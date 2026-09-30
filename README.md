@@ -9,6 +9,7 @@ Documentos de referência:
 - [docs/02-contas-e-chaves.md](docs/02-contas-e-chaves.md): contas e chaves que um humano precisa criar, na ordem em que bloqueiam o trabalho.
 - [docs/03-etapas.md](docs/03-etapas.md): as cinco etapas de entrega, uma PR por etapa, e o que cada uma inclui.
 - [docs/04-operacao-etapa-1.md](docs/04-operacao-etapa-1.md): como publicar e operar a LP, os leads e a Circular.
+- [docs/capturas/](docs/capturas/): LP e obrigado em 390px, referência aprovada ao lado da porta.
 
 Estrutura do repositório:
 
