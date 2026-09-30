@@ -361,3 +361,7 @@ Bloqueio é para regra quebrada. Aviso é para o que a Marcela deve olhar antes 
 ## Adendo de 30/09: Monitor técnico
 
 O Guardião (agente 9) segue só com revisão de conteúdo. A checagem técnica da LP (disponibilidade, velocidade, cliques, cadastro de ponta a ponta, Plano B na página, teste de carga) é um componente novo, o Monitor técnico, por código e sem modelo. Plano em `docs/13-monitor-tecnico-plano.md`, aguardando o "sim".
+
+## Adendo de 30/09 (noite): fechamento com o time humano
+
+Pagamento, PIX, contrato (D4Sign), aceite dos termos e pedido pelo sistema saíram do escopo dos agentes. Ficam com o time humano de fechamento. Continuam: Circular com registro do "Confirmo que recebi", botão "Reservou" no painel (com quantidade, contador das 250 e saída da régua) e o aviso "pode cobrar" depois de 10 dias da confirmação. Plano e ordem em `docs/14-fechamento-humano-e-painel.md`.

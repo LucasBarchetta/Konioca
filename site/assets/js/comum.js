@@ -95,9 +95,12 @@
       .catch(function (e) { console.error(e); return null; });
     return cfgCache;
   }
-  function post(rota, corpo) {
-    return fetch(API + "/" + rota, { method: "POST", headers: { "content-type": "application/json", accept: "application/json" }, body: JSON.stringify(corpo) })
-      .then(function (r) { return r.json().then(function (j) { j._status = r.status; return j; }); });
+  function post(rota, corpo, limiteMs) {
+    var ctrl = window.AbortController ? new AbortController() : null, t = null;
+    if (ctrl && limiteMs) t = setTimeout(function () { ctrl.abort(); }, limiteMs);
+    return fetch(API + "/" + rota, { method: "POST", headers: { "content-type": "application/json", accept: "application/json" }, body: JSON.stringify(corpo), signal: ctrl ? ctrl.signal : undefined })
+      .then(function (r) { return r.json().then(function (j) { j._status = r.status; return j; }); })
+      .finally(function () { if (t) clearTimeout(t); });
   }
 
   function iniciarContagem(cfg) {

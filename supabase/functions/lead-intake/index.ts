@@ -1,9 +1,10 @@
 // POST /lead-intake — cadastro na lista da pré-venda.
 // Valida, bloqueia duplicado, registra consentimento e UTMs, sorteia grupo de controle,
 // envia a Circular por e-mail (em segundo plano) e devolve o token do lead para a página de obrigado.
-// Turnstile: token inválido recusa; Cloudflare fora do ar aceita e marca "sem verificação" (nunca perder cadastro legítimo).
+// Turnstile: token inválido recusa. Token ausente (selo não carregou, cache antigo, bloqueador) ou Cloudflare fora do ar:
+// aceita e marca "sem verificação", com limite por IP mais apertado. Nunca perder cadastro legítimo.
 // Planilha em tempo real, API de Conversões da Meta e Events API do TikTok rodam em segundo plano e nunca seguram o cadastro.
-import { db } from "../_shared/db.ts";
+import { db, exigirServico } from "../_shared/db.ts";
 import { carregarConfig, cfgBool, cfgText } from "../_shared/config.ts";
 import { verificarTurnstile } from "../_shared/turnstile.ts";
 import { enviarLeadCapi } from "../_shared/meta_capi.ts";
@@ -19,8 +20,9 @@ interface Entrada {
   utm_source?: string; utm_medium?: string; utm_campaign?: string; utm_content?: string; utm_term?: string;
   fbclid?: string; gclid?: string; ttclid?: string; referrer?: string; landing_url?: string;
   site?: string; // honeypot: humano deixa vazio
-  turnstile_token?: string;
+  turnstile_token?: string; turnstile_estado?: string;
   fbp?: string; fbc?: string;
+  monitor?: boolean; // cadastro de teste do Monitor técnico: só com a chave de serviço; pula planilha, Circular e pixels
 }
 
 const TEXTO_CONSENTIMENTO_PADRAO = "Aceito receber mensagens da Konioca no WhatsApp e por e-mail sobre a pré-venda. Posso sair quando quiser.";
@@ -62,21 +64,30 @@ Deno.serve(async (req) => {
   const ip = ipDe(req);
   const sb = db();
   const { todos } = await carregarConfig();
+  const monitorTeste = b.monitor === true && (await exigirServico(req));
 
-  // Turnstile: antes de gravar e antes de qualquer disparo. Token inválido recusa; Cloudflare indisponível aceita e marca.
+  // Turnstile: antes de gravar e antes de qualquer disparo.
+  // Com token: inválido recusa; Cloudflare indisponível aceita e marca. Sem token: aceita e marca (limite por IP apertado).
   let semVerificacao: string | null = null;
-  if (cfgBool(todos, "turnstile_ativo", false)) {
-    const t = await verificarTurnstile(b.turnstile_token, ip);
-    if (t.status === "recusado") {
-      console.warn("turnstile recusado", t.motivo);
-      return json({ erro: "Não deu para confirmar que você não é um robô. Recarregue a página e tente de novo." }, 403, cors);
+  if (cfgBool(todos, "turnstile_ativo", false) && !monitorTeste) {
+    const token = String(b.turnstile_token ?? "").trim();
+    if (!token) {
+      semVerificacao = "token ausente (" + limparTexto(b.turnstile_estado, 30).replace(/[^a-z_]/g, "") + ")";
+      console.warn("turnstile sem token, cadastro aceito sem verificação:", semVerificacao);
+    } else {
+      const t = await verificarTurnstile(token, ip);
+      if (t.status === "recusado") {
+        console.warn("turnstile recusado", t.motivo);
+        return json({ erro: "Não deu para confirmar que você não é um robô. Recarregue a página e tente de novo." }, 403, cors);
+      }
+      if (t.status === "indisponivel") { semVerificacao = t.motivo; console.error("turnstile indisponível, cadastro aceito sem verificação:", t.motivo); }
     }
-    if (t.status === "indisponivel") { semVerificacao = t.motivo; console.error("turnstile indisponível, cadastro aceito sem verificação:", t.motivo); }
   }
 
-  const lim = (todos["cadastro_limite_ip"] as { janela_min?: number; max?: number } | undefined) ?? {};
-  if (ip) {
-    const { data: dentro } = await sb.rpc("rate_limit_hit", { p_chave: "cadastro:" + ip, p_janela_min: lim.janela_min ?? 10, p_max: lim.max ?? 8 });
+  // Limite por IP: o normal, e um mais apertado para quem chega sem o selo verificado.
+  const lim = (todos[semVerificacao ? "cadastro_limite_ip_sem_selo" : "cadastro_limite_ip"] as { janela_min?: number; max?: number } | undefined) ?? {};
+  if (ip && !monitorTeste) {
+    const { data: dentro } = await sb.rpc("rate_limit_hit", { p_chave: (semVerificacao ? "cadastro-sem-selo:" : "cadastro:") + ip, p_janela_min: lim.janela_min ?? (semVerificacao ? 30 : 10), p_max: lim.max ?? (semVerificacao ? 3 : 8) });
     if (dentro === false) return json({ erro: "Muitas tentativas. Tente de novo em alguns minutos." }, 429, cors);
   }
 
@@ -120,7 +131,11 @@ Deno.serve(async (req) => {
   const r = Array.isArray(data) ? data[0] : data;
   if (!r) return json({ erro: "Não deu para salvar agora. Tente de novo." }, 500, cors);
 
-  if (r.novo) {
+  if (r.novo && monitorTeste) {
+    // Teste do Monitor: fica marcado no lead e não dispara nada (planilha, Circular, pixels, APIs de conversão).
+    await sb.from("leads").update({ monitor_teste: true }).eq("id", r.lead_id);
+    await sb.from("lead_eventos").insert({ lead_id: r.lead_id, tipo: "monitor_teste", origem: "sistema" });
+  } else if (r.novo) {
     // Tudo abaixo roda em segundo plano: o cadastro não espera provedores. Cada tarefa engole o próprio erro.
     const tarefas: Promise<unknown>[] = [
       enviarCircular(r.lead_id).catch((e) => console.error("enviarCircular", e)),
