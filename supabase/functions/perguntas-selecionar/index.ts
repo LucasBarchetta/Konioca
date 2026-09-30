@@ -8,7 +8,7 @@ import { selecionarPerguntas, type PerguntaCandidata } from "../_shared/claude.t
 
 Deno.serve(async (req) => {
   if (req.method !== "POST") return json({ erro: "método" }, 405);
-  if (!exigirServico(req)) return json({ erro: "não autorizado" }, 401);
+  if (!(await exigirServico(req))) return json({ erro: "não autorizado" }, 401);
   const b = await lerJson<{ turma?: string; qtd?: number }>(req);
   const sb = db();
   const { todos: cfg } = await carregarConfig();

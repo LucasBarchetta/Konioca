@@ -8,7 +8,7 @@ import { enviarLembreteCircular } from "../_shared/circular.ts";
 
 Deno.serve(async (req) => {
   if (req.method !== "POST") return json({ erro: "método" }, 405);
-  if (!exigirServico(req)) return json({ erro: "não autorizado" }, 401);
+  if (!(await exigirServico(req))) return json({ erro: "não autorizado" }, 401);
   const { todos } = await carregarConfig();
   const horas = cfgNum(todos, "circular_lembrete_horas", 48);
   const canal = cfgText(todos, "circular_lembrete_canal", "email");

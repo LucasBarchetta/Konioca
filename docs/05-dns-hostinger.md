@@ -4,12 +4,14 @@ Nada abaixo altera registros existentes. O site atual (A na raiz), o e-mail atua
 
 Estado atual lido no DNS público em 30/09: raiz com SPF `include:_spf.google.com`, MX `smtp.google.com`, DMARC `p=none` com alinhamento estrito (`adkim=s; aspf=s`). Nenhum registro em `prevenda` nem em `envio`.
 
+Atualização de 30/09, fim do dia: CNAME `prevenda` criado e `https://prevenda.konioca.com` no ar (conferido: resolve para o Cloudflare Pages, HTTPS válido, LP carregando os valores da configuração). Os registros de e-mail e da Meta continuam pendentes.
+
 ## Lista para criar
 
 Um por linha: tipo, nome, valor.
 
 ```
-CNAME  prevenda                  konioca-prevenda.pages.dev
+CNAME  prevenda                  konioca.pages.dev                       (criado em 30/09)
 MX     send.envio                feedback-smtp.us-east-1.amazonses.com   (prioridade 10)
 TXT    send.envio                v=spf1 include:amazonses.com ~all
 TXT    resend._domainkey.envio   [CHAVE DKIM GERADA PELO RESEND]
@@ -21,7 +23,12 @@ TTL: 3600, como o Resend recomenda para a Hostinger. Para os testes de 3/10, 300
 
 ## De onde vem cada valor e o que depende de quê
 
-1. **LP (`prevenda`)**. Criar no Cloudflare Pages o projeto `konioca-prevenda` ligado a este repositório (diretório `site`). Se o nome estiver ocupado, o Cloudflare mostra outro endereço `.pages.dev` e é esse que vai no CNAME. Depois de criar o CNAME, adicionar `prevenda.konioca.com` em Pages > Custom domains; o certificado sai automático.
+1. **LP (`prevenda`)**. Feito. Projeto `konioca` no Cloudflare Pages, ligado a este repositório, branch de produção `main`, pasta de saída `site`, sem comando de build. Endereço provisório `konioca.pages.dev`; `prevenda.konioca.com` em Pages > Custom domains, com o certificado emitido pelo Cloudflare.
+   - CORS: as functions públicas aceitam `https://prevenda.konioca.com`, `https://konioca.pages.dev` e `https://*.konioca.pages.dev` (prévias por commit e por branch), pela chave `cors_origens`. As duas de `pages.dev` são provisórias. Para retirar quando o domínio próprio estiver estável:
+     ```sql
+     update config set valor = '["https://prevenda.konioca.com"]' where chave = 'cors_origens';
+     ```
+     Sem elas, as prévias do Pages abrem sem preço, contador e faixas, e o formulário não envia.
 2. **E-mail (Resend, subdomínio `envio`)**. Em Resend > Domains, adicionar `envio.konioca.com`, região `us-east-1`. O Resend mostra as mesmas três linhas acima (MX e SPF em `send.envio`, DKIM em `resend._domainkey.envio`); só a chave DKIM é única da conta, por isso ela fica entre colchetes. Remetente: `time@envio.konioca.com` (já gravado na configuração).
    - Por que subdomínio: o DMARC da raiz exige alinhamento estrito. Enviando como `@envio.konioca.com` com DKIM do próprio `envio`, o alinhamento estrito passa, e nada da reputação do e-mail do Google na raiz é afetado.
    - O `_dmarc.envio` com `p=quarantine` vale só para o subdomínio de envio. Para receber relatórios, acrescentar `; rua=mailto:dmarc@konioca.com` ao valor (a caixa já aparece no DMARC da raiz).
@@ -30,7 +37,7 @@ TTL: 3600, como o Resend recomenda para a Hostinger. Para os testes de 3/10, 300
 ## Conferência depois de criar
 
 ```
-dig +short CNAME prevenda.konioca.com
+dig +short CNAME prevenda.konioca.com   # konioca.pages.dev.
 dig +short TXT resend._domainkey.envio.konioca.com
 dig +short TXT konioca.com        # deve listar o SPF antigo E o facebook-domain-verification
 ```

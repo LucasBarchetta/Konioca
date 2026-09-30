@@ -1,4 +1,4 @@
-// Página de obrigado: conversão (uma vez, só para cadastro novo), pergunta de um toque, grupo e agenda.
+// Página de obrigado: conversão (uma vez, só para cadastro novo), pergunta de um toque, WhatsApp do time e agenda.
 (function () {
   var K = window.K;
   var q = new URLSearchParams(location.search), token = q.get("t") || "", novo = q.get("n") === "1";
@@ -26,7 +26,7 @@
       var ini = new Date(cfg.live_data), fim = new Date(ini.getTime() + Number(cfg.live_duracao_min || 60) * 60000);
       function g(d) { return d.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z"); }
       var titulo = "Live Konioca · pré-lançamento da nova geração";
-      var det = "Ao vivo pelo " + (cfg.live_plataforma || "") + ". O link chega pelo grupo da pré-venda.";
+      var det = "Ao vivo pelo " + (cfg.live_plataforma || "") + ". O link chega no WhatsApp que você cadastrou.";
       agenda.href = "https://calendar.google.com/calendar/render?action=TEMPLATE&text=" + encodeURIComponent(titulo) + "&dates=" + g(ini) + "/" + g(fim) + "&details=" + encodeURIComponent(det) + "&ctz=America/Sao_Paulo";
       agenda.target = "_blank";
       agenda.addEventListener("click", function () { if (token) K.post("lead-evento", { token: token, tipo: "clicou_agenda" }).catch(function () {}); });
@@ -34,8 +34,8 @@
       agenda.setAttribute("data-ics", K.API + "/live-ics");
     }
 
-    var grupo = document.getElementById("btn-grupo");
-    if (grupo) grupo.addEventListener("click", function () { if (token) K.post("lead-evento", { token: token, tipo: "clicou_grupo" }).catch(function () {}); });
+    var time = document.getElementById("btn-time");
+    if (time) time.addEventListener("click", function () { if (token) K.post("lead-evento", { token: token, tipo: "clicou_whatsapp_time" }).catch(function () {}); });
   });
 
   // Pergunta de um toque
