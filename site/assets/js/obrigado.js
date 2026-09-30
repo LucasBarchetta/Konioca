@@ -15,7 +15,7 @@
     var chave = "k_conv_" + token, ja = false;
     try { ja = !!localStorage.getItem(chave); } catch (e) { ja = false; }
     if (novo && token && !ja) {
-      window.KPixels.lead({ origem: sessao && sessao.origem, grupo_controle: sessao && sessao.grupo_controle });
+      window.KPixels.lead({ event_id: (sessao && sessao.event_id) || "", origem: sessao && sessao.origem, grupo_controle: sessao && sessao.grupo_controle });
       try { localStorage.setItem(chave, "1"); } catch (e) { /* sem storage */ }
       if (token) K.post("lead-evento", { token: token, tipo: "viu_obrigado" }).catch(function () { /* ignora */ });
     }

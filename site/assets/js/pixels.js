@@ -20,10 +20,11 @@
     }
   }
 
-  /** Evento de conversão do cadastro. Disparar uma vez por lead novo (página de obrigado). */
+  /** Evento de conversão do cadastro. Disparar uma vez por lead novo (página de obrigado).
+   *  dados.event_id é o mesmo id enviado pelo servidor à API de Conversões: a Meta deduplica pelo par (event_name, event_id). */
   function lead(dados) {
     dados = dados || {};
-    try { if (ativo.meta) window.fbq("track", "Lead", { content_name: "prevenda_nova_geracao" }); } catch (e) { /* ignora */ }
+    try { if (ativo.meta) window.fbq("track", "Lead", { content_name: "prevenda_nova_geracao" }, dados.event_id ? { eventID: dados.event_id } : undefined); } catch (e) { /* ignora */ }
     try { if (ativo.tiktok) window.ttq.track("SubmitForm", { content_name: "prevenda_nova_geracao" }); } catch (e) { /* ignora */ }
     try { if (ativo.ga4) window.gtag("event", "generate_lead", { origem: dados.origem || "", grupo_controle: !!dados.grupo_controle }); } catch (e) { /* ignora */ }
   }

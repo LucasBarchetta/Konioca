@@ -40,12 +40,21 @@ createServer(async (req, res) => {
     const token = Math.random().toString(16).slice(2) + Math.random().toString(16).slice(2);
     leads.set(token, { ...b, token, criado_em: new Date().toISOString() });
     console.log("lead", b.nome, b.whatsapp, b.email, "origem?", b.utm_source, b.referrer);
-    return json(res, { ok: true, novo: true, token, grupo_controle: Math.random() < 0.1, obrigado_url: "/obrigado.html?t=" + token + "&n=1" }, 201);
+    return json(res, { ok: true, novo: true, token, event_id: "mock-" + token.slice(0, 8), grupo_controle: Math.random() < 0.1, obrigado_url: "/obrigado.html?t=" + token + "&n=1" }, 201);
   }
   if (url.pathname === "/functions/v1/lead-evento" && req.method === "POST") {
     const b = await corpo(req); console.log("evento", b.tipo, b.valor ?? ""); return json(res, { ok: true });
   }
   if (url.pathname === "/functions/v1/live-ics") { res.writeHead(200, { "content-type": "text/calendar", ...cors }); return res.end("BEGIN:VCALENDAR\r\nEND:VCALENDAR\r\n"); }
+  // fontes locais para capturas (opcional): MOCK_FONTS=/pasta com local.css e .woff2
+  if (process.env.MOCK_FONTS && url.pathname.startsWith("/__fonts/")) {
+    const f = join(process.env.MOCK_FONTS, url.pathname.replace("/__fonts/", ""));
+    if (existsSync(f)) { res.writeHead(200, { "content-type": f.endsWith(".css") ? "text/css" : "font/woff2", ...cors }); return res.end(readFileSync(f)); }
+  }
+  if (process.env.MOCK_REF && url.pathname.startsWith("/__ref/")) {
+    const f = join(process.env.MOCK_REF, url.pathname.replace("/__ref/", ""));
+    if (existsSync(f)) { res.writeHead(200, { "content-type": MIME[extname(f)] ?? "application/octet-stream" }); return res.end(readFileSync(f)); }
+  }
   // estático
   let p = url.pathname === "/" ? "/index.html" : url.pathname;
   const arquivo = join(raiz, "site", p);

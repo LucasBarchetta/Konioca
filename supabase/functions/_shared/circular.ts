@@ -44,9 +44,9 @@ export function montarEmailCircular(opts: {
     anexoLinha,
     `É o documento que a lei pede que você tenha em mãos antes de qualquer pagamento. Leia com calma.`,
     ``,
-    `Um detalhe de calendário: a lei dá ${opts.prazoDias} dias entre o recebimento da Circular e qualquer pagamento. A pré-venda fecha em ${fim.ddmm}, às ${fim.hora}. Quem recebe a Circular até ${lim.ddmm} consegue reservar dentro do prazo.`,
+    `Um detalhe de calendário: a lei dá ${opts.prazoDias} dias entre o recebimento da Circular e qualquer pagamento, e o prazo começa a contar quando você confirma o recebimento no link abaixo. A pré-venda fecha em ${fim.ddmm}, às ${fim.hora}. Quem confirma até ${lim.ddmm} consegue reservar dentro do prazo.`,
     ``,
-    `Confirme que recebeu: ${confirmar}`,
+    `Confirmo que recebi a Circular: ${confirmar}`,
     ``,
     `A live é ${live.diaSemana}, ${live.ddmm}, às ${live.hora}, pelo ${opts.livePlataforma}. O link chega pelo grupo da pré-venda: ${opts.grupoLink}`,
     ``,
@@ -61,7 +61,7 @@ export function montarEmailCircular(opts: {
 <h1 style="margin:14px 0 0;font-family:Caladea,Cambria,Georgia,serif;font-weight:400;font-size:30px;line-height:1.1;color:#1f4a36">${esc(nome)}, seu nome está na lista.</h1>
 <div style="width:120px;height:1px;background:#c9a227;margin:16px 0 20px 6px"></div>
 <p style="margin:0 0 14px;font-size:17px;line-height:1.6">${esc(anexoLinha)} É o documento que a lei pede que você tenha em mãos antes de qualquer pagamento. Leia com calma.</p>
-<p style="margin:0 0 20px;font-size:17px;line-height:1.6">Um detalhe de calendário: a lei dá ${opts.prazoDias} dias entre o recebimento da Circular e qualquer pagamento. A pré-venda fecha em ${fim.ddmm}, às ${fim.hora}. Quem recebe a Circular até <strong>${lim.ddmm}</strong> consegue reservar dentro do prazo.</p>
+<p style="margin:0 0 20px;font-size:17px;line-height:1.6">Um detalhe de calendário: a lei dá ${opts.prazoDias} dias entre o recebimento da Circular e qualquer pagamento, e o prazo começa a contar quando você confirma o recebimento no botão abaixo. A pré-venda fecha em ${fim.ddmm}, às ${fim.hora}. Quem confirma até <strong>${lim.ddmm}</strong> consegue reservar dentro do prazo.</p>
 <a href="${esc(confirmar)}" style="display:block;text-align:center;padding:16px;background:#b04d0c;color:#f7f0e2;font-size:18px;font-weight:700;text-decoration:none;border-radius:7px">Confirmo que recebi a Circular</a>
 <p style="margin:24px 0 0;font-size:16px;line-height:1.6">A live é ${live.diaSemana}, ${live.ddmm}, às ${live.hora}, pelo ${esc(opts.livePlataforma)}. O link chega pelo <a href="${esc(opts.grupoLink)}" style="color:#1f4a36">grupo da pré-venda</a>.</p>
 <p style="margin:24px 0 0;font-family:Caladea,Cambria,Georgia,serif;font-style:italic;font-size:18px;color:#5a6b3a">${esc(opts.assinatura)}</p>
@@ -171,4 +171,61 @@ export async function aplicarEventoCircular(provedorId: string, tipo: string, qu
   await sb.from("lead_eventos").insert({ lead_id: envio.lead_id, tipo: "circular_" + m.status, origem: "sistema", dados: { provedor_id: provedorId } });
   if (m.marco) await sb.rpc("circular_marca_recebimento", { p_lead: envio.lead_id, p_evento: m.marco, p_quando: quandoIso });
   return true;
+}
+
+/** E-mail de lembrete para quem não confirmou o recebimento. Curto, um pedido só. */
+export function montarEmailLembrete(opts: { nome: string; token: string; apiUrl: string; prevendaFimIso: string; prazoDias: number; assinatura: string }) {
+  const confirmar = `${opts.apiUrl}/circular-confirmar?t=${encodeURIComponent(opts.token)}`;
+  const sair = `${opts.apiUrl}/optout?t=${encodeURIComponent(opts.token)}`;
+  const lim = partesData(limiteRecebimentoCircular(opts.prevendaFimIso, opts.prazoDias).toISOString());
+  const nome = primeiroNome(opts.nome);
+  const texto = [
+    `${nome}, a Circular de Oferta de Franquia chegou no seu e-mail há dois dias e ainda falta um clique.`,
+    ``,
+    `O prazo de ${opts.prazoDias} dias que a lei pede só começa a contar quando você confirma o recebimento. Sem isso, a reserva não abre para você.`,
+    ``,
+    `Confirmo que recebi a Circular: ${confirmar}`,
+    ``,
+    `Quem confirma até ${lim.ddmm} ainda reserva dentro da pré-venda.`,
+    ``,
+    opts.assinatura,
+    ``,
+    `Para não receber mais mensagens da pré-venda: ${sair}`,
+  ].join("\n");
+  const html = `<!doctype html><html lang="pt-BR"><body style="margin:0;background:#f4ebdb;font-family:Carlito,Calibri,'Segoe UI',sans-serif;color:#1f4a36">
+<div style="max-width:560px;margin:0 auto;padding:32px 24px">
+<h1 style="margin:0;font-family:Caladea,Cambria,Georgia,serif;font-weight:400;font-size:28px;line-height:1.1">${esc(nome)}, falta um clique.</h1>
+<div style="width:120px;height:1px;background:#c9a227;margin:16px 0 20px 6px"></div>
+<p style="margin:0 0 14px;font-size:17px;line-height:1.6">A Circular de Oferta de Franquia chegou no seu e-mail há dois dias. O prazo de ${opts.prazoDias} dias que a lei pede só começa a contar quando você confirma o recebimento. Sem isso, a reserva não abre para você.</p>
+<a href="${esc(confirmar)}" style="display:block;text-align:center;padding:16px;background:#b04d0c;color:#f7f0e2;font-size:18px;font-weight:700;text-decoration:none;border-radius:7px">Confirmo que recebi a Circular</a>
+<p style="margin:20px 0 0;font-size:16px;line-height:1.6">Quem confirma até <strong>${lim.ddmm}</strong> ainda reserva dentro da pré-venda.</p>
+<p style="margin:24px 0 0;font-family:Caladea,Cambria,Georgia,serif;font-style:italic;font-size:18px;color:#5a6b3a">${esc(opts.assinatura)}</p>
+<p style="margin:32px 0 0;font-size:12px;line-height:1.5;color:#5a6b3a"><a href="${esc(sair)}" style="color:#5a6b3a">Não quero mais receber mensagens da pré-venda</a>.</p>
+</div></body></html>`;
+  return { texto, html };
+}
+
+/** Envia o lembrete de confirmação para um lead. Um só por lead. */
+export async function enviarLembreteCircular(lead: { id: string; nome: string; email: string; token: string }): Promise<{ ok: boolean; motivo?: string }> {
+  const apiKey = Deno.env.get("RESEND_API_KEY");
+  if (!apiKey) return { ok: false, motivo: "RESEND_API_KEY ausente" };
+  const { todos } = await carregarConfig();
+  const from = cfgText(todos, "email_from");
+  if (!from || pendente(from)) return { ok: false, motivo: "config.email_from pendente" };
+  const apiUrl = (Deno.env.get("SUPABASE_URL") ?? "") + "/functions/v1";
+  const email = montarEmailLembrete({
+    nome: lead.nome, token: lead.token, apiUrl,
+    prevendaFimIso: cfgText(todos, "prevenda_fim"), prazoDias: cfgNum(todos, "circular_prazo_dias", 10),
+    assinatura: cfgText(todos, "assinatura_time", "Time da Marcela"),
+  });
+  const resp = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: { "authorization": `Bearer ${apiKey}`, "content-type": "application/json" },
+    body: JSON.stringify({ from, to: [lead.email], subject: cfgText(todos, "circular_lembrete_assunto", "Falta um clique: sua Circular de Oferta de Franquia"), text: email.texto, html: email.html, tags: [{ name: "tipo", value: "circular_lembrete" }] }),
+  });
+  if (!resp.ok) return { ok: false, motivo: "resend " + resp.status };
+  const sb = db();
+  await sb.from("leads").update({ circular_lembrete_em: new Date().toISOString() }).eq("id", lead.id);
+  await sb.from("lead_eventos").insert({ lead_id: lead.id, tipo: "circular_lembrete", origem: "sistema", dados: { canal: "email" } });
+  return { ok: true };
 }

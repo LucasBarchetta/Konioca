@@ -28,7 +28,7 @@ insert into public.config (chave, valor, publico, descricao) values
 
   -- Circular de Oferta de Franquia (Lei 13.966/2019)
   ('circular_prazo_dias',   '10',    true,  'Dias entre o recebimento da Circular e a liberação de qualquer pagamento'),
-  ('circular_marco_recebimento', '"entrega"', false, 'Marco que conta como recebimento: entrega (webhook do provedor) ou confirmacao (clique do lead)'),
+  ('circular_marco_recebimento', '"confirmacao"', false, 'Marco que conta como recebimento: confirmacao (clique do lead, padrão aprovado) ou entrega (webhook do provedor)'),
   ('circular_storage_path', '"circular/[Circular_Oferta_Franquia_Konioca.pdf]"', false, 'Caminho do PDF no bucket circular'),
   ('circular_assunto',      '"Sua Circular de Oferta de Franquia Konioca"', false, 'Assunto do e-mail'),
 

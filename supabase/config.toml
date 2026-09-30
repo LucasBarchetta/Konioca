@@ -21,5 +21,7 @@ verify_jwt = false
 verify_jwt = true
 [functions.circular-reconciliar]
 verify_jwt = true
+[functions.circular-lembrete]
+verify_jwt = true
 [functions.sults-export]
 verify_jwt = true

@@ -60,9 +60,11 @@ Regras que o banco garante, não só o agente:
 
 FATO: a lei exige entrega da Circular ao candidato com pelo menos 10 dias de antecedência da assinatura do contrato ou pré-contrato ou do pagamento de qualquer valor ao franqueador. A reserva de R$ 1.000 e o termo de reserva caem nessa regra.
 
-INFERÊNCIA (confiança alta, validar com o jurídico): o registro mais defensável de "recebimento" é a combinação de três marcas, todas gravadas: envio pela plataforma, confirmação de entrega pelo provedor (webhook `email.delivered`) e clique do lead no botão "Confirmo que recebi a Circular". O sistema usa a entrega confirmada como data de recebimento para contar os 10 dias e guarda a confirmação explícita como reforço. Se o jurídico preferir contar só a partir da confirmação explícita, é uma linha na `config` (`circular_marco_recebimento`).
+Decisão aprovada: os 10 dias contam a partir do clique "Confirmo que recebi a Circular" (`config.circular_marco_recebimento = confirmacao`). O sistema grava as três marcas de qualquer forma: envio, entrega confirmada pelo provedor (`leads.circular_entregue_em`, webhook `email.delivered`) e confirmação explícita (`circular_confirmada_em`). Quem não confirma em 48 h recebe um lembrete por e-mail (`circular-lembrete`, horário, um por lead); na etapa 2 o agente repete pelo WhatsApp. O lembrete vai também ao grupo de controle: é ato do processo legal, não mensagem de venda.
 
-Consequência operacional: com pré-venda encerrando 30/10 23h59, quem se cadastra até 20/10 consegue reservar dentro do prazo. A LP não fala disso; o e-mail da Circular e o agente falam com naturalidade, com a data calculada da `config`.
+Consequência operacional: com pré-venda encerrando 30/10 23h59, quem confirma o recebimento até 20/10 consegue reservar dentro do prazo. A LP não fala disso; o e-mail da Circular, o lembrete e o agente falam com naturalidade, com a data calculada da `config`.
+
+Se o PDF da Circular chegar depois de 5/10: o cadastro, o convite, a live, o pedido e a aprovação seguem abertos. O que trava é só a cobrança. O e-mail da Circular sai em massa quando o PDF entrar (`circular-enviar` com `pendentes`), cada lead confirma no seu tempo e a reserva de cada um é cobrada na sua própria data de liberação (`lead_pode_pagar`). O agente diz isso ao lead sem rodeio: "sua reserva abre em DD/MM".
 
 ## Dados (etapa 1)
 
@@ -84,17 +86,27 @@ RLS ligado em tudo, sem política para `anon`. Toda escrita passa pelas edge fun
 - Pixels Meta, TikTok e GA4 carregados com os IDs da `config`; evento de conversão disparado uma vez na página de obrigado, só para cadastro novo.
 - Formulário valida WhatsApp com DDD antes de enviar; o servidor valida de novo.
 
+## Medição
+
+- Pixels Meta, TikTok e GA4 no navegador, com IDs da `config`.
+- API de Conversões da Meta pelo servidor (`meta_capi_ativo`, segredo `META_CAPI_TOKEN`): a `lead-intake` envia o evento `Lead` com dados hasheados, IP, user agent, `fbp` e `fbc`. O `event_id` é o id do lead, o mesmo que a página de obrigado passa ao pixel em `eventID`; a Meta deduplica pelo par (nome do evento, event_id). Só para cadastro novo, nunca para duplicado.
+- Grupo de controle de 10% fora das automações, para medir efeito real.
+
+## Plano B de aquecimento (WABA não aprovada em 5/10)
+
+`config.canal_aquecimento`: `whatsapp` (padrão) ou `email`. Em `email`, o aquecimento da base sai por Resend em lotes (`email_lote_tamanho`, `email_lote_intervalo_min`) com SPF, DKIM e DMARC configurados no domínio, e o WhatsApp entra quando a Meta liberar. A rotina de envio em lotes chega na etapa 2 junto com a de WhatsApp; a chave já existe para a virada ser uma linha de SQL.
+
 ## Segurança e LGPD
 
 - Segredos só nas variáveis de ambiente das functions (`supabase secrets set`). `.env.example` lista todos sem valor.
-- Cadastro protegido por honeypot e limite por IP. Webhooks verificam assinatura (Resend/Svix; Meta e PSP nas etapas seguintes).
+- Cadastro protegido por Cloudflare Turnstile (`turnstile_ativo`, site key pública na `config`, `TURNSTILE_SECRET` no servidor; a `lead-intake` valida em `siteverify` antes de gravar e antes de qualquer disparo), honeypot e limite por IP. Webhooks verificam assinatura (Resend/Svix; Meta e PSP nas etapas seguintes).
 - Links de confirmação da Circular e de opt-out usam token aleatório por lead, não o id.
 - Dados mínimos, finalidade declarada no consentimento, opt-out em um clique. A política de privacidade e os termos da pré-venda são links na `config` [A PREENCHER].
 
 ## Riscos e pontos cegos
 
 1. Aprovação de templates e verificação da empresa na Meta levam dias. É o item que mais ameaça 5/10; começa hoje.
-2. O PDF da Circular ainda não existe no repositório. Sem ele, o e-mail vai sem anexo e o sistema não marca `circular_enviada_em`. O cadastro continua funcionando.
+2. O PDF da Circular vem do jurídico. Sem ele, o e-mail não sai e o sistema não marca `circular_enviada_em`. O cadastro continua funcionando; ver "Se o PDF chegar depois de 5/10" acima.
 3. Sults: a API pública existe (developers.sults.com.br, módulo Expansão), mas os endpoints só aparecem com login. O adaptador fica pronto para receber URL, cabeçalho e mapeamento; até lá, CSV diário em Storage.
 4. Cache do provedor de e-mail: se o webhook de entrega falhar, uma rotina horária reconsulta o status pela API do Resend.
 5. Contador ao vivo antes da live mostra zero. Fica oculto até `contador_visivel` ser ligado no dia 15/10.
