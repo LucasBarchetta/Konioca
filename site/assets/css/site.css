@@ -14,5 +14,5 @@ button.cta[disabled]{opacity:.7;cursor:progress}
 .hp{position:absolute;left:-10000px;top:auto;width:1px;height:1px;overflow:hidden}
 summary::-webkit-details-marker{display:none}
 .quadro svg{width:100%;height:auto}
-.logo-txt{font-family:Caladea,Cambria,Georgia,serif;font-size:26px;letter-spacing:.04em;color:#f7f0e2}
+
 @media (prefers-reduced-motion:reduce){*{transition:none !important}}

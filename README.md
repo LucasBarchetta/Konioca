@@ -9,6 +9,10 @@ Documentos de referência:
 - [docs/02-contas-e-chaves.md](docs/02-contas-e-chaves.md): contas e chaves que um humano precisa criar, na ordem em que bloqueiam o trabalho.
 - [docs/03-etapas.md](docs/03-etapas.md): as cinco etapas de entrega, uma PR por etapa, e o que cada uma inclui.
 - [docs/04-operacao-etapa-1.md](docs/04-operacao-etapa-1.md): como publicar e operar a LP, os leads e a Circular.
+- [docs/06-whatsapp-modelos.md](docs/06-whatsapp-modelos.md): modelos de mensagem para submeter à Meta.
+- [docs/07-operacao-etapa-2.md](docs/07-operacao-etapa-2.md): WhatsApp, convite, perguntas da live e base antiga.
+- [docs/05-dns-hostinger.md](docs/05-dns-hostinger.md): registros DNS para criar na Hostinger (LP, e-mail, Meta).
+- [docs/politica-privacidade.md](docs/politica-privacidade.md): rascunho da política de privacidade para o jurídico (dados armazenados nos EUA).
 - [docs/capturas/](docs/capturas/): LP e obrigado em 390px, referência aprovada ao lado da porta.
 
 Estrutura do repositório:

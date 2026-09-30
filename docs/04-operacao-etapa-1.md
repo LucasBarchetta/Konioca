@@ -2,17 +2,13 @@
 
 ## Publicar pela primeira vez
 
-1. Supabase (projeto `konioca-prevenda`):
-   ```
-   supabase link --project-ref <REF>
-   supabase db push                      # aplica as três migrations
-   supabase secrets set --env-file .env  # RESEND_API_KEY, RESEND_WEBHOOK_SECRET, SULTS_API_TOKEN, TURNSTILE_SECRET, META_CAPI_TOKEN
-   supabase functions deploy
-   ```
-   No SQL Editor, guardar os dois segredos que o cron usa:
+1. Supabase: feito em 30/09 no projeto `ytsildpxummevfkjcjhs` (us-east-2). Migrations 100 a 450 aplicadas, 11 functions publicadas, `project_url` guardada no Vault, `lp_url`, `cors_origens` e `email_from` apontando para `prevenda.konioca.com` e `envio.konioca.com`. Falta um passo humano, no SQL Editor, com a chave `service_role` legada (Settings > API Keys > Legacy):
    ```sql
-   select vault.create_secret('https://<REF>.supabase.co', 'project_url');
    select vault.create_secret('<SERVICE_ROLE_KEY>', 'service_role_key');
+   ```
+   Sem ela o cron (reconciliação, lembrete da Circular, exportação) roda e não faz nada. Segredos das functions:
+   ```
+   supabase secrets set --project-ref ytsildpxummevfkjcjhs --env-file .env
    ```
 2. Configuração: atualizar as chaves entre colchetes (`select chave, valor from config where valor::text like '%[%'`).
    ```sql
@@ -28,7 +24,7 @@
    Turnstile e API de Conversões só ligam quando o segredo correspondente já estiver nas functions. Ligar `turnstile_ativo` sem `TURNSTILE_SECRET` bloqueia todo cadastro.
 3. Circular: subir o PDF no bucket `circular` (Storage, privado) e apontar `circular_storage_path` para `circular/<nome do arquivo>.pdf`.
 4. Resend: domínio verificado; webhook em `https://<REF>.supabase.co/functions/v1/circular-webhook` com os eventos `email.delivered`, `email.opened`, `email.clicked`, `email.bounced`, `email.complained`.
-5. Site: em `site/assets/js/env.js`, trocar `[PROJECT_REF]` pelo ref do projeto. Cloudflare Pages: diretório `site`, sem build. Domínio próprio apontado.
+5. Site: `site/assets/js/env.js` já aponta para o projeto. Cloudflare Pages: projeto `konioca-prevenda`, diretório `site`, sem build, domínio `prevenda.konioca.com` (registros em `docs/05-dns-hostinger.md`).
 
 ## Testar ponta a ponta (antes de 5/10)
 
