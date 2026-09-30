@@ -1,10 +1,11 @@
 // Base antiga (cron a cada 30 min): WhatsApp em lotes pequenos depois do e-mail, uma tentativa por pessoa.
-//   P2 (email_depois_whatsapp_lotes): entra nos lotes N horas depois do e-mail entregue; quem clicou vai primeiro.
+//   P2 (email_depois_whatsapp_lotes): por decisão de 30/09, só quem clicou no e-mail (config.base_antiga_p2_regra = "se_clicar").
+//        Com "lotes", volta à regra da planilha: entra nos lotes N horas depois do e-mail, quem clicou primeiro.
 //   P3/P4 (email_whatsapp_se_clicar): só quem clicou no e-mail.
 // Nunca: sem celular válido, e-mail devolvido, quem saiu, grupo de controle, quem já se cadastrou pela LP.
 // Com a fila pausada por qualidade do número, não enfileira nada.
 import { db, exigirServico } from "../_shared/db.ts";
-import { carregarConfig, cfgNum } from "../_shared/config.ts";
+import { carregarConfig, cfgNum, cfgText } from "../_shared/config.ts";
 import { json } from "../_shared/http.ts";
 
 Deno.serve(async (req) => {
@@ -18,12 +19,14 @@ Deno.serve(async (req) => {
 
   const lote = Math.max(1, Math.floor(cfgNum(cfg, "wa_base_antiga_por_hora", 30) / 2)); // roda 2x por hora
   const aposHoras = cfgNum(cfg, "base_antiga_whatsapp_apos_horas", 48);
+  const p2EmLotes = cfgText(cfg, "base_antiga_p2_regra", "se_clicar") === "lotes";
   const corte = new Date(Date.now() - aposHoras * 3600_000).toISOString();
 
-  // Leads da base com e-mail entregue e sem WhatsApp da base ainda
+  // Leads da base com e-mail enviado (não devolvido). Quem clicou vai na hora; a espera de N horas vale só no modo "lotes".
   const { data: emails } = await sb.from("mensagens").select("lead_id, status, criado_em")
-    .eq("canal", "email").eq("modelo", "base_antiga_email").in("status", ["enviado", "entregue", "lido"]).lt("criado_em", corte)
+    .eq("canal", "email").eq("modelo", "base_antiga_email").in("status", ["enviado", "entregue", "lido"])
     .order("criado_em", { ascending: true }).limit(3000);
+  const antigo = new Set((emails ?? []).filter((m) => m.criado_em < corte).map((m) => m.lead_id));
   const ids = [...new Set((emails ?? []).map((m) => m.lead_id).filter(Boolean))] as string[];
   if (!ids.length) return json({ ok: true, candidatos: 0, enfileirados: 0 });
 
@@ -36,7 +39,7 @@ Deno.serve(async (req) => {
 
   const candidatos = (leads ?? []).filter((l) =>
     l.base_antiga && !l.optout_em && !l.wa_invalido_em && l.whatsapp && !l.grupo_controle && !l.base_antiga_convertido_em && !tentou.has(l.id) &&
-    (l.base_antiga_canal === "email_depois_whatsapp_lotes" || (l.base_antiga_canal === "email_whatsapp_se_clicar" && clicou.has(l.id))));
+    (clicou.has(l.id) || (p2EmLotes && l.base_antiga_canal === "email_depois_whatsapp_lotes" && antigo.has(l.id))));
   candidatos.sort((a, b) => Number(clicou.has(b.id)) - Number(clicou.has(a.id)));
 
   let n = 0;
