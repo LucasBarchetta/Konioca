@@ -1,0 +1,25 @@
+# Configuração do projeto Supabase (CLI). project_id é preenchido por `supabase link`.
+project_id = "[PROJECT_REF]"
+
+[functions.public-config]
+verify_jwt = false
+[functions.lead-intake]
+verify_jwt = false
+[functions.lead-evento]
+verify_jwt = false
+[functions.circular-webhook]
+verify_jwt = false
+[functions.circular-confirmar]
+verify_jwt = false
+[functions.optout]
+verify_jwt = false
+[functions.live-ics]
+verify_jwt = false
+
+# Internas: exigem a chave de serviço no Authorization (verificado no código).
+[functions.circular-enviar]
+verify_jwt = true
+[functions.circular-reconciliar]
+verify_jwt = true
+[functions.sults-export]
+verify_jwt = true

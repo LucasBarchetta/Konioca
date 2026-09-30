@@ -1,0 +1,52 @@
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import { normalizarWhatsapp, validarEmail, validarNome, classificarOrigem, percentualDesconto, formatarWhatsapp } from "../supabase/functions/_shared/validacao.ts";
+
+test("WhatsApp: máscara, +55, zero de operadora e sem o 9", () => {
+  assert.deepEqual(normalizarWhatsapp("(11) 99000-0000").ok, true);
+  assert.equal(normalizarWhatsapp("(11) 99000-0000").e164, "+5511990000000");
+  assert.equal(normalizarWhatsapp("+55 11 99000 0000").e164, "+5511990000000");
+  assert.equal(normalizarWhatsapp("011990000000").e164, "+5511990000000");
+  assert.equal(normalizarWhatsapp("1199000000").e164, "+5511999000000", "celular antigo de 8 dígitos ganha o 9");
+  assert.equal(normalizarWhatsapp("5511990000000").e164, "+5511990000000");
+});
+
+test("WhatsApp: recusa DDD inexistente, fixo, curto e repetido", () => {
+  assert.equal(normalizarWhatsapp("(10) 99000-0000").ok, false);
+  assert.equal(normalizarWhatsapp("(20) 99000-0000").ok, false);
+  assert.equal(normalizarWhatsapp("(11) 3000-0000").ok, false, "fixo não tem WhatsApp");
+  assert.equal(normalizarWhatsapp("(11) 80000-0000").ok, false, "11 dígitos sem o 9");
+  assert.equal(normalizarWhatsapp("11 9900").ok, false);
+  assert.equal(normalizarWhatsapp("").ok, false);
+  assert.equal(normalizarWhatsapp("(11) 99999-9999").ok, false, "todos iguais");
+});
+
+test("WhatsApp: formatação de volta", () => {
+  assert.equal(formatarWhatsapp("+5511990000000"), "(11) 99000-0000");
+});
+
+test("E-mail e nome", () => {
+  assert.equal(validarEmail(" Lucas@Exemplo.com ").email, "lucas@exemplo.com");
+  assert.equal(validarEmail("semarroba").ok, false);
+  assert.equal(validarEmail("a@b").ok, false);
+  assert.equal(validarNome("  Ana   Paula ").nome, "Ana Paula");
+  assert.equal(validarNome("A").ok, false);
+  assert.equal(validarNome("123").ok, false);
+});
+
+test("Origem: prioridade pago > base > conteúdo > direto", () => {
+  assert.equal(classificarOrigem({ utm_source: "instagram", fbclid: "x" }), "trafego_pago");
+  assert.equal(classificarOrigem({ utm_source: "instagram", utm_medium: "cpc" }), "trafego_pago");
+  assert.equal(classificarOrigem({ utm_source: "base", utm_medium: "whatsapp" }), "base_propria");
+  assert.equal(classificarOrigem({ utm_source: "instagram", utm_medium: "bio" }), "marcela_conteudo");
+  assert.equal(classificarOrigem({ referrer: "https://l.instagram.com/?u=..." }), "marcela_conteudo");
+  assert.equal(classificarOrigem({}), "direto");
+  assert.equal(classificarOrigem({ utm_source: "parceiro-x" }), "outro");
+});
+
+test("Desconto sempre arredondado para baixo", () => {
+  assert.equal(percentualDesconto(25900, 9900), 61); // 61,77 -> 61
+  assert.equal(percentualDesconto(100, 1), 99);
+  assert.equal(percentualDesconto(100, 100), 0);
+  assert.equal(percentualDesconto(0, 10), 0);
+});

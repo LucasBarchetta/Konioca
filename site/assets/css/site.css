@@ -1,0 +1,18 @@
+/* Konioca · pré-venda. Complementa os estilos inline portados das visualizações aprovadas. */
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:#19422d;font-family:Carlito,Calibri,"Segoe UI",sans-serif;display:flex;justify-content:center}
+.pagina{width:100%;max-width:390px;margin:0 auto;box-sizing:border-box}
+/* Valores e datas chegam da configuração: ficam invisíveis até o preenchimento, sem pular o layout. */
+html:not(.pronto) [data-t],html:not(.pronto) [data-tpl]{visibility:hidden}
+.oculto{display:none !important}
+input:focus,button:focus-visible,a:focus-visible{outline:2px solid #c9a227;outline-offset:2px}
+.campo-erro{border-color:#b04d0c !important;background:#fbeee6 !important}
+.msg-erro{font-size:14px;line-height:1.4;color:#b04d0c}
+.form-erro{padding:12px 14px;border:1px solid #b04d0c;border-radius:7px;background:#fbeee6;color:#8a3a08;font-size:15px;line-height:1.45}
+button.cta{border:0;cursor:pointer;font-family:Carlito,Calibri,sans-serif;width:100%}
+button.cta[disabled]{opacity:.7;cursor:progress}
+.hp{position:absolute;left:-10000px;top:auto;width:1px;height:1px;overflow:hidden}
+summary::-webkit-details-marker{display:none}
+.quadro svg{width:100%;height:auto}
+.logo-txt{font-family:Caladea,Cambria,Georgia,serif;font-size:26px;letter-spacing:.04em;color:#f7f0e2}
+@media (prefers-reduced-motion:reduce){*{transition:none !important}}
