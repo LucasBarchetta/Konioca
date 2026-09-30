@@ -1,6 +1,8 @@
 // WhatsApp Cloud API (Meta). Única forma de WhatsApp permitida no projeto.
 // Envio de template, texto, botões e áudio; verificação de assinatura do webhook; parse dos eventos.
+// Chave mestra config.envios_ativos: com false, nenhuma mensagem sai pela Cloud API.
 import { normalizarWhatsapp } from "./validacao.ts";
+import { carregarConfig, cfgBool } from "./config.ts";
 
 const GRAPH = "https://graph.facebook.com/v21.0";
 
@@ -18,6 +20,8 @@ export function whatsappConfigurado(): boolean {
 
 async function postMensagem(corpo: Record<string, unknown>): Promise<EnvioResultado> {
   if (!whatsappConfigurado()) return { ok: false, erro: "WHATSAPP_TOKEN/WHATSAPP_PHONE_NUMBER_ID ausentes", codigo: -1 };
+  const { todos } = await carregarConfig();
+  if (!cfgBool(todos, "envios_ativos", false)) return { ok: false, erro: "envios pausados (config.envios_ativos)", codigo: -2 };
   const token = env("WHATSAPP_TOKEN");
   const phone = env("WHATSAPP_PHONE_NUMBER_ID");
   const r = await fetch(`${GRAPH}/${phone}/messages`, {

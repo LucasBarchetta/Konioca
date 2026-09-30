@@ -1,10 +1,12 @@
 // Envio genérico por Resend (convite do plano B, base antiga, alertas). A Circular tem módulo próprio.
-import { carregarConfig, cfgText, pendente } from "./config.ts";
+// Chave mestra config.envios_ativos: com false, nada sai por aqui.
+import { carregarConfig, cfgBool, cfgText, pendente } from "./config.ts";
 
 export async function enviarEmail(para: string, assunto: string, texto: string, html: string, tag: string): Promise<{ ok: boolean; id?: string; motivo?: string }> {
   const apiKey = Deno.env.get("RESEND_API_KEY");
   if (!apiKey) return { ok: false, motivo: "RESEND_API_KEY ausente" };
   const { todos } = await carregarConfig();
+  if (!cfgBool(todos, "envios_ativos", false)) return { ok: false, motivo: "envios pausados (config.envios_ativos)" };
   const from = cfgText(todos, "email_from");
   if (!from || pendente(from)) return { ok: false, motivo: "config.email_from pendente" };
   const replyTo = cfgText(todos, "email_reply_to");

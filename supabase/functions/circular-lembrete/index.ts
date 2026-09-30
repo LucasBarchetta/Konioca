@@ -21,7 +21,7 @@ Deno.serve(async (req) => {
       if (canal === "whatsapp") { await db().from("leads").update({ circular_lembrete_em: new Date().toISOString() }).eq("id", l.id); enviados++; continue; }
     }
     const r = await enviarLembreteCircular(l);
-    if (r.ok) enviados++; else { falhas[l.id] = r.motivo ?? "erro"; if (/RESEND_API_KEY|email_from/.test(r.motivo ?? "")) break; }
+    if (r.ok) enviados++; else { falhas[l.id] = r.motivo ?? "erro"; if (/RESEND_API_KEY|email_from|envios pausados/.test(r.motivo ?? "")) break; }
   }
   return json({ ok: true, candidatos: leads?.length ?? 0, enviados, falhas });
 });

@@ -1,6 +1,7 @@
 // Envio da Circular de Oferta de Franquia por e-mail (Resend) e registro do envio.
 import { db } from "./db.ts";
-import { carregarConfig, cfgNum, cfgText, pendente } from "./config.ts";
+// Chave mestra config.envios_ativos: com false, nem a Circular nem o lembrete saem.
+import { carregarConfig, cfgBool, cfgNum, cfgText, pendente } from "./config.ts";
 import { limiteRecebimentoCircular, partesData, textoHaQuanto } from "./datas.ts";
 
 interface LeadMin { id: string; nome: string; email: string; token: string; optout_em: string | null; circular_enviada_em: string | null }
@@ -84,6 +85,7 @@ export async function enviarCircular(leadId: string, opts: { forcar?: boolean } 
   if (!apiKey) return { ok: false, motivo: "RESEND_API_KEY ausente" };
 
   const { todos } = await carregarConfig();
+  if (!cfgBool(todos, "envios_ativos", false)) return { ok: false, motivo: "envios pausados (config.envios_ativos)" };
   const from = cfgText(todos, "email_from");
   if (!from || pendente(from)) return { ok: false, motivo: "config.email_from pendente" };
   const replyTo = cfgText(todos, "email_reply_to");
@@ -211,6 +213,7 @@ export async function enviarLembreteCircular(lead: { id: string; nome: string; e
   const apiKey = Deno.env.get("RESEND_API_KEY");
   if (!apiKey) return { ok: false, motivo: "RESEND_API_KEY ausente" };
   const { todos } = await carregarConfig();
+  if (!cfgBool(todos, "envios_ativos", false)) return { ok: false, motivo: "envios pausados (config.envios_ativos)" };
   const from = cfgText(todos, "email_from");
   if (!from || pendente(from)) return { ok: false, motivo: "config.email_from pendente" };
   const apiUrl = (Deno.env.get("SUPABASE_URL") ?? "") + "/functions/v1";
