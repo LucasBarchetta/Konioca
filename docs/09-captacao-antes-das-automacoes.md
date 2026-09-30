@@ -6,7 +6,7 @@ Decisão do Lucas: abrir a captação já, só para guardar a base. WhatsApp e e
 
 - LP em `prevenda.konioca.com` com os textos de pré-reserva (R$ 1.000 de acesso à pré-reserva, que já contam no valor da máquina; mais a entrada na assinatura; "Pago até a assinatura" calculado como `reserva_valor + entrada_valor`).
 - Página de obrigado com "Falar com o time no WhatsApp" (`config.whatsapp_time_link`, número (11) 91945-1047), data da live e botão de agenda.
-- Política de privacidade em `/privacidade` (rascunho; jurídico revisa). Pendentes na página: encarregado (LGPD art. 41) e prazo de retenção.
+- Política de privacidade em `/privacidade` (rascunho; jurídico revisa). Encarregado e retenção preenchidos em 30/09.
 - Links com UTM em `docs/08-links-utm.md`.
 
 ## Planilha do time
