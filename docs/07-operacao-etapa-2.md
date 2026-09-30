@@ -47,7 +47,7 @@ Para fixar uma pergunta à mão: `update perguntas_live set selecionada = true, 
 
 ## Lembrete e gravação
 
-Automáticos pela `config.turmas`: lembrete 1h antes (com a pergunta só para quem foi selecionado) e gravação no dia seguinte às 10h para quem não assistiu. Pré-requisitos: `live_link` e `live_gravacao_link` preenchidos. A presença (`assistiu_em`) é registrada na etapa 3; até lá, a gravação vai para todos os convidados.
+Automáticos pela `config.turmas`: lembrete 1h antes (com a pergunta só para quem foi selecionado) e gravação no dia seguinte às 10h para todos os convidados (FAQ v3: a gravação vai para quem se cadastrou). Pré-requisitos: `live_link` e `live_gravacao_link` preenchidos. A presença (`assistiu_em`) é registrada na etapa 3 e serve ao placar; a gravação vai para todos de qualquer forma.
 
 ## Base antiga (1.210 pessoas, carregada em 30/09)
 

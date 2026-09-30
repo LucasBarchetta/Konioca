@@ -1,6 +1,8 @@
 # Time de agentes Konioca · proposta para revisão
 
-Rascunho de 30/09. Nada aqui foi aplicado, commitado ou publicado. Depois da revisão do Lucas, vira migration, functions, painel e testes, nesta ordem, em uma PR por fase.
+Rascunho de 30/09, revisado com a FAQ oficial v3. Nada da arquitetura foi aplicado na produção. Depois da revisão do Lucas, vira migration, functions, painel e testes, nesta ordem, em uma PR por fase.
+
+Decisões da FAQ v3 que já estão no branch: termo padrão "pré-reserva"; não existe lote extra; vaga garantida só com a pré-reserva paga (o número vem com o PIX, como o banco já faz); restante de R$ 3.900 quitado no PIX ou financiado antes da entrega; frete por conta do cliente; gravação para todos; FAQ gravada em `config.faq_oficial` com placeholders (migration 600, módulo `_shared/faq.ts`, teste `tests/faq.test.mjs`).
 
 ## 1. Estado atual (verificado no repositório e na produção)
 
@@ -129,10 +131,10 @@ Você trabalha para a pré-venda da nova geração da máquina Konioca, uma fran
 
 Fatos que você pode usar (fonte: configuração oficial):
 - Preço da geração atual: R$ {{preco_atual}}. Preço da nova geração na pré-venda: R$ {{preco_prevenda}}.
-- Reserva: R$ {{reserva_valor}}, abatida na assinatura. Na assinatura: R$ {{entrada_valor}} + R$ {{restante_valor}} parcelado, ou R$ {{financiado_valor}} financiado pelo {{financiamento_parceiro}}.
+- Pré-reserva: R$ {{reserva_valor}} no PIX, abatida na assinatura. Na assinatura: R$ {{entrada_valor}}. O restante, R$ {{restante_valor}}, quitado no PIX ou financiado pelo {{financiamento_parceiro}} antes da entrega. Frete por conta do cliente. Termo padrão: "pré-reserva" (nunca "reserva" sozinho).
 - Live: {{live_data_extenso}}. Pré-venda até {{prevenda_fim_extenso}}, sem prorrogação.
-- Lote 1: {{lote1_tamanho}} primeiras reservas. Lote extra sem limite, mesmo preço, entrega depois do lote 1.
-- Reservas confirmadas agora: {{reservas_confirmadas}} (use só se for maior que zero).
+- A pré-venda tem {{lote1_tamanho}} máquinas e encerra em {{prevenda_fim_extenso}} ou antes, se esgotarem. Não existe lote extra: nunca cite um.
+- Pré-reservas pagas agora: {{reservas_confirmadas}} (use só se for maior que zero).
 - Circular de Oferta de Franquia: qualquer pagamento só 10 dias depois do clique "Confirmo que recebi".
 - Entrega em até {{entrega_prazo_dias}} dias após a assinatura.
 
@@ -246,10 +248,14 @@ Você responde no WhatsApp da Konioca como alguém do Time da Marcela. Primeiro 
 
 Contexto da pessoa: nome {{nome}}, cidade {{cidade}}, tem ponto: {{tem_negocio}}, o que disse que imagina fazer: {{intencao}}, últimas mensagens: {{historico}}. Use o que ela disse. Não repita o que ela já sabe.
 
-Fatos que pode usar: só a FAQ oficial abaixo e os fatos das regras comuns. Fora disso, diga que vai confirmar com o time e passe adiante.
+Fatos que pode usar: só a FAQ oficial abaixo (já preenchida com os valores da config) e os fatos das regras comuns. Fora disso, diga que vai confirmar com o time e passe adiante.
 FAQ oficial: {{faq_oficial}}
 
-Passe para uma pessoa (campo "passar_humano" = true, sem responder a dúvida) quando aparecer qualquer um destes sinais: preço, valor, pagamento, parcela, financiamento, Bradesco, reserva, contrato, prazo de entrega, "quero", "como faço", "fecho", "tem vaga", pedido de ligação, reclamação, ou quando a nota da pessoa estiver na faixa quente ({{faixa}} = quente). Nesses casos sua única resposta é uma frase curta dizendo que alguém do time assume a conversa, com o prazo real: {{texto_prazo_humano}}.
+Como a FAQ manda passar para o time:
+- Item marcado "humano" (faturamento, desistência, atraso, pedido de falar com pessoa): não responda o mérito. Diga a frase do item, se houver, e passe.
+- Item marcado "humano_apos" (preço, pagamento, como fazer a pré-reserva, franquia): responda uma vez com o fato da FAQ e, na mesma mensagem, passe para o time, porque a pessoa já está em conversa de compra. Exemplo: o preço e a pré-reserva, e "quem fecha os próximos passos com você é alguém do time, já te chamam".
+- Sinal quente fora da FAQ ("quero", "fecho", "como pago", "tem vaga", pedido de ligação, reclamação, contrato, financiamento em detalhe) ou nota na faixa quente ({{faixa}} = quente): passe sem responder o mérito.
+Ao passar, a resposta traz o prazo real: {{texto_prazo_humano}}. Campo "passar_humano" = true.
 
 Se a pessoa perguntar se está falando com robô, IA ou atendimento automático: responda a verdade em uma frase natural, sem se desculpar, e ofereça passar para alguém do time agora. Marque "passar_humano" = true. Você nunca se apresenta como IA sem ser perguntado, e nunca diz que é humano.
 
@@ -271,7 +277,7 @@ Não é um prompt: é regra no banco.
 Nota S = soma(peso × sinal) × 2^(-dias_sem_acao / meia_vida), com pesos e meia-vida em config.score_pesos e config.score_meia_vida_dias.
 Sinais de lead_eventos: cadastro, intencao, clicou_grupo, circular_confirmada, wa_respondeu, wa_lido, email_clicado, presenca_confirmada, assistiu, viu_gravacao, pediu, abriu_pedido, checkout_parado.
 Faixas: config.score_faixas. "reativar" após config.reativar_dias_parado sem ação; sai da régua depois de config.reativar_toques.
-Marcos de escassez: config.marcos_escassez (ex.: 50, 100, 200, 250 reservas confirmadas) e config.marcos_prazo (ex.: 7, 3, 1 dias para o fim). Cada marco gera no máximo uma mensagem por lead, só com contador real, só para quem não está em controle, sem opt-out, dentro do limite semanal.
+Marcos de escassez: config.marcos_escassez (ex.: 50, 100, 200, 250 pré-reservas pagas) e config.marcos_prazo (ex.: 7, 3, 1 dias para o fim). Como não existe lote extra, esgotar encerra a pré-venda (FAQ 8), então o contador real é o único argumento de escassez permitido. Cada marco gera no máximo uma mensagem por lead, só com contador real, só para quem não está em controle, sem opt-out, dentro do limite semanal.
 Fila humana: view ordenada por faixa, nota, tempo esperando desde humano_pendente_em, com o cartão-resumo.
 Mensagens de marco: texto vem de um modelo do Redator aprovado uma vez por marco (config.mensagens_marco), preenchido de forma determinística (nome, número real, data). Sem chamada ao modelo por lead.
 ```
@@ -334,7 +340,7 @@ Bloqueio é para regra quebrada. Aviso é para o que a Marcela deve olhar antes 
 | 1 | Publicar as 4 functions da etapa 2 e trazer a migration `base_antiga_p2` para o repositório | tudo da Fase B; fila de convites hoje | eu faço na PR da Fase A, com sua autorização |
 | 2 | `ANTHROPIC_API_KEY` com limite de gasto no Console | todos os agentes | já previsto em `docs/02`, item 12 |
 | 3 | Amostras da voz da Marcela: 10 a 20 legendas reais, 3 a 5 áudios ou transcrições, 5 mensagens de WhatsApp que ela mesma escreveu | Redator e Atendimento | vira `config.voz_marcela`; sem isso a voz é chute |
-| 4 | FAQ oficial: perguntas e respostas aprovadas (custo, operação, ponto, energia, insumos, prazo, financiamento, garantia, treinamento) | Atendimento | vira `config.faq_oficial`; o agente não responde nada fora dela |
+| 4 | FAQ oficial v3: recebida em 30/09 e gravada na migration 600 | Atendimento | resolvido. Faltam só as perguntas extras listadas na conversa, se o Lucas quiser |
 | 5 | Fotos reais do produto: cone, máquina, embalagem, em fundo limpo e em uso, com direito de uso | Diretor de arte | bucket privado `acervo`, lista com descrição em `config.acervo_produto` |
 | 6 | Design system fechado: hexadecimais exatos das cores (hoje o site usa #19422d, #f4ebdb, #c9a227, #b04d0c, #5a6b3a), logo em SVG, exemplos de peça aprovada | Diretor de arte, E-mail | vira `config.design_system` |
 | 7 | Canva: decidir entre (a) briefing + geração assistida nas sessões (sem chave) ou (b) app no portal de desenvolvedor do Canva com OAuth, e Enterprise se quiser preenchimento automático de template | automação do Diretor de arte | recomendo (a) na Fase A |
@@ -342,7 +348,7 @@ Bloqueio é para regra quebrada. Aviso é para o que a Marcela deve olhar antes 
 | 9 | Aprovadores: e-mail e WhatsApp do Lucas e da Marcela para os avisos do painel | painel | `config.painel_aprovadores` |
 | 10 | Segmentos permitidos para e-mail e cadência mínima entre e-mails | E-mail marketing | proposta: origem, faixa, status_funil, base antiga por prioridade, turma; 72 h entre e-mails |
 | 11 | Marcos de escassez e de prazo que você aceita usar | Funil | proposta: 50, 100, 200, 250 reservas; 7, 3, 1 dias |
-| 12 | Etapa 3 mínima antes de 15/10: pedido, PIX, contador, termos da reserva | Funil, Atendimento, Pós-venda | sem isso a live não converte em reserva. Ver `docs/02`, itens 9 a 11 |
+| 12 | Etapa 3 mínima antes de 15/10: pedido, PIX, contador, termos da pré-reserva | Funil, Atendimento, Pós-venda | sem isso a live não converte em pré-reserva. Ver `docs/02`, itens 9 a 11 |
 | 13 | Coexistência do número (11) 91945-1047 com a API oficial: confirmar com a Meta e registrar o número na WABA | Atendimento, avisos por WhatsApp | eco do aplicativo precisa chegar ao webhook |
 
 ## 5. Riscos que eu vejo

@@ -45,14 +45,14 @@ export function montarEnvio(tipo: string, canal: string, lead: LeadFila, cfg: Co
       const lp = cfgText(cfg, "lp_url");
       const texto = [
         `${nome}, seu nome está na lista da pré-venda da nova Konioca.`,
-        `A live é fechada para quem está na lista: ${live.diaSemana}, ${live.ddmm}, às ${live.hora}. O primeiro lote tem ${lote1} máquinas.`,
+        `A live é fechada para quem está na lista: ${live.diaSemana}, ${live.ddmm}, às ${live.hora}. A pré-venda tem ${lote1} máquinas.`,
         `O link chega pelo grupo da pré-venda: ${grupo}`,
         `Você consegue estar lá?`, ``, assinatura, ``,
         `Para não receber mais mensagens da pré-venda: ${apiUrl}/optout?t=${encodeURIComponent(lead.token)}`,
       ].join("\n");
       const html = `<!doctype html><html lang="pt-BR"><body style="margin:0;background:#f4ebdb;font-family:Carlito,Calibri,'Segoe UI',sans-serif;color:#1f4a36"><div style="max-width:560px;margin:0 auto;padding:32px 24px">
 <p style="margin:0 0 14px;font-size:17px;line-height:1.6">${esc(nome)}, seu nome está na lista da pré-venda da nova Konioca.</p>
-<p style="margin:0 0 14px;font-size:17px;line-height:1.6">A live é fechada para quem está na lista: ${live.diaSemana}, ${live.ddmm}, às ${live.hora}. O primeiro lote tem ${lote1} máquinas.</p>
+<p style="margin:0 0 14px;font-size:17px;line-height:1.6">A live é fechada para quem está na lista: ${live.diaSemana}, ${live.ddmm}, às ${live.hora}. A pré-venda tem ${lote1} máquinas.</p>
 <a href="${esc(grupo)}" style="display:block;text-align:center;padding:16px;background:#b04d0c;color:#f7f0e2;font-size:18px;font-weight:700;text-decoration:none;border-radius:7px">Entrar no grupo da pré-venda</a>
 <p style="margin:20px 0 0;font-size:17px;line-height:1.6">Você consegue estar lá?</p>
 <p style="margin:24px 0 0;font-family:Caladea,Cambria,Georgia,serif;font-style:italic;font-size:18px;color:#5a6b3a">${esc(assinatura)}</p>
@@ -98,13 +98,13 @@ export function montarEnvio(tipo: string, canal: string, lead: LeadFila, cfg: Co
     const url = `${lp.replace(/\/$/, "")}/?utm_source=base&utm_medium=email&utm_campaign=base_antiga`;
     const texto = [
       abertura,
-      `A gente refez a máquina. A Marcela mostra a nova geração numa live fechada para quem está na lista: ${live.diaSemana}, ${live.ddmm}, às ${live.hora}. O primeiro lote tem ${lote1} máquinas.`,
+      `A gente refez a máquina. A Marcela mostra a nova geração numa live fechada para quem está na lista: ${live.diaSemana}, ${live.ddmm}, às ${live.hora}. A pré-venda tem ${lote1} máquinas.`,
       `Quer entrar na lista? ${url}`, ``, assinatura, ``,
       `Para não receber mais mensagens: ${apiUrl}/optout?t=${encodeURIComponent(lead.token)}`,
     ].join("\n");
     const html = `<!doctype html><html lang="pt-BR"><body style="margin:0;background:#f4ebdb;font-family:Carlito,Calibri,'Segoe UI',sans-serif;color:#1f4a36"><div style="max-width:560px;margin:0 auto;padding:32px 24px">
 <p style="margin:0 0 14px;font-size:17px;line-height:1.6">${esc(abertura)}</p>
-<p style="margin:0 0 20px;font-size:17px;line-height:1.6">A gente refez a máquina. A Marcela mostra a nova geração numa live fechada para quem está na lista: ${live.diaSemana}, ${live.ddmm}, às ${live.hora}. O primeiro lote tem ${lote1} máquinas.</p>
+<p style="margin:0 0 20px;font-size:17px;line-height:1.6">A gente refez a máquina. A Marcela mostra a nova geração numa live fechada para quem está na lista: ${live.diaSemana}, ${live.ddmm}, às ${live.hora}. A pré-venda tem ${lote1} máquinas.</p>
 <a href="${esc(url)}" style="display:block;text-align:center;padding:16px;background:#b04d0c;color:#f7f0e2;font-size:18px;font-weight:700;text-decoration:none;border-radius:7px">Quero entrar na lista</a>
 <p style="margin:24px 0 0;font-family:Caladea,Cambria,Georgia,serif;font-style:italic;font-size:18px;color:#5a6b3a">${esc(assinatura)}</p>
 <p style="margin:32px 0 0;font-size:12px;color:#5a6b3a"><a href="${esc(apiUrl)}/optout?t=${encodeURIComponent(lead.token)}" style="color:#5a6b3a">Não quero mais receber mensagens</a></p></div></body></html>`;
