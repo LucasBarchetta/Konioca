@@ -1,6 +1,6 @@
 // Envio genérico por Resend (convite do plano B, base antiga, alertas, avisos do painel). A Circular tem módulo próprio.
-// Chave mestra config.envios_ativos: com false, nada sai por aqui, com uma única exceção: aviso do painel de aprovação
-// (tag "painel") para um e-mail da lista config.painel_aprovadores. Leads, base antiga e alertas continuam bloqueados.
+// Chave mestra config.envios_ativos: com false, nada sai por aqui, com uma única exceção: aviso interno (painel de
+// aprovação e Monitor técnico) para um e-mail da lista config.painel_aprovadores. Leads e base antiga continuam bloqueados.
 // Rastreio de abertura e clique fica desligado (nada de tracking no payload; o domínio no Resend também fica sem).
 import { carregarConfig, cfgBool, cfgText, pendente } from "./config.ts";
 import { excecaoInterna } from "./aprovadores.ts";

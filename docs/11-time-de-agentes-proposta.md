@@ -357,3 +357,7 @@ Bloqueio é para regra quebrada. Aviso é para o que a Marcela deve olhar antes 
 2. Voz da Marcela sem amostra vira voz genérica, que é exatamente o que o briefing proíbe. Item 3 da tabela acima é o mais barato e o que mais muda o resultado.
 3. Atendimento por modelo em WhatsApp com coexistência: se uma pessoa do time responder pelo aplicativo enquanto o agente também responde, a conversa fica dupla. A regra do eco resolve, mas precisa de teste com o número real.
 4. Custo de Opus em produção diária é controlável (teto por agente e limite no Console), mas o Atendimento em pico de live pode ter centenas de mensagens em uma hora. Sonnet e regra antes do modelo seguram isso.
+
+## Adendo de 30/09: Monitor técnico
+
+O Guardião (agente 9) segue só com revisão de conteúdo. A checagem técnica da LP (disponibilidade, velocidade, cliques, cadastro de ponta a ponta, Plano B na página, teste de carga) é um componente novo, o Monitor técnico, por código e sem modelo. Plano em `docs/13-monitor-tecnico-plano.md`, aguardando o "sim".

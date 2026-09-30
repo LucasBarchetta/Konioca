@@ -53,7 +53,9 @@ test("exceção de envios_ativos: só aviso do painel para e-mail da lista de ap
   ] };
   assert.deepEqual(emailsInternos(cfg), ["principal@exemplo.com"]);          // placeholder entre colchetes não conta
   assert.equal(excecaoInterna(cfg, "principal@exemplo.com", "painel"), true);
+  assert.equal(excecaoInterna(cfg, "principal@exemplo.com", "monitor"), true);
   assert.equal(excecaoInterna(cfg, "principal@exemplo.com", "convite"), false); // outra tag: bloqueado
+  assert.equal(excecaoInterna(cfg, "principal@exemplo.com", "alerta"), false);  // alerta de conversa: bloqueado
   assert.equal(excecaoInterna(cfg, "lead@gmail.com", "painel"), false);         // fora da lista: bloqueado
   assert.equal(excecaoInterna({}, "principal@exemplo.com", "painel"), false);   // sem lista: bloqueado
 });
