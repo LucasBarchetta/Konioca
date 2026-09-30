@@ -55,7 +55,7 @@ Botões (respostas rápidas): `Quero uma` · `Tenho uma dúvida` · `Agora não`
 ## 5. `konioca_circular_lembrete` · Utilidade
 
 ```
-{{1}}, falta um clique para confirmar que você recebeu a Circular de Oferta de Franquia. O prazo da lei só começa a contar depois disso. Quem confirma até {{2}} ainda reserva na pré-venda: {{3}}
+{{1}}, falta um clique para confirmar que você recebeu a Circular de Oferta de Franquia. O prazo da lei só começa a contar depois disso. Quem confirma até {{2}} ainda garante a pré-reserva: {{3}}
 ```
 Exemplos: `Ana` · `20/10` · `https://ytsildpxummevfkjcjhs.supabase.co/functions/v1/circular-confirmar?t=exemplo`
 

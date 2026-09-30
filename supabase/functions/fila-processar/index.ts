@@ -28,7 +28,7 @@ async function taxaFalhasHora(): Promise<{ total: number; falhas: number }> {
 
 Deno.serve(async (req) => {
   if (req.method !== "POST") return json({ erro: "método" }, 405);
-  if (!exigirServico(req)) return json({ erro: "não autorizado" }, 401);
+  if (!(await exigirServico(req))) return json({ erro: "não autorizado" }, 401);
   const sb = db();
   const { todos: cfg } = await carregarConfig();
   const apiUrl = (Deno.env.get("SUPABASE_URL") ?? "") + "/functions/v1";
@@ -66,9 +66,9 @@ Deno.serve(async (req) => {
 
     const envio = montarEnvio(item.tipo, item.canal, lead as LeadFila, cfg as Config, apiUrl);
     if (envio.canal === "nenhum") {
-      // Config pendente: devolve à fila para daqui a 10 min e não insiste mais de 30 vezes.
-      if (item.tentativas >= 30) await fechar(item.id, "falhou", envio.motivo);
-      else await sb.from("fila_envios").update({ status: "pendente", agendado_para: new Date(Date.now() + 600_000).toISOString(), motivo: envio.motivo }).eq("id", item.id);
+      // Config pendente é bloqueio geral, não falha do item: volta à fila em 10 min sem gastar tentativa.
+      // Nada se perde enquanto um humano não preenche a configuração.
+      await sb.from("fila_envios").update({ status: "pendente", tentativas: Math.max(0, item.tentativas - 1), agendado_para: new Date(Date.now() + 600_000).toISOString(), motivo: envio.motivo }).eq("id", item.id);
       resultados[item.id] = envio.motivo; continue;
     }
 

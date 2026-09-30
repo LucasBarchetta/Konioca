@@ -8,7 +8,7 @@ import { carregarConfig, cfgText } from "../_shared/config.ts";
 
 Deno.serve(async (req) => {
   if (req.method !== "POST") return json({ erro: "método" }, 405);
-  if (!exigirServico(req)) return json({ erro: "não autorizado" }, 401);
+  if (!(await exigirServico(req))) return json({ erro: "não autorizado" }, 401);
   const b = await lerJson<{ limite?: number; forcar?: boolean }>(req);
   const { todos } = await carregarConfig();
   const inicio = cfgText(todos, "captacao_inicio");

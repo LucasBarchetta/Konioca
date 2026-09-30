@@ -9,7 +9,7 @@ function chaveDia(iso: string): string { return iso.slice(0, 10); }
 
 Deno.serve(async (req) => {
   if (req.method !== "POST") return json({ erro: "método" }, 405);
-  if (!exigirServico(req)) return json({ erro: "não autorizado" }, 401);
+  if (!(await exigirServico(req))) return json({ erro: "não autorizado" }, 401);
   const sb = db();
   const { todos: cfg } = await carregarConfig();
   const agora = Date.now();

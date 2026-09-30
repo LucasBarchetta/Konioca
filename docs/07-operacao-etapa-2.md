@@ -56,7 +56,7 @@ Carregada em `base_antiga` a partir da planilha do Drive, sem passar pelo reposi
 | Prioridade | Regra | Pessoas | Com WhatsApp |
 |---|---|---|---|
 | P1 | WhatsApp + e-mail | 49 | 46 |
-| P2 | E-mail primeiro, WhatsApp em lotes depois de 48h | 703 | 679 |
+| P2 | E-mail; WhatsApp só se clicar (decisão de 30/09, reavaliar depois de 15/10) | 703 | 679 |
 | P3 | E-mail, WhatsApp só se clicar | 202 | 195 |
 | P4 | E-mail, WhatsApp só se clicar | 256 | 239 |
 
@@ -66,7 +66,10 @@ Em 5/10, promover e agendar os e-mails (lotes de 150 por hora):
 ```
 curl -X POST -H "Authorization: Bearer <SERVICE_ROLE_KEY>" https://ytsildpxummevfkjcjhs.supabase.co/functions/v1/base-antiga-importar
 ```
-A function recusa rodar antes de `captacao_inicio`. Depois disso, o `base-antiga-processar` (a cada 30 minutos) faz o WhatsApp em lotes de 15, uma tentativa por pessoa, e para se a fila for pausada por qualidade do número.
+A function recusa rodar antes de `captacao_inicio`. Depois disso, o `base-antiga-processar` (a cada 30 minutos) manda WhatsApp a quem clicou no e-mail, em lotes de 15, uma tentativa por pessoa, e para se a fila for pausada por qualidade do número. P1 já recebe WhatsApp junto com o e-mail. Para voltar a regra original do P2 (WhatsApp em lotes 48h depois do e-mail, mesmo sem clique):
+```sql
+update config set valor = '"lotes"' where chave = 'base_antiga_p2_regra';
+```
 
 Para recarregar uma planilha nova (dados nunca no repositório):
 ```

@@ -16,7 +16,6 @@ Deno.serve(async (req) => {
   const inicio = new Date(cfgText(publicos, "live_data"));
   const fim = new Date(inicio.getTime() + cfgNum(publicos, "live_duracao_min", 60) * 60000);
   const plataforma = cfgText(publicos, "live_plataforma", "online");
-  const grupo = cfgText(publicos, "whatsapp_grupo_link");
   const lp = cfgText(publicos, "lp_url");
   const linhas = [
     "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Konioca//Pre-venda//PT", "CALSCALE:GREGORIAN", "METHOD:PUBLISH",
@@ -26,7 +25,7 @@ Deno.serve(async (req) => {
     `DTSTART:${icsData(inicio)}`,
     `DTEND:${icsData(fim)}`,
     `SUMMARY:${icsEsc("Live Konioca · pré-lançamento da nova geração")}`,
-    `DESCRIPTION:${icsEsc(`Ao vivo pelo ${plataforma}. O link chega pelo grupo da pré-venda: ${grupo}`)}`,
+    `DESCRIPTION:${icsEsc(`Ao vivo pelo ${plataforma}. O link chega no WhatsApp que você cadastrou.`)}`,
     `URL:${icsEsc(lp)}`,
     "BEGIN:VALARM", "TRIGGER:-PT60M", "ACTION:DISPLAY", "DESCRIPTION:Live Konioca em 1 hora", "END:VALARM",
     "END:VEVENT", "END:VCALENDAR",

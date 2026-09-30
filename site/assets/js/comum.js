@@ -41,6 +41,7 @@
       preco_prevenda: fmtReais(novo),
       reserva: fmtReais(reserva),
       entrada: fmtReais(entrada),
+      pago_assinatura: fmtReais(reserva + entrada),
       parcelado: nParc > 0 ? nParc + "x de " + fmtReaisCent(parcelado / nParc) : fmtReais(parcelado),
       financiado: fmtReais(Math.max(0, novo - reserva)),
       desconto_pct: String(num(cfg.desconto_pct)),
