@@ -1,6 +1,6 @@
 # Política de privacidade da pré-venda · rascunho para o jurídico
 
-Status: rascunho técnico. Descreve o que o sistema faz de fato, para o jurídico redigir a versão final. Não publicar antes da aprovação. Enquanto isso, `config.politica_privacidade_url` continua pendente.
+Status: rascunho técnico, publicado em 30/09 por decisão do Lucas em https://prevenda.konioca.com/privacidade (`site/privacidade.html`), para abrir a captação. O jurídico revisa depois. A página pública leva só as seções para o titular; os "Pontos para o jurídico decidir" ficam só aqui. Pendentes na página, entre colchetes: nome e e-mail do encarregado (LGPD art. 41, §1º, exige divulgação pública) e prazo de retenção.
 
 ## Controlador
 

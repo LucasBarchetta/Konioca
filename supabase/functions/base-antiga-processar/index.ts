@@ -10,7 +10,7 @@ import { json } from "../_shared/http.ts";
 
 Deno.serve(async (req) => {
   if (req.method !== "POST") return json({ erro: "método" }, 405);
-  if (!exigirServico(req)) return json({ erro: "não autorizado" }, 401);
+  if (!(await exigirServico(req))) return json({ erro: "não autorizado" }, 401);
   const sb = db();
   const { todos: cfg } = await carregarConfig();
 

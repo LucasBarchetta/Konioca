@@ -44,7 +44,7 @@ export function montarEmailCircular(opts: {
     anexoLinha,
     `É o documento que a lei pede que você tenha em mãos antes de qualquer pagamento. Leia com calma.`,
     ``,
-    `Um detalhe de calendário: a lei dá ${opts.prazoDias} dias entre o recebimento da Circular e qualquer pagamento, e o prazo começa a contar quando você confirma o recebimento no link abaixo. A pré-venda fecha em ${fim.ddmm}, às ${fim.hora}. Quem confirma até ${lim.ddmm} consegue reservar dentro do prazo.`,
+    `Um detalhe de calendário: a lei dá ${opts.prazoDias} dias entre o recebimento da Circular e qualquer pagamento, e o prazo começa a contar quando você confirma o recebimento no link abaixo. A pré-venda fecha em ${fim.ddmm}, às ${fim.hora}. Quem confirma até ${lim.ddmm} consegue fazer a pré-reserva dentro do prazo.`,
     ``,
     `Confirmo que recebi a Circular: ${confirmar}`,
     ``,
@@ -61,7 +61,7 @@ export function montarEmailCircular(opts: {
 <h1 style="margin:14px 0 0;font-family:Caladea,Cambria,Georgia,serif;font-weight:400;font-size:30px;line-height:1.1;color:#1f4a36">${esc(nome)}, seu nome está na lista.</h1>
 <div style="width:120px;height:1px;background:#c9a227;margin:16px 0 20px 6px"></div>
 <p style="margin:0 0 14px;font-size:17px;line-height:1.6">${esc(anexoLinha)} É o documento que a lei pede que você tenha em mãos antes de qualquer pagamento. Leia com calma.</p>
-<p style="margin:0 0 20px;font-size:17px;line-height:1.6">Um detalhe de calendário: a lei dá ${opts.prazoDias} dias entre o recebimento da Circular e qualquer pagamento, e o prazo começa a contar quando você confirma o recebimento no botão abaixo. A pré-venda fecha em ${fim.ddmm}, às ${fim.hora}. Quem confirma até <strong>${lim.ddmm}</strong> consegue reservar dentro do prazo.</p>
+<p style="margin:0 0 20px;font-size:17px;line-height:1.6">Um detalhe de calendário: a lei dá ${opts.prazoDias} dias entre o recebimento da Circular e qualquer pagamento, e o prazo começa a contar quando você confirma o recebimento no botão abaixo. A pré-venda fecha em ${fim.ddmm}, às ${fim.hora}. Quem confirma até <strong>${lim.ddmm}</strong> consegue fazer a pré-reserva dentro do prazo.</p>
 <a href="${esc(confirmar)}" style="display:block;text-align:center;padding:16px;background:#b04d0c;color:#f7f0e2;font-size:18px;font-weight:700;text-decoration:none;border-radius:7px">Confirmo que recebi a Circular</a>
 <p style="margin:24px 0 0;font-size:16px;line-height:1.6">A live é ${live.diaSemana}, ${live.ddmm}, às ${live.hora}, pelo ${esc(opts.livePlataforma)}. O link chega pelo <a href="${esc(opts.grupoLink)}" style="color:#1f4a36">grupo da pré-venda</a>.</p>
 <p style="margin:24px 0 0;font-family:Caladea,Cambria,Georgia,serif;font-style:italic;font-size:18px;color:#5a6b3a">${esc(opts.assinatura)}</p>
@@ -183,11 +183,11 @@ export function montarEmailLembrete(opts: { nome: string; token: string; apiUrl:
   const texto = [
     `${nome}, a Circular de Oferta de Franquia chegou no seu e-mail ${ha} e ainda falta um clique.`,
     ``,
-    `O prazo de ${opts.prazoDias} dias que a lei pede só começa a contar quando você confirma o recebimento. Sem isso, a reserva não abre para você.`,
+    `O prazo de ${opts.prazoDias} dias que a lei pede só começa a contar quando você confirma o recebimento. Sem isso, a pré-reserva não abre para você.`,
     ``,
     `Confirmo que recebi a Circular: ${confirmar}`,
     ``,
-    `Quem confirma até ${lim.ddmm} ainda reserva dentro da pré-venda.`,
+    `Quem confirma até ${lim.ddmm} ainda garante a pré-reserva.`,
     ``,
     opts.assinatura,
     ``,
@@ -197,9 +197,9 @@ export function montarEmailLembrete(opts: { nome: string; token: string; apiUrl:
 <div style="max-width:560px;margin:0 auto;padding:32px 24px">
 <h1 style="margin:0;font-family:Caladea,Cambria,Georgia,serif;font-weight:400;font-size:28px;line-height:1.1">${esc(nome)}, falta um clique.</h1>
 <div style="width:120px;height:1px;background:#c9a227;margin:16px 0 20px 6px"></div>
-<p style="margin:0 0 14px;font-size:17px;line-height:1.6">A Circular de Oferta de Franquia chegou no seu e-mail ${ha}. O prazo de ${opts.prazoDias} dias que a lei pede só começa a contar quando você confirma o recebimento. Sem isso, a reserva não abre para você.</p>
+<p style="margin:0 0 14px;font-size:17px;line-height:1.6">A Circular de Oferta de Franquia chegou no seu e-mail ${ha}. O prazo de ${opts.prazoDias} dias que a lei pede só começa a contar quando você confirma o recebimento. Sem isso, a pré-reserva não abre para você.</p>
 <a href="${esc(confirmar)}" style="display:block;text-align:center;padding:16px;background:#b04d0c;color:#f7f0e2;font-size:18px;font-weight:700;text-decoration:none;border-radius:7px">Confirmo que recebi a Circular</a>
-<p style="margin:20px 0 0;font-size:16px;line-height:1.6">Quem confirma até <strong>${lim.ddmm}</strong> ainda reserva dentro da pré-venda.</p>
+<p style="margin:20px 0 0;font-size:16px;line-height:1.6">Quem confirma até <strong>${lim.ddmm}</strong> ainda garante a pré-reserva.</p>
 <p style="margin:24px 0 0;font-family:Caladea,Cambria,Georgia,serif;font-style:italic;font-size:18px;color:#5a6b3a">${esc(opts.assinatura)}</p>
 <p style="margin:32px 0 0;font-size:12px;line-height:1.5;color:#5a6b3a"><a href="${esc(sair)}" style="color:#5a6b3a">Não quero mais receber mensagens da pré-venda</a>.</p>
 </div></body></html>`;

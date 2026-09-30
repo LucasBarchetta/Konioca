@@ -26,7 +26,7 @@ export function montarCsv(linhas: Record<string, unknown>[]): string {
 
 Deno.serve(async (req) => {
   if (req.method !== "POST") return json({ erro: "método" }, 405);
-  if (!exigirServico(req)) return json({ erro: "não autorizado" }, 401);
+  if (!(await exigirServico(req))) return json({ erro: "não autorizado" }, 401);
   const b = await lerJson<{ modo?: string; somente_novos?: boolean }>(req);
   const { todos } = await carregarConfig();
   const modo = cfgText(todos, "sults_modo", "csv");
