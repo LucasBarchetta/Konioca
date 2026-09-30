@@ -13,7 +13,7 @@
 2. Configuração: atualizar as chaves entre colchetes (`select chave, valor from config where valor::text like '%[%'`).
    ```sql
    update config set valor = '"https://prevenda.konioca.com.br"' where chave = 'lp_url';
-   update config set valor = '["https://prevenda.konioca.com.br"]' where chave = 'cors_origens';
+   -- cors_origens já gravado: prevenda.konioca.com, konioca.pages.dev e *.konioca.pages.dev (provisórios). Ver docs/05.
    update config set valor = '"https://chat.whatsapp.com/XXXX"' where chave = 'whatsapp_grupo_link';
    update config set valor = '"Time da Marcela <time@konioca.com.br>"' where chave = 'email_from';
    update config set valor = '"123456789012345"' where chave = 'meta_pixel_id';
@@ -24,7 +24,7 @@
    Turnstile e API de Conversões só ligam quando o segredo correspondente já estiver nas functions. Ligar `turnstile_ativo` sem `TURNSTILE_SECRET` bloqueia todo cadastro.
 3. Circular: subir o PDF no bucket `circular` (Storage, privado) e apontar `circular_storage_path` para `circular/<nome do arquivo>.pdf`.
 4. Resend: domínio verificado; webhook em `https://<REF>.supabase.co/functions/v1/circular-webhook` com os eventos `email.delivered`, `email.opened`, `email.clicked`, `email.bounced`, `email.complained`.
-5. Site: `site/assets/js/env.js` já aponta para o projeto. Cloudflare Pages: projeto `konioca-prevenda`, diretório `site`, sem build, domínio `prevenda.konioca.com` (registros em `docs/05-dns-hostinger.md`).
+5. Site: `site/assets/js/env.js` já aponta para o projeto. Cloudflare Pages: projeto `konioca` (`konioca.pages.dev`), branch `main`, pasta de saída `site`, sem build, domínio `prevenda.konioca.com` no ar desde 30/09 (registros em `docs/05-dns-hostinger.md`).
 
 ## Testar ponta a ponta (antes de 5/10)
 

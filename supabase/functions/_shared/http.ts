@@ -1,4 +1,5 @@
 import { carregarConfig } from "./config.ts";
+import { origemPermitida } from "./cfg.ts";
 
 export async function corsHeaders(req: Request): Promise<Record<string, string>> {
   const origem = req.headers.get("origin") ?? "";
@@ -8,7 +9,7 @@ export async function corsHeaders(req: Request): Promise<Record<string, string>>
     const v = todos["cors_origens"];
     permitidas = Array.isArray(v) ? v.map(String) : [];
   } catch { /* sem config, sem CORS */ }
-  const ok = permitidas.includes(origem) || permitidas.includes("*");
+  const ok = origemPermitida(origem, permitidas);
   return {
     "Access-Control-Allow-Origin": ok ? origem : (permitidas[0] ?? "null"),
     "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
