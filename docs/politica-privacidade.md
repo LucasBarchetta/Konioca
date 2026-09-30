@@ -43,7 +43,7 @@ Pontos para o jurídico decidir (INFERÊNCIA, confiança média; validar):
 
 ## Cookies e medição de anúncios
 
-A página da pré-venda usa cookies e códigos de medição da Meta (Pixel do Facebook e Instagram) e do TikTok (Pixel), além do Google Analytics. Eles registram que a pessoa visitou a página e que concluiu o cadastro, para a Konioca saber quais anúncios e conteúdos trazem cadastros e para mostrar a pré-venda a quem já visitou. Nenhum deles recebe nome, WhatsApp ou e-mail em texto aberto: quando o cadastro é confirmado pelo servidor (API de Conversões da Meta e Events API do TikTok), e-mail e telefone são transformados em códigos irreversíveis (SHA-256) antes de seguir, no padrão que essas empresas exigem.
+A página da pré-venda usa cookies e códigos de medição da Meta (Pixel do Facebook e Instagram) e do TikTok (Pixel). Eles registram que a pessoa visitou a página e que concluiu o cadastro, para a Konioca saber quais anúncios e conteúdos trazem cadastros e para mostrar a pré-venda a quem já visitou. Nenhum deles recebe nome, WhatsApp ou e-mail em texto aberto: quando o cadastro é confirmado pelo servidor (API de Conversões da Meta e Events API do TikTok), e-mail e telefone são transformados em códigos criptografados (SHA-256) antes de seguir, no padrão que essas empresas exigem.
 
 A pessoa pode bloquear cookies no navegador ou usar as configurações de anúncios da Meta e do TikTok. A página continua funcionando sem eles.
 

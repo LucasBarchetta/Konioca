@@ -1,6 +1,6 @@
 -- Acessos de 30/09: planilha em tempo real, Turnstile, pixels e custo da API da Anthropic.
--- Ordem de aplicação: PRIMEIRO publicar lead-intake e planilha-processar novos, DEPOIS esta migration
--- (turnstile_ativo = true com a lead-intake antiga recusaria todo cadastro, porque ela lê outro nome de segredo).
+-- Esta parte só cria tabelas, cron e chaves de config e não liga nada: pode ir antes da lead-intake nova.
+-- A parte que liga Turnstile e pixels está na 630 (só depois de publicar a lead-intake nova).
 
 -- Planilha em tempo real: uma linha por lead novo; o lead-intake tenta na hora e o cron retenta o que falhar.
 create table if not exists public.planilha_envios (
@@ -49,14 +49,6 @@ insert into public.config (chave, valor, publico, descricao) values
   ('tiktok_eapi_ativo',  'false', false, 'Enviar SubmitForm pela Events API do TikTok (precisa de TIKTOK_ACCESS_TOKEN). Sem token, pula em silêncio'),
   ('planilha_tempo_real_ativa', 'true', false, 'Cada lead novo vira linha na aba Tempo real (SHEETS_WEBHOOK_URL/TOKEN). Falha entra na fila planilha_envios')
 on conflict (chave) do update set descricao = excluded.descricao;
-
--- Códigos públicos recebidos em 30/09.
-update public.config set valor = '"0x4AAAAAAFKlOAqhnTRvfA4h"' where chave = 'turnstile_site_key';
-update public.config set valor = '"1703448091210683"' where chave = 'meta_pixel_id';
-update public.config set valor = '"DAUOIDJC77U17TEHU9VG"' where chave = 'tiktok_pixel_id';
--- Turnstile ligado no formulário e na lead-intake (segredo TURNSTILE_SECRET_KEY nas functions).
-update public.config set valor = 'true' where chave = 'turnstile_ativo';
--- API de Conversões da Meta continua desligada até META_CAPI_TOKEN existir (chega até 4/10).
 
 select cron.unschedule('planilha-processar') where exists (select 1 from cron.job where jobname = 'planilha-processar');
 select cron.schedule('planilha-processar', '*/5 * * * *', $$ select public.chamar_function('planilha-processar') $$);

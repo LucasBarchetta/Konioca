@@ -44,3 +44,16 @@ test("custo da API: tokens x preço por milhão", () => {
   assert.equal(custoUsd({ input_tokens: 1_000_000, output_tokens: 0 }, precos), 4);
   assert.equal(custoUsd({ input_tokens: 2000, output_tokens: 500, cache_read_input_tokens: 10_000 }, precos), 0.02);
 });
+
+test("exceção de envios_ativos: só aviso do painel para e-mail da lista de aprovadores", async () => {
+  const { excecaoInterna, emailsInternos } = await import("../supabase/functions/_shared/aprovadores.ts");
+  const cfg = { painel_aprovadores: [
+    { nome: "A", email: "Principal@Exemplo.com", whatsapp: "+5511999990000", papel: "principal", escopo: "tudo" },
+    { nome: "B", email: "[EMAIL CONTEUDO]", whatsapp: "[E164]", papel: "conteudo", escopo: "" },
+  ] };
+  assert.deepEqual(emailsInternos(cfg), ["principal@exemplo.com"]);          // placeholder entre colchetes não conta
+  assert.equal(excecaoInterna(cfg, "principal@exemplo.com", "painel"), true);
+  assert.equal(excecaoInterna(cfg, "principal@exemplo.com", "convite"), false); // outra tag: bloqueado
+  assert.equal(excecaoInterna(cfg, "lead@gmail.com", "painel"), false);         // fora da lista: bloqueado
+  assert.equal(excecaoInterna({}, "principal@exemplo.com", "painel"), false);   // sem lista: bloqueado
+});
