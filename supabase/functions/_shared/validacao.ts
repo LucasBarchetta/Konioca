@@ -81,14 +81,19 @@ export type Origem = "marcela_conteudo" | "base_propria" | "trafego_pago" | "ind
 
 /**
  * Classifica a origem do lead. Regra simples e explícita; o painel agrupa por ela.
- * Prioridade: identificador de clique pago > utm_medium pago > utm_source conhecido > referrer > direto.
+ * Prioridade: gclid ou utm_medium pago > fbclid/ttclid sem utm_medium orgânico > utm_source conhecido > referrer > direto.
+ * O Instagram e o TikTok põem fbclid/ttclid em todo clique de saída, inclusive bio e stories; por isso um
+ * utm_medium orgânico dos links oficiais (docs/08) vence o identificador de clique. O gclid só existe em anúncio.
  */
+const MEDIO_ORGANICO = /^(bio|stories|story|post|reels|mensagem|organico|organic|social)$/;
+
 export function classificarOrigem(r: Rastreio): Origem {
   const src = (r.utm_source ?? "").toLowerCase();
   const med = (r.utm_medium ?? "").toLowerCase();
   const ref = (r.referrer ?? "").toLowerCase();
-  if (r.fbclid || r.gclid || r.ttclid) return "trafego_pago";
+  if (r.gclid) return "trafego_pago";
   if (/^(cpc|cpm|paid|ads|paid_social|pago)$/.test(med)) return "trafego_pago";
+  if ((r.fbclid || r.ttclid) && !MEDIO_ORGANICO.test(med)) return "trafego_pago";
   if (/^(base|email|e-mail|whatsapp|lista|crm|newsletter)$/.test(src) || /^(base|email|whatsapp)$/.test(med)) return "base_propria";
   if (/^(indicacao|indicação|referral|amigo)$/.test(src) || med === "referral") return "indicacao";
   if (/^(instagram|ig|tiktok|youtube|yt|facebook|fb|reels|bio|linktree|marcela)$/.test(src)) return "marcela_conteudo";

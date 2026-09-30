@@ -6,9 +6,14 @@ const L = { criado_em: "2026-10-05T13:07:00Z", nome: "Ana Souza", whatsapp: "+55
 
 test("planilha: cabeçalho, horário de São Paulo, WhatsApp formatado e origem legível", () => {
   const [cab, linha] = csvPlanilha([L]).trim().split("\n");
-  assert.equal(cab, "Data,Nome,WhatsApp,E-mail,Cidade,Tem negócio,Origem,Canal (UTM)");
-  assert.equal(linha, '2026-10-05 10:07,Ana Souza,(11) 91234-5678,ana@exemplo.com,"Campinas, SP",Sim,Conteúdo da Marcela,instagram / stories');
-  assert.equal(dataSP("2026-10-01T02:30:00Z"), "2026-09-30 23:30");
+  assert.equal(cab, "Data,Nome,WhatsApp,E-mail,Cidade,Tem negócio,Origem,Canal (UTM),Contato");
+  assert.equal(linha, '05/10/2026 10h07,Ana Souza,(11) 91234-5678,ana@exemplo.com,"Campinas, SP",Sim,Conteúdo da Marcela,instagram / stories,');
+  assert.equal(dataSP("2026-10-01T02:30:00Z"), "30/09/2026 23h30");
+});
+
+test("planilha: quem pediu para sair antes aparece marcado para não contatar", () => {
+  const linha = csvPlanilha([{ ...L, bloqueado_em: "2026-10-06T10:00:00Z" }]).trim().split("\n")[1];
+  assert.match(linha, /,Não contatar: pediu para sair antes$/);
 });
 
 test("planilha: texto do lead nunca vira fórmula e aspas são escapadas", () => {

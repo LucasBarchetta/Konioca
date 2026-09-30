@@ -4,9 +4,10 @@ import { formatarWhatsapp } from "./validacao.ts";
 export interface LeadPlanilha {
   criado_em: string; nome: string; whatsapp: string; email: string; cidade: string | null;
   tem_negocio: boolean | null; origem: string | null; utm_source: string | null; utm_medium: string | null;
+  bloqueado_em?: string | null;
 }
 
-export const CABECALHO = ["Data", "Nome", "WhatsApp", "E-mail", "Cidade", "Tem negócio", "Origem", "Canal (UTM)"];
+export const CABECALHO = ["Data", "Nome", "WhatsApp", "E-mail", "Cidade", "Tem negócio", "Origem", "Canal (UTM)", "Contato"];
 
 const ORIGENS: Record<string, string> = {
   marcela_conteudo: "Conteúdo da Marcela", base_propria: "Base própria", trafego_pago: "Tráfego pago",
@@ -25,8 +26,9 @@ function campo(v: string): string {
 export function dataSP(iso: string): string {
   const p: Record<string, string> = {};
   for (const x of new Intl.DateTimeFormat("en-GB", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: false }).formatToParts(new Date(iso))) p[x.type] = x.value;
-  // Formato ISO (aaaa-mm-dd hh:mm): o Sheets reconhece como data em qualquer idioma da planilha e mostra no formato local.
-  return `${p.year}-${p.month}-${p.day} ${p.hour === "24" ? "00" : p.hour}:${p.minute}`;
+  // "30/09/2026 17h40": o "h" impede o Sheets de converter em número de série (46295,73...) e dispensa
+  // formatar a coluna. A ordem certa (mais novo primeiro) já vem do servidor.
+  return `${p.day}/${p.month}/${p.year} ${p.hour === "24" ? "00" : p.hour}h${p.minute}`;
 }
 
 export function linhaPlanilha(l: LeadPlanilha): string[] {
@@ -40,6 +42,7 @@ export function linhaPlanilha(l: LeadPlanilha): string[] {
     l.tem_negocio === true ? "Sim" : l.tem_negocio === false ? "Não" : "",
     ORIGENS[l.origem ?? ""] ?? textoSeguro(l.origem),
     canal,
+    l.bloqueado_em ? "Não contatar: pediu para sair antes" : "",
   ];
 }
 
