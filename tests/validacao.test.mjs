@@ -36,6 +36,12 @@ test("E-mail e nome", () => {
 
 test("Origem: prioridade pago > base > conteúdo > direto", () => {
   assert.equal(classificarOrigem({ utm_source: "instagram", fbclid: "x" }), "trafego_pago");
+  // Link oficial dos stories/bio: o Instagram acrescenta fbclid, mas o utm_medium orgânico vence.
+  assert.equal(classificarOrigem({ utm_source: "instagram", utm_medium: "stories", fbclid: "x" }), "marcela_conteudo");
+  assert.equal(classificarOrigem({ utm_source: "tiktok", utm_medium: "bio", ttclid: "x" }), "marcela_conteudo");
+  assert.equal(classificarOrigem({ utm_source: "whatsapp", utm_medium: "mensagem", fbclid: "x" }), "base_propria");
+  assert.equal(classificarOrigem({ utm_source: "instagram", utm_medium: "stories", gclid: "x" }), "trafego_pago");
+  assert.equal(classificarOrigem({ fbclid: "x" }), "trafego_pago");
   assert.equal(classificarOrigem({ utm_source: "instagram", utm_medium: "cpc" }), "trafego_pago");
   assert.equal(classificarOrigem({ utm_source: "base", utm_medium: "whatsapp" }), "base_propria");
   assert.equal(classificarOrigem({ utm_source: "instagram", utm_medium: "bio" }), "marcela_conteudo");

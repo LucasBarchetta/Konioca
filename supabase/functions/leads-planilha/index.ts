@@ -23,8 +23,8 @@ Deno.serve(async (req) => {
   const leads: LeadPlanilha[] = [];
   for (let de = 0; de < 50_000; de += 1000) {
     const { data, error } = await sb.from("leads")
-      .select("criado_em, nome, whatsapp, email, cidade, tem_negocio, origem, utm_source, utm_medium")
-      .is("optout_em", null).order("criado_em", { ascending: false }).order("id").range(de, de + 999);
+      .select("criado_em, nome, whatsapp, email, cidade, tem_negocio, origem, utm_source, utm_medium, bloqueado_em")
+      .is("optout_em", null).is("anonimizado_em", null).order("criado_em", { ascending: false }).order("id").range(de, de + 999);
     if (error) return new Response("indisponível", { status: 500, headers: PRIVADO });
     leads.push(...((data ?? []) as LeadPlanilha[]));
     if ((data ?? []).length < 1000) break;
