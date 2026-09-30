@@ -1,0 +1,7 @@
+Prioridade;Canal inicial;Nome;Primeiro nome;E-mail;WhatsApp (+55);Cidade;UF;Região;Primeiro contato;Último contato;Nº de cadastros;Gancho (mês do 1º contato);IDs no Sults;Observações
+P1 · Voltou a procurar;WhatsApp + e-mail;Fulana Exemplo da Silva;Fulana;fulana.exemplo@exemplo.invalid;+5511900000001;Cidade Fictícia;SP;Sudeste;2026-02-10 00:00:00;2026-09-12 00:00:00;2;fev/26;1001, 1002;
+P2 · Jan-abr/26;"E-mail primeiro; WhatsApp em lotes";Beltrano Teste;Beltrano;beltrano@exemplo.invalid;+5571900000002;Outra Cidade;BA;Nordeste;2026-01-15 00:00:00;2026-01-15 00:00:00;1;jan/26;1003;
+P3 · Jul-dez/25;"E-mail; WhatsApp só se clicar";Ciclana;Ciclana;ciclana@exemplo.invalid;+551130000003;Cidade Três;SP;Sudeste;2025-09-01 00:00:00;2025-09-01 00:00:00;1;set/25;1004;"telefone com 10 dígitos: conferir; só primeiro nome"
+P4 · Jan-jun/25;"E-mail; WhatsApp só se clicar";Sem Telefone Exemplo;Sem;semtelefone@exemplo.invalid;;Cidade Quatro;PR;Sul;2025-03-20 00:00:00;2025-03-20 00:00:00;1;mar/25;1005;sem telefone
+P2 · Jan-abr/26;"E-mail primeiro; WhatsApp em lotes";teste;teste;teste@exemplo.invalid;+5521900000005;Cidade Cinco;RJ;Sudeste;2026-04-02 00:00:00;2026-04-02 00:00:00;1;abr/26;1006;"só primeiro nome; possível cadastro de teste"
+P2 · Jan-abr/26;"E-mail primeiro; WhatsApp em lotes";Repetida;Repetida;FULANA.EXEMPLO@exemplo.invalid;+5511900000009;Cidade;SP;Sudeste;2026-02-10 00:00:00;2026-02-10 00:00:00;1;fev/26;1007;

@@ -5,3 +5,9 @@ node_modules/
 supabase/.temp/
 supabase/.branches/
 .DS_Store
+# Dados pessoais nunca entram no repositório
+*.xlsx
+*.xls
+base_antiga*.json
+privado/
+__pycache__/

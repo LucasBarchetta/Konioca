@@ -1,2 +1,2 @@
-// Endereço das edge functions. Não é segredo. Preencher com o ref do projeto Supabase da pré-venda.
-window.KONIOCA_API = "https://[PROJECT_REF].supabase.co/functions/v1";
+// Endereço das edge functions (projeto Supabase "KONIOCA pre venda"). Não é segredo.
+window.KONIOCA_API = "https://ytsildpxummevfkjcjhs.supabase.co/functions/v1";

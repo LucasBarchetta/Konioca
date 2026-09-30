@@ -79,3 +79,25 @@ export function numeroNoLote(n: number, tamanho: number | null): string {
   const s = String(n).padStart(3, "0");
   return tamanho ? `${s} de ${tamanho}` : s;
 }
+
+/** "há dois dias", "há 6 horas": texto do lembrete derivado das horas configuradas. */
+export function textoHaQuanto(horas: number): string {
+  if (horas < 24) return `há ${horas} ${horas === 1 ? "hora" : "horas"}`;
+  const dias = Math.round(horas / 24);
+  const nomes = ["", "um dia", "dois dias", "três dias", "quatro dias", "cinco dias", "seis dias", "sete dias"];
+  return "há " + (nomes[dias] ?? `${dias} dias`);
+}
+
+const MESES: Record<string, string> = {
+  jan: "janeiro", fev: "fevereiro", mar: "março", abr: "abril", mai: "maio", jun: "junho",
+  jul: "julho", ago: "agosto", set: "setembro", out: "outubro", nov: "novembro", dez: "dezembro",
+};
+
+/** Gancho da base antiga: "fev/26" -> "em fevereiro" (mesmo ano) ou "em fevereiro de 2025". Vazio se não reconhecer. */
+export function ganchoTexto(gancho: string | null | undefined, agora: Date = new Date()): string {
+  const m = String(gancho ?? "").trim().toLowerCase().match(/^([a-zç]{3})\/(\d{2})$/);
+  if (!m || !MESES[m[1]]) return "";
+  const ano = 2000 + Number(m[2]);
+  const anoAtual = Number(new Intl.DateTimeFormat("en-US", { timeZone: "America/Sao_Paulo", year: "numeric" }).format(agora));
+  return ano === anoAtual ? `em ${MESES[m[1]]}` : `em ${MESES[m[1]]} de ${ano}`;
+}

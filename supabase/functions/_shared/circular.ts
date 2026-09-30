@@ -1,7 +1,7 @@
 // Envio da Circular de Oferta de Franquia por e-mail (Resend) e registro do envio.
 import { db } from "./db.ts";
 import { carregarConfig, cfgNum, cfgText, pendente } from "./config.ts";
-import { limiteRecebimentoCircular, partesData } from "./datas.ts";
+import { limiteRecebimentoCircular, partesData, textoHaQuanto } from "./datas.ts";
 
 interface LeadMin { id: string; nome: string; email: string; token: string; optout_em: string | null; circular_enviada_em: string | null }
 
@@ -174,13 +174,14 @@ export async function aplicarEventoCircular(provedorId: string, tipo: string, qu
 }
 
 /** E-mail de lembrete para quem não confirmou o recebimento. Curto, um pedido só. */
-export function montarEmailLembrete(opts: { nome: string; token: string; apiUrl: string; prevendaFimIso: string; prazoDias: number; assinatura: string }) {
+export function montarEmailLembrete(opts: { nome: string; token: string; apiUrl: string; prevendaFimIso: string; prazoDias: number; assinatura: string; horas?: number }) {
+  const ha = textoHaQuanto(opts.horas ?? 48);
   const confirmar = `${opts.apiUrl}/circular-confirmar?t=${encodeURIComponent(opts.token)}`;
   const sair = `${opts.apiUrl}/optout?t=${encodeURIComponent(opts.token)}`;
   const lim = partesData(limiteRecebimentoCircular(opts.prevendaFimIso, opts.prazoDias).toISOString());
   const nome = primeiroNome(opts.nome);
   const texto = [
-    `${nome}, a Circular de Oferta de Franquia chegou no seu e-mail há dois dias e ainda falta um clique.`,
+    `${nome}, a Circular de Oferta de Franquia chegou no seu e-mail ${ha} e ainda falta um clique.`,
     ``,
     `O prazo de ${opts.prazoDias} dias que a lei pede só começa a contar quando você confirma o recebimento. Sem isso, a reserva não abre para você.`,
     ``,
@@ -196,7 +197,7 @@ export function montarEmailLembrete(opts: { nome: string; token: string; apiUrl:
 <div style="max-width:560px;margin:0 auto;padding:32px 24px">
 <h1 style="margin:0;font-family:Caladea,Cambria,Georgia,serif;font-weight:400;font-size:28px;line-height:1.1">${esc(nome)}, falta um clique.</h1>
 <div style="width:120px;height:1px;background:#c9a227;margin:16px 0 20px 6px"></div>
-<p style="margin:0 0 14px;font-size:17px;line-height:1.6">A Circular de Oferta de Franquia chegou no seu e-mail há dois dias. O prazo de ${opts.prazoDias} dias que a lei pede só começa a contar quando você confirma o recebimento. Sem isso, a reserva não abre para você.</p>
+<p style="margin:0 0 14px;font-size:17px;line-height:1.6">A Circular de Oferta de Franquia chegou no seu e-mail ${ha}. O prazo de ${opts.prazoDias} dias que a lei pede só começa a contar quando você confirma o recebimento. Sem isso, a reserva não abre para você.</p>
 <a href="${esc(confirmar)}" style="display:block;text-align:center;padding:16px;background:#b04d0c;color:#f7f0e2;font-size:18px;font-weight:700;text-decoration:none;border-radius:7px">Confirmo que recebi a Circular</a>
 <p style="margin:20px 0 0;font-size:16px;line-height:1.6">Quem confirma até <strong>${lim.ddmm}</strong> ainda reserva dentro da pré-venda.</p>
 <p style="margin:24px 0 0;font-family:Caladea,Cambria,Georgia,serif;font-style:italic;font-size:18px;color:#5a6b3a">${esc(opts.assinatura)}</p>
@@ -216,7 +217,7 @@ export async function enviarLembreteCircular(lead: { id: string; nome: string; e
   const email = montarEmailLembrete({
     nome: lead.nome, token: lead.token, apiUrl,
     prevendaFimIso: cfgText(todos, "prevenda_fim"), prazoDias: cfgNum(todos, "circular_prazo_dias", 10),
-    assinatura: cfgText(todos, "assinatura_time", "Time da Marcela"),
+    assinatura: cfgText(todos, "assinatura_time", "Time da Marcela"), horas: cfgNum(todos, "circular_lembrete_horas", 48),
   });
   const resp = await fetch("https://api.resend.com/emails", {
     method: "POST",

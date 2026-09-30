@@ -33,7 +33,7 @@ insert into public.config (chave, valor, publico, descricao) values
   ('circular_assunto',      '"Sua Circular de Oferta de Franquia Konioca"', false, 'Assunto do e-mail'),
 
   -- Links
-  ('lp_url',                '"https://[DOMINIO-DA-LP]"', true, 'URL pública da LP'),
+  ('lp_url',                '"https://prevenda.konioca.com"', true, 'URL pública da LP'),
   ('whatsapp_grupo_link',   '"https://chat.whatsapp.com/[LINK]"', true, 'Grupo/Comunidade da pré-venda'),
   ('politica_privacidade_url', '"#privacidade"', true, '[LINK] da política de privacidade'),
   ('termos_prevenda_url',   '"#privacidade"', true, '[LINK] dos termos da pré-venda'),
@@ -50,7 +50,7 @@ insert into public.config (chave, valor, publico, descricao) values
   ('assinatura_time',       '"Time da Marcela"', true, 'Assinatura das mensagens'),
 
   -- E-mail
-  ('email_from',            '"Time da Marcela <time@[DOMINIO]>"', false, 'Remetente verificado no Resend'),
+  ('email_from',            '"Time da Marcela <time@envio.konioca.com>"', false, 'Remetente no subdomínio de envio verificado no Resend (o DMARC da raiz usa alinhamento estrito)'),
   ('email_reply_to',        '"[EMAIL DE ATENDIMENTO]"', false, 'Responder para'),
 
   -- Sults
@@ -61,7 +61,7 @@ insert into public.config (chave, valor, publico, descricao) values
   -- Grupo de controle e limites
   ('grupo_controle_pct',    '0.10',  false, 'Fração de leads fora das automações'),
   ('cadastro_limite_ip',    '{"janela_min": 10, "max": 8}', false, 'Limite de cadastros por IP por janela'),
-  ('cors_origens',          '["https://[DOMINIO-DA-LP]", "http://localhost:8080"]', false, 'Origens aceitas pelas functions públicas'),
+  ('cors_origens',          '["https://prevenda.konioca.com", "http://localhost:8080"]', false, 'Origens aceitas pelas functions públicas'),
 
   -- Etapa 4 (já em configuração editável; os agentes chegam na etapa 4)
   ('score_pesos',           '{"checkout_parado":30,"abriu_pedido":25,"ficou_ate_oferta":20,"tem_ponto":10,"viu_gravacao":10,"entrou_comunidade":5,"clicou":5}', false, 'Pesos da nota'),

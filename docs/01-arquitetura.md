@@ -8,7 +8,7 @@ Tese: uma única base (Supabase) com edge functions e rotinas agendadas cobre LP
 Conteúdo da Marcela / base própria / tráfego pago
         │  (UTMs em cada link)
         ▼
-  LP estática (Cloudflare Pages, domínio próprio)  ──▶  obrigado.html
+  LP estática (Cloudflare Pages, prevenda.konioca.com)  ──▶  obrigado.html
         │  POST /lead-intake                              │  POST /lead-intencao
         ▼                                                 ▼
   Supabase Edge Functions (Deno)  ◀──────────────────────┘
@@ -31,7 +31,7 @@ Conteúdo da Marcela / base própria / tráfego pago
 | Componente | Escolha | Por que | Alternativa descartada |
 |---|---|---|---|
 | Site (LP, obrigado, reserva, painel) | HTML/CSS/JS estático em Cloudflare Pages | Fidelidade total às visualizações aprovadas, zero build, deploy por push, domínio e DNS no mesmo lugar | Next.js/Vercel: mais peças para o que é uma página |
-| Banco, storage, functions, cron | Supabase (projeto novo, separado do "Konioca app") | O projeto existente na conta guarda outro sistema (modelo financeiro). Dados pessoais da pré-venda pedem base isolada, com RLS própria | Reusar o projeto existente: mistura dados e risco de LGPD |
+| Banco, storage, functions, cron | Supabase, projeto "KONIOCA pre venda" (ref `ytsildpxummevfkjcjhs`, região us-east-2, Ohio, EUA), separado do "Konioca app" | O projeto existente na conta guarda outro sistema (modelo financeiro). Dados pessoais da pré-venda pedem base isolada, com RLS própria | Reusar o projeto existente: mistura dados e risco de LGPD |
 | Configuração | Tabela `config` (chave, valor jsonb, público sim/não) | Valores e datas nunca no código; a function `public-config` expõe só o subconjunto público | Arquivo JSON no repositório: exigiria deploy para mudar preço ou data |
 | E-mail transacional | Resend | Anexo PDF, webhook de entrega/abertura/clique, DKIM simples | SES: mais configuração para o mesmo resultado |
 | WhatsApp | WhatsApp Cloud API (Meta), direto | Única forma oficial; templates aprovados pela Meta; webhook nativo | Z-API e similares: fora da regra do projeto |
@@ -102,6 +102,7 @@ RLS ligado em tudo, sem política para `anon`. Toda escrita passa pelas edge fun
 - Cadastro protegido por Cloudflare Turnstile (`turnstile_ativo`, site key pública na `config`, `TURNSTILE_SECRET` no servidor; a `lead-intake` valida em `siteverify` antes de gravar e antes de qualquer disparo), honeypot e limite por IP. Webhooks verificam assinatura (Resend/Svix; Meta e PSP nas etapas seguintes).
 - Links de confirmação da Circular e de opt-out usam token aleatório por lead, não o id.
 - Dados mínimos, finalidade declarada no consentimento, opt-out em um clique. A política de privacidade e os termos da pré-venda são links na `config` [A PREENCHER].
+- Os dados ficam armazenados nos EUA (Supabase em us-east-2). Isso é transferência internacional (Lei 13.709/2018, art. 33) e está registrado no rascunho da política em `docs/politica-privacidade.md`, com os pontos que o jurídico precisa decidir.
 
 ## Riscos e pontos cegos
 

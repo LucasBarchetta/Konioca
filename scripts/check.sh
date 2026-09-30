@@ -4,6 +4,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 DENO="${DENO:-deno}"
 echo "== testes (node)"; node --test tests/*.test.mjs
+echo "== testes (python)"; python3 -m unittest discover -s tests -p "test_*.py"
 echo "== validacao.js gerado em dia"; node scripts/build-validacao.mjs --check
 echo "== deno check"; (cd supabase/functions && "$DENO" check ./*/index.ts ./_shared/*.ts)
 echo "== deno lint"; (cd supabase/functions && "$DENO" lint)
