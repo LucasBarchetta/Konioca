@@ -15,6 +15,8 @@ verify_jwt = false
 verify_jwt = false
 [functions.live-ics]
 verify_jwt = false
+[functions.whatsapp-webhook]
+verify_jwt = false
 
 # Internas: exigem a chave de serviço no Authorization (verificado no código).
 [functions.circular-enviar]
@@ -24,4 +26,14 @@ verify_jwt = true
 [functions.circular-lembrete]
 verify_jwt = true
 [functions.sults-export]
+verify_jwt = true
+[functions.fila-processar]
+verify_jwt = true
+[functions.live-disparos]
+verify_jwt = true
+[functions.perguntas-selecionar]
+verify_jwt = true
+[functions.base-antiga-importar]
+verify_jwt = true
+[functions.base-antiga-processar]
 verify_jwt = true

@@ -1,0 +1,89 @@
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import { montarEnvio } from "../supabase/functions/_shared/fila.ts";
+import { selecionarHeuristica } from "../supabase/functions/_shared/perguntas.ts";
+import { textoHaQuanto } from "../supabase/functions/_shared/datas.ts";
+
+const CFG = {
+  live_data: "2026-10-15T19:00:00-03:00", prevenda_fim: "2026-10-30T23:59:59-03:00", circular_prazo_dias: 10, lote1_tamanho: 250,
+  whatsapp_grupo_link: "https://chat.whatsapp.com/AbCdEf123", lp_url: "https://prevenda.konioca.com", assinatura_time: "Time da Marcela",
+  wa_tpl_convite: "konioca_convite_live", wa_tpl_lembrete_live: "konioca_lembrete_live", wa_tpl_lembrete_live_pergunta: "konioca_lembrete_live_pergunta",
+  wa_tpl_gravacao: "konioca_gravacao", wa_tpl_circular_lembrete: "konioca_circular_lembrete", wa_tpl_base_antiga: "konioca_base_antiga",
+  live_link: "https://meet.google.com/abc-defg-hij", live_gravacao_link: "[LINK DA GRAVAÇÃO]",
+  turmas: [{ nome: "Turma de quinta · 15/10", live: "2026-10-15T19:00:00-03:00", subgrupo_link: "https://chat.whatsapp.com/[SUBGRUPO-15-10]" }],
+  wa_audios: {},
+};
+const LEAD = { id: "l1", nome: "Ana Paula", whatsapp: "+5511990000000", email: "ana@exemplo.com", token: "tok", turma: "Turma de quinta · 15/10", pergunta_live: "Cabe numa academia pequena?", estado_conversa: "inicio" };
+const API = "https://x.supabase.co/functions/v1";
+
+test("Convite por WhatsApp: template com nome, data, hora e lote; botão do grupo; sem 'escolhido'", () => {
+  const e = montarEnvio("convite", "whatsapp", LEAD, CFG, API);
+  assert.equal(e.canal, "whatsapp");
+  assert.equal(e.nome, "konioca_convite_live");
+  assert.deepEqual(e.params, ["Ana", "quinta", "15/10", "19h", "250"]);
+  assert.equal(e.botaoUrlSufixo, "AbCdEf123", "subgrupo pendente cai no grupo geral");
+});
+
+test("Convite por e-mail (plano B): termina em 'Você consegue estar lá?' e tem saída", () => {
+  const e = montarEnvio("convite", "email", LEAD, CFG, API);
+  assert.equal(e.canal, "email");
+  assert.match(e.texto, /Você consegue estar lá\?/);
+  assert.match(e.texto, /optout\?t=tok/);
+  assert.ok(!/escolhid/i.test(e.texto + e.html), "nada de exclusividade falsa");
+});
+
+test("Lembrete da live: cita a pergunta só na variante de pergunta selecionada", () => {
+  const a = montarEnvio("lembrete_live", "whatsapp", LEAD, CFG, API);
+  assert.equal(a.nome, "konioca_lembrete_live");
+  assert.ok(!a.params.some((p) => p.includes("academia")));
+  const b = montarEnvio("lembrete_live_pergunta", "whatsapp", LEAD, CFG, API);
+  assert.equal(b.nome, "konioca_lembrete_live_pergunta");
+  assert.ok(b.params.includes("Cabe numa academia pequena?"));
+});
+
+test("Colchete na config bloqueia o envio, nunca manda placeholder", () => {
+  const e = montarEnvio("gravacao", "whatsapp", LEAD, CFG, API);
+  assert.equal(e.canal, "nenhum");
+  const sem = montarEnvio("convite", "whatsapp", LEAD, { ...CFG, whatsapp_grupo_link: "https://chat.whatsapp.com/[LINK]" }, API);
+  assert.equal(sem.canal, "nenhum");
+});
+
+test("Lembrete da Circular pelo WhatsApp usa a data-limite calculada", () => {
+  const e = montarEnvio("circular_lembrete", "whatsapp", LEAD, CFG, API);
+  assert.equal(e.params[1], "20/10");
+  assert.match(e.params[2], /circular-confirmar\?t=tok$/);
+});
+
+test("Seleção de perguntas sem modelo: respeita o limite e prioriza pergunta clara de quem tem ponto", () => {
+  const c = [
+    { lead_id: "a", nome: "A", cidade: null, texto: "oi", tem_negocio: false, nota: 0 },
+    { lead_id: "b", nome: "B", cidade: "Campinas", texto: "Quanto rende por dia numa academia com 300 alunos?", tem_negocio: true, nota: 60 },
+    { lead_id: "c", nome: "C", cidade: null, texto: "Dá para financiar o restante pelo banco?", tem_negocio: false, nota: 20 },
+  ];
+  const s = selecionarHeuristica(c, 2);
+  assert.equal(s.length, 2);
+  assert.equal(s[0].lead_id, "b");
+});
+
+test("Texto do lembrete acompanha as horas configuradas", () => {
+  assert.equal(textoHaQuanto(48), "há dois dias");
+  assert.equal(textoHaQuanto(24), "há um dia");
+  assert.equal(textoHaQuanto(6), "há 6 horas");
+});
+
+test("Base antiga: gancho personaliza e leva à LP, sem oferta de preço", async () => {
+  const { ganchoTexto } = await import("../supabase/functions/_shared/datas.ts");
+  const agora = new Date("2026-10-06T12:00:00-03:00");
+  assert.equal(ganchoTexto("fev/26", agora), "em fevereiro");
+  assert.equal(ganchoTexto("set/25", agora), "em setembro de 2025");
+  assert.equal(ganchoTexto("xyz", agora), "");
+  const lead = { ...LEAD, base_antiga_gancho: "fev/26" };
+  const e = montarEnvio("base_antiga_email", "email", lead, CFG, API);
+  assert.equal(e.canal, "email");
+  assert.match(e.texto, /você procurou a Konioca em (fevereiro|fevereiro de 2026)\./);
+  assert.match(e.texto, /utm_campaign=base_antiga/);
+  assert.ok(!/R\$/.test(e.texto), "convite sem oferta de produto");
+  const w = montarEnvio("base_antiga", "whatsapp", lead, CFG, API);
+  assert.equal(w.nome, "konioca_base_antiga");
+  assert.equal(w.params.length, 5);
+});

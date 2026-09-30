@@ -2,7 +2,7 @@
 // da Circular em config.circular_lembrete_horas. Um lembrete por lead. Na etapa 2 o agente repete pelo WhatsApp.
 // Inclui o grupo de controle: a confirmação é ato do processo legal, não mensagem de venda.
 import { db, exigirServico } from "../_shared/db.ts";
-import { carregarConfig, cfgNum } from "../_shared/config.ts";
+import { carregarConfig, cfgNum, cfgText } from "../_shared/config.ts";
 import { json } from "../_shared/http.ts";
 import { enviarLembreteCircular } from "../_shared/circular.ts";
 
@@ -11,10 +11,15 @@ Deno.serve(async (req) => {
   if (!exigirServico(req)) return json({ erro: "não autorizado" }, 401);
   const { todos } = await carregarConfig();
   const horas = cfgNum(todos, "circular_lembrete_horas", 48);
+  const canal = cfgText(todos, "circular_lembrete_canal", "email");
   const { data: leads, error } = await db().rpc("leads_para_lembrete_circular", { p_horas: horas, p_limite: 200 });
   if (error) return json({ erro: error.message }, 500);
   let enviados = 0; const falhas: Record<string, string> = {};
   for (const l of (leads ?? []) as { id: string; nome: string; email: string; token: string }[]) {
+    if (canal === "whatsapp" || canal === "ambos") {
+      await db().rpc("fila_enfileirar", { p_lead: l.id, p_tipo: "circular_lembrete", p_quando: new Date().toISOString() });
+      if (canal === "whatsapp") { await db().from("leads").update({ circular_lembrete_em: new Date().toISOString() }).eq("id", l.id); enviados++; continue; }
+    }
     const r = await enviarLembreteCircular(l);
     if (r.ok) enviados++; else { falhas[l.id] = r.motivo ?? "erro"; if (/RESEND_API_KEY|email_from/.test(r.motivo ?? "")) break; }
   }
