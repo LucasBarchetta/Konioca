@@ -41,6 +41,12 @@ Pontos para o jurídico decidir (INFERÊNCIA, confiança média; validar):
 3. Base antiga (1.210 pessoas do Sults): o contato parte de relacionamento anterior, não de aceite na LP. Base legal provável: legítimo interesse (art. 7º, IX), com saída em toda mensagem e teste de balanceamento documentado. Quem se cadastra pela LP passa a ter o aceite registrado normalmente.
 4. Prazo de retenção (definido em 30/09): até 2 anos após o último contato ou até o titular pedir para sair; registros ligados a contrato pelo prazo legal. Falta a rotina que apaga ou anonimiza no prazo, e decidir o que fica de quem pediu para sair (lista mínima de supressão para não contatar de novo).
 
+## Cookies e medição de anúncios
+
+A página da pré-venda usa cookies e códigos de medição da Meta (Pixel do Facebook e Instagram) e do TikTok (Pixel), além do Google Analytics. Eles registram que a pessoa visitou a página e que concluiu o cadastro, para a Konioca saber quais anúncios e conteúdos trazem cadastros e para mostrar a pré-venda a quem já visitou. Nenhum deles recebe nome, WhatsApp ou e-mail em texto aberto: quando o cadastro é confirmado pelo servidor (API de Conversões da Meta e Events API do TikTok), e-mail e telefone são transformados em códigos irreversíveis (SHA-256) antes de seguir, no padrão que essas empresas exigem.
+
+A pessoa pode bloquear cookies no navegador ou usar as configurações de anúncios da Meta e do TikTok. A página continua funcionando sem eles.
+
 ## Direitos do titular
 
 Confirmação, acesso, correção, anonimização, portabilidade, eliminação, informação sobre compartilhamento e revogação do consentimento (Lei 13.709/2018, art. 18). Canal: controladoria@konioca.com.

@@ -25,7 +25,7 @@
   function lead(dados) {
     dados = dados || {};
     try { if (ativo.meta) window.fbq("track", "Lead", { content_name: "prevenda_nova_geracao" }, dados.event_id ? { eventID: dados.event_id } : undefined); } catch (e) { /* ignora */ }
-    try { if (ativo.tiktok) window.ttq.track("SubmitForm", { content_name: "prevenda_nova_geracao" }); } catch (e) { /* ignora */ }
+    try { if (ativo.tiktok) window.ttq.track("SubmitForm", { content_name: "prevenda_nova_geracao" }, dados.event_id ? { event_id: dados.event_id } : undefined); } catch (e) { /* ignora */ }
     try { if (ativo.ga4) window.gtag("event", "generate_lead", { origem: dados.origem || "", grupo_controle: !!dados.grupo_controle }); } catch (e) { /* ignora */ }
   }
   window.KPixels = { init: init, lead: lead };
