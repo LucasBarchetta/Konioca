@@ -5,6 +5,7 @@
   var sessao = null;
   try { sessao = JSON.parse(sessionStorage.getItem("k_lead") || "null"); } catch (e) { sessao = null; }
   if (!token && sessao) token = sessao.token;
+  K.visita("obrigado");
 
   K.config().then(function (cfg) {
     if (cfg) { K.preencher(K.tokens(cfg)); K.preencherLinks(cfg); }

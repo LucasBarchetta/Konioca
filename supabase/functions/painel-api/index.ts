@@ -4,7 +4,7 @@
 import { db, exigirServico } from "../_shared/db.ts";
 import { carregarConfig, cfgNum, cfgText, type Config } from "../_shared/config.ts";
 import { corsHeaders, json, lerJson } from "../_shared/http.ts";
-import { aprovadores, type Aprovador } from "../_shared/aprovadores.ts";
+import { acharAprovador, aprovadores, type Aprovador } from "../_shared/aprovadores.ts";
 import { assinaturaAprovador, botaoReservar, quantidadeValida } from "../_shared/painel_regras.ts";
 
 async function tokenDe(email: string, versao: string): Promise<string> {
@@ -42,8 +42,7 @@ Deno.serve(async (req) => {
   // Gera o link assinado de um aprovador. Só com a chave de serviço (cron, operador).
   if (acao === "link") {
     if (!(await exigirServico(req))) return json({ erro: "não autorizado" }, 401, cors);
-    const email = String(b.email ?? "").trim().toLowerCase();
-    const a = aprovadores(cfg).find((x) => x.email.toLowerCase() === email);
+    const a = acharAprovador(cfg, String(b.email ?? ""));
     if (!a) return json({ erro: "e-mail fora de painel_aprovadores" }, 400, cors);
     const base = cfgText(cfg, "painel_url", "https://prevenda.konioca.com/painel/");
     const url = String(b.base ?? base).replace(/\/?$/, "/") + "?t=" + await tokenDe(a.email, cfgText(cfg, "painel_links_versao", "1"));

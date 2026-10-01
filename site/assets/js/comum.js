@@ -87,6 +87,24 @@
     return r;
   }
 
+  // Contador de visitas (docs/17): um sinal por carregamento, sem cookie e sem dado pessoal. Manda o primeiro toque
+  // (k_rastreio) e o link desta visita; "nova" = primeira vez neste navegador (marca k_visitou). text/plain evita preflight.
+  function visita(pagina) {
+    try {
+      if (navigator.webdriver) return;
+      var nova = false;
+      try { nova = !localStorage.getItem("k_visitou"); if (nova) localStorage.setItem("k_visitou", "1"); } catch (e) { nova = false; }
+      var q = new URLSearchParams(location.search), p = rastreio();
+      var corpo = JSON.stringify({
+        pagina: pagina, host: location.hostname, nova: nova,
+        primeiro: { utm_source: p.utm_source || "", utm_medium: p.utm_medium || "", referrer: p.referrer || "" },
+        visita: { utm_source: q.get("utm_source") || "", utm_medium: q.get("utm_medium") || "", referrer: document.referrer || "" }
+      });
+      if (navigator.sendBeacon) navigator.sendBeacon(API + "/visita", corpo);
+      else fetch(API + "/visita", { method: "POST", body: corpo, keepalive: true }).catch(function () {});
+    } catch (e) { /* contador nunca atrapalha a página */ }
+  }
+
   var cfgCache = null;
   function config() {
     if (cfgCache) return cfgCache;
@@ -124,7 +142,7 @@
 
   window.K = {
     API: API, config: config, post: post, tokens: tokens, preencher: preencher, preencherLinks: preencherLinks,
-    rastreio: rastreio, iniciarContagem: iniciarContagem, mostrarContador: mostrarContador, fmtReais: fmtReais, partes: partes,
+    rastreio: rastreio, visita: visita, iniciarContagem: iniciarContagem, mostrarContador: mostrarContador, fmtReais: fmtReais, partes: partes,
     pronto: function () { document.documentElement.classList.add("pronto"); }
   };
 })();

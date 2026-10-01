@@ -46,12 +46,17 @@ test("custo da API: tokens x preço por milhão", () => {
 });
 
 test("exceção de envios_ativos: só aviso do painel para e-mail da lista de aprovadores", async () => {
-  const { excecaoInterna, emailsInternos } = await import("../supabase/functions/_shared/aprovadores.ts");
+  const { excecaoInterna, emailsInternos, emailsDe, acharAprovador } = await import("../supabase/functions/_shared/aprovadores.ts");
   const cfg = { painel_aprovadores: [
     { nome: "A", email: "Principal@Exemplo.com", whatsapp: "+5511999990000", papel: "principal", escopo: "tudo" },
     { nome: "B", email: "[EMAIL CONTEUDO]", whatsapp: "[E164]", papel: "conteudo", escopo: "" },
+    { nome: "C", email: "op@exemplo.com", whatsapp: "+5511999990001", papel: "operacional", escopo: "", emails_copia: ["Copia@Gmail.com", "op@exemplo.com", "[EXTRA]"] },
   ] };
-  assert.deepEqual(emailsInternos(cfg), ["principal@exemplo.com"]);          // placeholder entre colchetes não conta
+  assert.deepEqual(emailsInternos(cfg), ["principal@exemplo.com", "op@exemplo.com", "copia@gmail.com"]); // placeholder entre colchetes não conta; cópia conta
+  assert.deepEqual(emailsDe(cfg.painel_aprovadores[2]), ["op@exemplo.com", "copia@gmail.com"]);           // sem repetição, principal primeiro
+  assert.equal(acharAprovador(cfg, "COPIA@gmail.com")?.nome, "C");                                        // acha pela cópia
+  assert.equal(acharAprovador(cfg, "ninguem@exemplo.com"), null);
+  assert.equal(excecaoInterna(cfg, "copia@gmail.com", "painel"), true);
   assert.equal(excecaoInterna(cfg, "principal@exemplo.com", "painel"), true);
   assert.equal(excecaoInterna(cfg, "principal@exemplo.com", "monitor"), true);
   assert.equal(excecaoInterna(cfg, "principal@exemplo.com", "teste"), true);   // prévia de e-mail só para aprovador

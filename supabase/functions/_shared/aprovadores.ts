@@ -12,6 +12,7 @@ export interface Aprovador {
   whatsapp: string;            // E.164; só entra em uso quando o WhatsApp oficial estiver ativo
   papel: "principal" | "conteudo" | "operacional";
   escopo: string;              // texto para o painel: o que essa pessoa aprova
+  emails_copia?: string[];     // outros endereços da mesma pessoa: recebem os mesmos avisos e o mesmo link (o token sai só de `email`)
 }
 
 /** Tags de e-mail que a exceção aceita. Qualquer outra tag obedece a envios_ativos sem exceção. */
@@ -24,9 +25,23 @@ export function aprovadores(cfg: Config): Aprovador[] {
   return v.filter((a): a is Aprovador => !!a && typeof a === "object" && typeof (a as Aprovador).email === "string" && !/\[[^\]]*\]/.test((a as Aprovador).email));
 }
 
-/** E-mails internos liberados na exceção: só os da lista de aprovadores, em minúsculas. */
+/** Todos os endereços de um aprovador (principal primeiro, depois as cópias), em minúsculas, sem repetição e sem placeholder. */
+export function emailsDe(a: Aprovador): string[] {
+  const lista = [a.email, ...(Array.isArray(a.emails_copia) ? a.emails_copia : [])]
+    .filter((e): e is string => typeof e === "string" && e.includes("@") && !/\[[^\]]*\]/.test(e))
+    .map((e) => e.trim().toLowerCase());
+  return [...new Set(lista)];
+}
+
+/** Acha o aprovador por qualquer um dos endereços dele (principal ou cópia). */
+export function acharAprovador(cfg: Config, email: string): Aprovador | null {
+  const e = String(email ?? "").trim().toLowerCase();
+  return aprovadores(cfg).find((a) => emailsDe(a).includes(e)) ?? null;
+}
+
+/** E-mails internos liberados na exceção: só os da lista de aprovadores (principal e cópias), em minúsculas. */
 export function emailsInternos(cfg: Config): string[] {
-  return aprovadores(cfg).map((a) => a.email.trim().toLowerCase());
+  return [...new Set(aprovadores(cfg).flatMap(emailsDe))];
 }
 
 /** A exceção vale só para aviso interno (tag em TAGS_INTERNAS) a um e-mail da lista. Tudo o mais fica bloqueado. */
