@@ -69,15 +69,15 @@ export function montarEnvio(tipo: string, canal: string, lead: LeadFila, cfg: Co
       const texto = [p1, p2, p3, `Seguir o Instagram da Konioca: ${instagram}`, p4, ``, assinatura, ``,
         `Para não receber mais mensagens da pré-venda: ${apiUrl}/optout?t=${encodeURIComponent(lead.token)}`].join("\n");
       const img = emailImagens(cfg);
-      // Visual aprovado em 1/10: faixa verde com a logo centralizada, foto real da máquina na largura toda (600 px,
-      // hospedada, não anexo), texto em seguida. Sem emoji. Tabelas e estilos inline por causa do Gmail e do Outlook.
+      // Visual aprovado em 1/10: faixa verde com a logo centralizada, foto real da máquina atual, inteira (sem recorte),
+      // na largura toda (600 px, hospedada, não anexo), texto em seguida. Sem emoji. Tabelas e estilos inline por causa do Gmail e do Outlook.
       const html = `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>${esc(assunto)}</title></head>
 <body style="margin:0;padding:0;background:#f4ebdb;font-family:Carlito,Calibri,'Segoe UI',sans-serif;color:#1f4a36">
 <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:#f4ebdb;font-size:1px;line-height:1px">${esc(previa)}&#8204;&nbsp;&#8204;&nbsp;&#8204;&nbsp;&#8204;&nbsp;&#8204;&nbsp;&#8204;&nbsp;&#8204;&nbsp;&#8204;&nbsp;&#8204;&nbsp;&#8204;&nbsp;&#8204;&nbsp;&#8204;&nbsp;</div>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f4ebdb"><tr><td align="center" style="padding:24px 12px">
 <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;background:#ffffff;border-radius:10px;overflow:hidden">
 <tr><td align="center" style="background:#1f4a36;padding:22px 24px"><img src="${esc(img.logo)}" width="180" alt="Konioca" style="display:block;width:180px;height:auto;border:0"></td></tr>
-<tr><td style="padding:0;line-height:0"><img src="${esc(img.maquina)}" width="600" alt="Nova máquina Konioca" style="display:block;width:100%;max-width:600px;height:auto;border:0"></td></tr>
+<tr><td style="padding:0;line-height:0"><img src="${esc(img.maquina)}" width="600" alt="Máquina Konioca" style="display:block;width:100%;max-width:600px;height:auto;border:0"></td></tr>
 <tr><td style="padding:28px 24px 32px">
 <p style="margin:0 0 14px;font-size:17px;line-height:1.6">${esc(p1)}</p>
 <p style="margin:0 0 14px;font-size:17px;line-height:1.6">${esc(p2)}</p>

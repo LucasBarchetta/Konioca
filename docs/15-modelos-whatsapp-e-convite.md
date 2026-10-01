@@ -33,8 +33,9 @@ nome). Remetente na caixa de entrada: "Time da Konioca" (config.email_from; o en
     Para não receber mais mensagens da pré-venda: {link de saída}
 
 Na versão em HTML o link do perfil é o botão "Seguir o Instagram da Konioca". Visual (1/10): faixa verde no topo
-com a logo centralizada (180 px), foto real da máquina na largura toda (600 px, texto alternativo "Nova máquina
-Konioca", JPEG de 65 KB, recorte horizontal do arquivo FOTO-HORIZONTAL-PREVIA do Drive), depois o texto. Sem emoji.
+com a logo centralizada (180 px), foto real da máquina atual, inteira, sem recorte, na largura toda (600 px, texto alternativo
+"Máquina Konioca", JPEG abaixo de 150 KB, do arquivo FOTO-HORIZONTAL-PREVIA do Drive), depois o texto. A mesma foto é
+a prévia do link (og:image, 1200x630, foto inteira centralizada sobre fundo desfocado). Sem emoji.
 As imagens ficam hospedadas em `site/assets/img/email/` (Cloudflare Pages), base em `config.email_imagens_url`.
 
 ## Reaquecimento de quem foi contatado à mão no WhatsApp

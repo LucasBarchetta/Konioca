@@ -42,7 +42,7 @@ test("Convite por e-mail: Instagram da Konioca, termina em 'Você consegue estar
 test("Convite por e-mail: logo no topo, foto da máquina hospedada com texto alternativo, sem emoji", () => {
   const e = montarEnvio("convite", "email", LEAD, CFG, API);
   assert.match(e.html, /<img src="https:\/\/prevenda\.konioca\.com\/assets\/img\/email\/logo-360\.png" width="180" alt="Konioca"/);
-  assert.match(e.html, /<img src="https:\/\/prevenda\.konioca\.com\/assets\/img\/email\/maquina-600\.jpg" width="600" alt="Nova máquina Konioca"/);
+  assert.match(e.html, /<img src="https:\/\/prevenda\.konioca\.com\/assets\/img\/email\/maquina-600\.jpg" width="600" alt="Máquina Konioca"/);
   assert.ok(e.html.indexOf("logo-360.png") < e.html.indexOf("maquina-600.jpg"), "logo acima da foto");
   assert.ok(!/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u.test(e.html + e.texto), "sem emoji");
   const outra = emailImagens({ email_imagens_url: "https://claude-x.konioca.pages.dev/assets/img/email/" });
