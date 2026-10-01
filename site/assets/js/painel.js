@@ -7,7 +7,8 @@
   try { if (token) sessionStorage.setItem("k_painel_t", token); else token = sessionStorage.getItem("k_painel_t") || ""; } catch (e) { /* sem storage */ }
   if (q.get("t")) { try { history.replaceState(null, "", location.pathname); } catch (e) { /* ok */ } }
 
-  var estado = { quem: null, leads: [], filtro: "todos", busca: "", aba: "leads", aberto: {}, aprovacoes: [] };
+  var estado = { quem: null, leads: [], filtro: "todos", busca: "", aba: "leads", aberto: {}, aprovacoes: [], novos: {}, atualizadoEm: 0, digitando: false, carregando: false, adiada: false };
+  var INTERVALO = 30000; // atualização automática com a página visível
   var el = function (id) { return document.getElementById(id); };
   function erro(msg) { var e = el("p-erro"); if (!msg) { e.classList.add("oculto"); return; } e.textContent = msg; e.classList.remove("oculto"); }
   function api(acao, corpo) {
@@ -76,7 +77,7 @@
     }
     acoes += '<button type="button" class="discreto" data-acao="historico" data-id="' + l.id + '">' + (estado.aberto[l.id] === "historico" ? "Fechar histórico" : "Histórico") + "</button>";
     var extra = estado.aberto[l.id] === "reservar" ? formReserva(l) : estado.aberto[l.id] === "cancelar" ? formCancelar(l) : estado.aberto[l.id] === "email" ? formEmail(l) : estado.aberto[l.id] === "historico" ? '<div class="p-hist" id="hist-' + l.id + '">carregando…</div>' : "";
-    return '<article class="p-card" data-lead="' + l.id + '"><h3>' + esc(l.nome) + "</h3><div class=\"p-meta\">" + esc(meta) + '</div><div class="p-tags">' + tags.join("") + '</div><div class="p-acoes">' + acoes + "</div>" + extra + "</article>";
+    return '<article class="p-card' + (estado.novos[l.id] ? " p-novo" : "") + '" data-lead="' + l.id + '"><h3>' + esc(l.nome) + "</h3><div class=\"p-meta\">" + esc(meta) + '</div><div class="p-tags">' + tags.join("") + '</div><div class="p-acoes">' + acoes + "</div>" + extra + "</article>";
   }
   function formReserva(l) {
     var ops = ""; for (var i = 1; i <= 10; i++) ops += '<option value="' + i + '">' + i + (i === 1 ? " máquina" : " máquinas") + "</option>";
@@ -117,16 +118,54 @@
       h.innerHTML = linhas.length ? linhas.map(function (x) { return "<div>" + esc(dataHora(x.em)) + " · " + esc(x.t) + "</div>"; }).join("") : "Sem eventos.";
     });
   }
-  function recarregar() {
+  // Sem link válido, a página mostra só "Acesso restrito": nada de logo, abas ou dados.
+  function restrito() {
+    try { sessionStorage.removeItem("k_painel_t"); } catch (e) { /* ok */ }
+    el("p-app").classList.add("oculto"); el("p-restrito").classList.remove("oculto");
+  }
+  function liberar() { el("p-restrito").classList.add("oculto"); el("p-app").classList.remove("oculto"); }
+
+  // Atualização automática: a cada 30 s com a página visível; pausa escondida; ao voltar, atualiza na hora.
+  // Se a pessoa está no meio de uma ação (formulário aberto ou digitando), espera ela terminar.
+  function ocupado() {
+    var f = Object.keys(estado.aberto).some(function (id) { return estado.aberto[id] !== "historico"; });
+    var a = document.activeElement, dentro = a && a.closest && a.closest(".p-form");
+    return f || estado.digitando || !!dentro;
+  }
+  function recarregar(auto) {
+    if (estado.carregando) { if (!auto) estado.pendente = true; return Promise.resolve(); }
+    if (auto && ocupado()) { estado.adiada = true; return Promise.resolve(); }
+    estado.carregando = true; estado.adiada = false;
     return Promise.all([api("quem"), api("leads"), api("aprovacoes")]).then(function (r) {
       var quem = r[0], leads = r[1], ap = r[2];
-      if (!quem.ok) { erro(quem.erro === "link inválido ou vencido" ? "Este link não é válido ou foi renovado. Peça um link novo." : (quem.erro || "Não foi possível abrir o painel.")); return; }
-      estado.quem = quem; estado.leads = leads.leads || []; estado.aprovacoes = ap.itens || [];
+      if (!quem.ok) { if (quem._status === 401) restrito(); else if (!auto) erro(quem.erro || "Não foi possível abrir o painel."); return; }
+      var antes = {}; estado.leads.forEach(function (l) { antes[l.id] = true; });
+      var lista = leads.leads || [];
+      if (estado.quem) { lista.forEach(function (l) { if (!antes[l.id]) estado.novos[l.id] = true; }); }
+      estado.quem = quem; estado.leads = lista; estado.aprovacoes = ap.itens || [];
       el("p-nome").textContent = quem.nome; el("p-papel").textContent = quem.papel + " · " + (quem.escopo || "");
       el("p-placar-num").textContent = String(quem.placar.reservas_lote1 || 0); el("p-placar-lote").textContent = String(quem.placar.lote1_tamanho || 250);
-      erro(""); render(); renderAprovacoes();
-    }).catch(function () { erro("Sem conexão com o painel. Tente de novo."); });
+      estado.atualizadoEm = Date.now(); estado.digitando = false;
+      liberar(); erro(""); render(); renderAprovacoes(); mostrarAtualizado();
+      if (Object.keys(estado.novos).length) setTimeout(function () { estado.novos = {}; document.querySelectorAll(".p-card.p-novo").forEach(function (c) { c.classList.remove("p-novo"); }); }, 6500);
+    }).catch(function () { if (!auto) erro("Sem conexão com o painel. Tente de novo."); else mostrarAtualizado("sem conexão, tentando de novo"); })
+      .then(function () { estado.carregando = false; if (estado.pendente) { estado.pendente = false; return recarregar(); } });
   }
+  function mostrarAtualizado(extra) {
+    var e = el("p-atualizado"); if (!estado.atualizadoEm) { e.textContent = ""; return; }
+    var s = Math.max(0, Math.round((Date.now() - estado.atualizadoEm) / 1000));
+    e.textContent = "atualizado há " + (s < 60 ? s + " s" : Math.floor(s / 60) + " min") + (extra ? " · " + extra : estado.adiada ? " · atualiza quando você terminar" : "");
+  }
+  var relogio = null;
+  function ligarAutomatico() {
+    if (relogio) return;
+    relogio = setInterval(function () { mostrarAtualizado(); if (Date.now() - estado.atualizadoEm >= INTERVALO) recarregar(true); }, 1000);
+  }
+  function desligarAutomatico() { if (relogio) { clearInterval(relogio); relogio = null; } }
+  document.addEventListener("visibilitychange", function () {
+    if (document.visibilityState === "visible") { if (estado.quem) recarregar(true); ligarAutomatico(); } else desligarAutomatico();
+  });
+  document.addEventListener("input", function (ev) { if (ev.target.closest && ev.target.closest(".p-form")) estado.digitando = true; });
 
   // Ações
   document.addEventListener("click", function (ev) {
@@ -174,6 +213,6 @@
   });
   el("p-busca").addEventListener("input", function () { estado.busca = this.value; render(); });
 
-  if (!token) { erro("Abra o painel pelo seu link pessoal (enviado por e-mail)."); el("p-papel").textContent = "sem acesso"; }
-  else recarregar();
+  if (!token) restrito();
+  else recarregar().then(function () { if (document.visibilityState === "visible") ligarAutomatico(); });
 })();

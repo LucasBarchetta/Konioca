@@ -6,3 +6,6 @@
   Cache-Control: public, max-age=0, must-revalidate
 /assets/img/*
   Cache-Control: public, max-age=86400
+/painel/*
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-store
