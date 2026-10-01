@@ -20,7 +20,8 @@
   var TEMPS = [["quente", "Quente"], ["morno", "Morno"], ["frio", "Frio"]], ORDEM_TEMP = { quente: 0, morno: 1, frio: 2 };
   function rotuloTemp(t) { for (var i = 0; i < TEMPS.length; i++) if (TEMPS[i][0] === t) return TEMPS[i][1]; return "Frio"; }
   function filtrarTemp(leads, t) { if (!t || t === "todas") return leads; return leads.filter(function (l) { return (l.temperatura || "frio") === t; }); }
-  function ordenarTemp(leads) { return leads.slice().sort(function (a, b) { return (ORDEM_TEMP[a.temperatura || "frio"] - ORDEM_TEMP[b.temperatura || "frio"]) || String(b.criado_em || "").localeCompare(String(a.criado_em || "")); }); }
+  // Quentes primeiro; dentro do grupo, quem tem negócio; depois o mais novo (espelho de painel_regras.ts).
+  function ordenarTemp(leads) { return leads.slice().sort(function (a, b) { return (ORDEM_TEMP[a.temperatura || "frio"] - ORDEM_TEMP[b.temperatura || "frio"]) || (Number(b.tem_negocio === true) - Number(a.tem_negocio === true)) || String(b.criado_em || "").localeCompare(String(a.criado_em || "")); }); }
   function filtrarCanal(leads, canal) { if (!canal || canal === "todos") return leads; return leads.filter(function (l) { return (l.canal || "outros") === canal; }); }
   function canaisPresentes(leads) {
     var n = {}; leads.forEach(function (l) { var c = l.canal || "outros"; n[c] = (n[c] || 0) + 1; });

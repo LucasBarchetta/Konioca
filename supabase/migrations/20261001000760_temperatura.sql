@@ -1,9 +1,11 @@
--- Temperatura do lead (regra simples de 1/10; o agente de funil refina depois). Calculada na leitura, nunca gravada:
--- muda sozinha a cada atualização do painel e da planilha.
---   Quente: nos últimos 7 dias clicou para falar no WhatsApp do time, salvou a live na agenda, confirmou a Circular
---           ou foi marcado como "respondeu" pelo time; ou tem negócio e se cadastrou nos últimos 3 dias.
---   Morno:  cadastrou pela página ou clicou no e-mail, sem sinal quente nos últimos 7 dias.
---   Frio:   base antiga sem nenhum clique; cadastro sem interação há mais de 14 dias; quem pediu para sair.
+-- Temperatura do lead (regra simples de 1/10, ajustada antes de publicar; o agente de funil refina depois). Calculada na
+-- leitura, nunca gravada: muda sozinha a cada atualização do painel e da planilha.
+--   Quente: clicou para falar no WhatsApp do time, foi marcado como "respondeu" pelo time, confirmou a Circular,
+--           ou clicou num e-mail nosso depois do cadastro (sinal dentro dos últimos 14 dias).
+--   Morno:  cadastrou pela página há até 14 dias sem sinal quente (agenda salva não muda nada); ou contato da base
+--           antiga que clicou no e-mail.
+--   Frio:   base antiga sem clique; cadastro sem nenhuma ação há mais de 14 dias; quem pediu para sair.
+-- "Tem negócio" não muda a temperatura: só ordena dentro de cada grupo (no painel e na planilha).
 -- "Cadastro" da base antiga é a conversão pela LP (base_antiga_convertido_em), não a promoção do contato.
 create or replace function public.lead_temperatura(l public.leads)
 returns text language sql stable as $$
@@ -12,14 +14,15 @@ returns text language sql stable as $$
       (l.base_antiga is true and l.base_antiga_convertido_em is null and l.utm_campaign = 'base_antiga') as so_base,
       case when (l.base_antiga is true and l.base_antiga_convertido_em is null and l.utm_campaign = 'base_antiga') then null
            else coalesce(l.base_antiga_convertido_em, l.criado_em) end as cadastro_em,
-      (select max(e.criado_em) from public.lead_eventos e where e.lead_id = l.id and e.tipo in ('clicou_whatsapp_time', 'clicou_agenda', 'respondeu')) as sinal_quente_em,
+      (select max(e.criado_em) from public.lead_eventos e where e.lead_id = l.id and e.tipo in ('clicou_whatsapp_time', 'respondeu')) as sinal_em,
+      (select max(e.criado_em) from public.lead_eventos e where e.lead_id = l.id and e.tipo = 'email_clicado') as email_clicado_em,
       (select max(e.criado_em) from public.lead_eventos e where e.lead_id = l.id and (e.origem = 'lead' or e.tipo = 'respondeu')) as ult_evento_lead
   )
   select case
     when l.optout_em is not null then 'frio'
-    when greatest(s.sinal_quente_em, l.circular_confirmada_em) >= now() - interval '7 days' then 'quente'
-    when l.tem_negocio is true and s.cadastro_em >= now() - interval '3 days' then 'quente'
-    when s.so_base and s.ult_evento_lead is null and l.ultima_msg_lead_em is null then 'frio'
+    when greatest(s.sinal_em, l.circular_confirmada_em, case when not s.so_base then s.email_clicado_em end) >= now() - interval '14 days' then 'quente'
+    when s.so_base and s.email_clicado_em is not null then 'morno'
+    when s.so_base then 'frio'
     when greatest(s.cadastro_em, s.ult_evento_lead, l.ultima_msg_lead_em, l.circular_confirmada_em) < now() - interval '14 days' then 'frio'
     else 'morno' end
   from s

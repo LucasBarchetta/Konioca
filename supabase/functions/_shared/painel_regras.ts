@@ -95,8 +95,12 @@ export function filtrarTemperatura<T extends { temperatura?: string | null }>(le
   return leads.filter((l) => (l.temperatura ?? "frio") === temp);
 }
 
-export function ordenarPorTemperatura<T extends { temperatura?: string | null; criado_em?: string | null }>(leads: T[]): T[] {
-  return [...leads].sort((a, b) => (ORDEM_TEMP[a.temperatura ?? "frio"] ?? 2) - (ORDEM_TEMP[b.temperatura ?? "frio"] ?? 2) || String(b.criado_em ?? "").localeCompare(String(a.criado_em ?? "")));
+/** Quentes primeiro; dentro de cada grupo, quem tem negócio; depois o mais novo. */
+export function ordenarPorTemperatura<T extends { temperatura?: string | null; criado_em?: string | null; tem_negocio?: boolean | null }>(leads: T[]): T[] {
+  return [...leads].sort((a, b) =>
+    (ORDEM_TEMP[a.temperatura ?? "frio"] ?? 2) - (ORDEM_TEMP[b.temperatura ?? "frio"] ?? 2) ||
+    Number(b.tem_negocio === true) - Number(a.tem_negocio === true) ||
+    String(b.criado_em ?? "").localeCompare(String(a.criado_em ?? "")));
 }
 
 export function temperaturasPresentes(leads: { temperatura?: string | null }[]): { temp: string; rotulo: string; n: number }[] {

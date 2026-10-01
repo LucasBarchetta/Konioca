@@ -59,8 +59,9 @@ test("Etiqueta de canal: mesma gaveta da aba Desempenho, com o link específico 
 
 test("Temperatura: rótulo, filtro, contagem e ordem (quentes primeiro, depois o mais novo)", () => {
   assert.equal(rotuloTemperatura("quente"), "Quente"); assert.equal(rotuloTemperatura(null), "Frio");
-  const leads = [{ id: 1, temperatura: "frio", criado_em: "2026-10-01T10:00:00Z" }, { id: 2, temperatura: "quente", criado_em: "2026-09-30T10:00:00Z" }, { id: 3, temperatura: "morno", criado_em: "2026-10-01T12:00:00Z" }, { id: 4, temperatura: "quente", criado_em: "2026-10-01T11:00:00Z" }];
-  assert.deepEqual(ordenarPorTemperatura(leads).map((l) => l.id), [4, 2, 3, 1]);
+  const leads = [{ id: 1, temperatura: "frio", criado_em: "2026-10-01T10:00:00Z" }, { id: 2, temperatura: "quente", criado_em: "2026-09-30T10:00:00Z", tem_negocio: true }, { id: 3, temperatura: "morno", criado_em: "2026-10-01T12:00:00Z" }, { id: 4, temperatura: "quente", criado_em: "2026-10-01T11:00:00Z", tem_negocio: false }];
+  // Tem negócio só ordena dentro do grupo: o 2 (mais antigo, com negócio) vem antes do 4.
+  assert.deepEqual(ordenarPorTemperatura(leads).map((l) => l.id), [2, 4, 3, 1]);
   assert.equal(filtrarTemperatura(leads, "quente").length, 2); assert.equal(filtrarTemperatura(leads, "todas").length, 4);
   assert.deepEqual(temperaturasPresentes(leads).map((t) => t.temp + ":" + t.n), ["quente:2", "morno:1", "frio:1"]);
 });
