@@ -1,4 +1,9 @@
-# Aba "Números" do painel · plano (1/10, para o "sim" do Lucas antes de construir)
+# Aba "Números" do painel · plano e estado
+
+Decisões do Lucas em 1/10: taxa sobre visitantes novos, origem pelo primeiro toque como padrão, gaveta "Outros"
+visível, Cloudflare Web Analytics ligado como cruzamento. Publicado em 1/10: migração 720 (`visitas_dia`,
+`origem_numeros`, `visita_registrar`), function `visita` e o sinal em `comum.js` (`K.visita`, chamado por `lp.js` e
+`obrigado.js`). A aba no painel vem depois, com prévia antes.
 
 Entra depois da Fase A (5/10), sem concorrer com ela. Público: os três aprovadores, na mesma página `/painel/`,
 com o mesmo link assinado. Nada de ferramenta externa com conta e senha.
@@ -65,13 +70,14 @@ Ordem: migração e function `visita` primeiro (começam a contar desde o dia da
 visitas passadas), depois a aba. Antes da publicação: prévia da aba com dados reais de cadastros, e-mails e
 Circulares, e o beacon testado contra a prévia (bloqueado pelo domínio, como esperado).
 
-## Decisões para o Lucas
+## Cloudflare Web Analytics (cruzamento, depende do Lucas)
 
-1. Taxa de cadastro sobre visitantes novos (marca no localStorage, sem identificação) ou sobre visitas brutas.
-   Recomendação: visitantes novos, mostrando as visitas brutas ao lado.
-2. Origem pelo primeiro toque como padrão (fecha com os cadastros), com a coluna "link da visita" à parte.
-3. "Outros" como gaveta visível (posts, pago, indicação, base antiga) em vez de somar em alguma das cinco.
-4. Ligar Cloudflare Web Analytics no Pages como cruzamento (um clique no painel do Cloudflare, sem custo).
+1. dash.cloudflare.com, conta da Konioca, menu "Workers & Pages", projeto do site (prevenda.konioca.com).
+2. Aba "Metrics" do projeto. Em "Web Analytics", botão "Enable". O Pages injeta o script sozinho em todas as páginas;
+   nada muda no repositório.
+3. Para ver: menu "Analytics & Logs" > "Web Analytics" > o site. Começa a contar na hora; sem cookie.
+4. Conferir uma vez por semana a ordem de grandeza: visitas do Cloudflare x `visitas_dia`. Diferença de até 20% é
+   normal (bloqueadores de script, bots filtrados de jeitos diferentes). Diferença maior é sinal para investigar.
 
 ## Fora do escopo desta aba
 
