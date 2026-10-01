@@ -36,14 +36,14 @@ Na versão em HTML o link do perfil é o botão "Seguir o Instagram da Konioca".
 WhatsApp, modelo `konioca_lembrete_live` (Utility). Variáveis: {{1}} nome, {{2}} hora, {{3}} perfil do Instagram.
 
     Oi, {{1}}, a live da Konioca começa às {{2}}. É aberta, no Instagram da Konioca: {{3}}
-    Às 19h é só abrir o perfil da Konioca.
+    Na hora, é só abrir o perfil da Konioca.
 
 Variante com a pergunta selecionada, modelo `konioca_lembrete_live_pergunta`. Variáveis: {{1}} nome, {{2}} hora,
 {{3}} pergunta, {{4}} perfil.
 
     Oi, {{1}}, a live da Konioca começa às {{2}}. A Marcela separou a sua pergunta: {{3}}
     É aberta, no Instagram da Konioca: {{4}}
-    Às 19h é só abrir o perfil da Konioca.
+    Na hora, é só abrir o perfil da Konioca.
 
 ## Gravação (dia seguinte), para aprovar depois
 
