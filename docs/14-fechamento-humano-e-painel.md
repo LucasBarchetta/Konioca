@@ -112,3 +112,7 @@ celular espera a Cloudflare.
 ## Etiqueta de canal (1/10)
 
 Cada lead mostra, ao lado do nome, o canal de origem pelo primeiro toque, com a mesma regra da aba Desempenho (`origem_numeros` sobre os UTMs guardados no cadastro, coluna `canal` da view `v_painel_leads`): Stories, Bio do Instagram, Bio do TikTok, WhatsApp, E-mail base antiga P1/P2/P3-P4, Convite, Direto, Outros. Tocar na etiqueta mostra o link específico (`utm_content`, ex.: o roteiro de vídeo) e os UTMs crus. No topo da lista há um filtro por canal, com a contagem de cada um dentro do filtro atual. Migração `20261001000750_painel_canal.sql` (só leitura, aplicada junto com a publicação do painel).
+
+## Temperatura do lead (1/10)
+
+Regra simples no banco (`lead_temperatura`, migração 760), calculada na leitura e por isso recalculada a cada atualização do painel e da planilha. Quente: nos últimos 7 dias clicou para falar no WhatsApp do time, salvou a live na agenda, confirmou a Circular ou foi marcado como "respondeu" pelo time; ou tem negócio e se cadastrou nos últimos 3 dias. Morno: cadastrou pela página ou clicou no e-mail, sem sinal quente nos últimos 7 dias. Frio: base antiga sem nenhum clique, cadastro sem interação há mais de 14 dias, ou quem saiu. No painel: etiqueta ao lado do canal, filtro Quente/Morno/Frio, quentes primeiro na lista, e o botão "Respondeu" (evento `respondeu`, só registro, nada é enviado). Na aba Total da planilha: coluna "Temperatura". O agente de funil refina depois.

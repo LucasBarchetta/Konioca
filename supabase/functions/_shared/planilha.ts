@@ -4,10 +4,11 @@ import { formatarWhatsapp } from "./validacao.ts";
 export interface LeadPlanilha {
   criado_em: string; nome: string; whatsapp: string | null; email: string; cidade: string | null;
   tem_negocio: boolean | null; origem: string | null; utm_source: string | null; utm_medium: string | null;
-  bloqueado_em?: string | null;
+  bloqueado_em?: string | null; temperatura?: string | null;
 }
 
-export const CABECALHO = ["Data", "Nome", "WhatsApp", "E-mail", "Cidade", "Tem negócio", "Origem", "Canal (UTM)", "Contato"];
+export const CABECALHO = ["Data", "Nome", "WhatsApp", "E-mail", "Cidade", "Tem negócio", "Temperatura", "Origem", "Canal (UTM)", "Contato"];
+const TEMPERATURAS: Record<string, string> = { quente: "Quente", morno: "Morno", frio: "Frio" };
 
 const ORIGENS: Record<string, string> = {
   marcela_conteudo: "Conteúdo da Marcela", base_propria: "Base própria", trafego_pago: "Tráfego pago",
@@ -40,6 +41,7 @@ export function linhaPlanilha(l: LeadPlanilha): string[] {
     textoSeguro(l.email),
     textoSeguro(l.cidade),
     l.tem_negocio === true ? "Sim" : l.tem_negocio === false ? "Não" : "",
+    TEMPERATURAS[l.temperatura ?? ""] ?? "",
     ORIGENS[l.origem ?? ""] ?? textoSeguro(l.origem),
     canal,
     l.bloqueado_em ? "Não contatar: pediu para sair antes" : "",

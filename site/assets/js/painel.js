@@ -7,7 +7,7 @@
   try { if (token) sessionStorage.setItem("k_painel_t", token); else token = sessionStorage.getItem("k_painel_t") || ""; } catch (e) { /* sem storage */ }
   if (q.get("t")) { try { history.replaceState(null, "", location.pathname); } catch (e) { /* ok */ } }
 
-  var estado = { quem: null, leads: [], filtro: "todos", canal: "todos", busca: "", aba: "leads", aberto: {}, canalAberto: {}, aprovacoes: [], novos: {}, atualizadoEm: 0, digitando: false, carregando: false, adiada: false };
+  var estado = { quem: null, leads: [], filtro: "todos", canal: "todos", temp: "todas", busca: "", aba: "leads", aberto: {}, canalAberto: {}, aprovacoes: [], novos: {}, atualizadoEm: 0, digitando: false, carregando: false, adiada: false };
   // Etiqueta de canal (primeiro toque, mesma gaveta da aba Desempenho: v_painel_leads.canal). Espelho de painel_regras.ts.
   var CANAIS = [["stories", "Stories"], ["bio_instagram", "Bio do Instagram"], ["bio_tiktok", "Bio do TikTok"], ["whatsapp", "WhatsApp"], ["base_p1", "E-mail base antiga P1"], ["base_p2", "E-mail base antiga P2"], ["base_p34", "E-mail base antiga P3-P4"], ["base_email", "E-mail base antiga"], ["convite", "Convite"], ["direto", "Direto"], ["outros", "Outros"]];
   function rotuloCanal(c) { for (var i = 0; i < CANAIS.length; i++) if (CANAIS[i][0] === (c || "outros")) return CANAIS[i][1]; return "Outros"; }
@@ -16,6 +16,11 @@
     var link = String(l.utm_content || "").trim();
     return (link ? "Link: " + link : "Sem link específico") + (crus ? " · " + crus : " · sem UTM");
   }
+  // Temperatura (regra no banco: lead_temperatura, recalculada a cada atualização). Aqui só rótulo, filtro e ordem.
+  var TEMPS = [["quente", "Quente"], ["morno", "Morno"], ["frio", "Frio"]], ORDEM_TEMP = { quente: 0, morno: 1, frio: 2 };
+  function rotuloTemp(t) { for (var i = 0; i < TEMPS.length; i++) if (TEMPS[i][0] === t) return TEMPS[i][1]; return "Frio"; }
+  function filtrarTemp(leads, t) { if (!t || t === "todas") return leads; return leads.filter(function (l) { return (l.temperatura || "frio") === t; }); }
+  function ordenarTemp(leads) { return leads.slice().sort(function (a, b) { return (ORDEM_TEMP[a.temperatura || "frio"] - ORDEM_TEMP[b.temperatura || "frio"]) || String(b.criado_em || "").localeCompare(String(a.criado_em || "")); }); }
   function filtrarCanal(leads, canal) { if (!canal || canal === "todos") return leads; return leads.filter(function (l) { return (l.canal || "outros") === canal; }); }
   function canaisPresentes(leads) {
     var n = {}; leads.forEach(function (l) { var c = l.canal || "outros"; n[c] = (n[c] || 0) + 1; });
@@ -68,6 +73,7 @@
   function cartao(l) {
     var c = cobranca(l), tags = [];
     tags.push(tag(c.texto, c.tom));
+    if (l.respondeu_em) tags.push(tag("Respondeu " + ddmm(l.respondeu_em), "verde"));
     if (l.reservou_em) tags.push(tag("Reservou " + l.reservas_qtd + (l.reservas_qtd === 1 ? " máquina" : " máquinas") + " em " + ddmm(l.reservou_em), "ouro"));
     if (l.optout_em) tags.push(tag("Saiu" + (l.optout_motivo ? " (" + l.optout_motivo + ")" : ""), "vermelho"));
     if (l.contato_manual_em) tags.push(tag("Contatado à mão " + ddmm(l.contato_manual_em)));
@@ -86,13 +92,15 @@
       }
       else acoes += '<button type="button" class="discreto" data-acao="cancelar-form" data-id="' + l.id + '">Desfazer reserva</button>';
       if (!l.contato_manual_em) acoes += '<button type="button" data-acao="contato" data-id="' + l.id + '">Contatado à mão</button>';
+      acoes += '<button type="button" data-acao="respondeu" data-id="' + l.id + '">Respondeu</button>';
       acoes += '<button type="button" class="discreto" data-acao="email-form" data-id="' + l.id + '">Corrigir e-mail</button>';
     }
     acoes += '<button type="button" class="discreto" data-acao="historico" data-id="' + l.id + '">' + (estado.aberto[l.id] === "historico" ? "Fechar histórico" : "Histórico") + "</button>";
     var extra = estado.aberto[l.id] === "reservar" ? formReserva(l) : estado.aberto[l.id] === "cancelar" ? formCancelar(l) : estado.aberto[l.id] === "email" ? formEmail(l) : estado.aberto[l.id] === "historico" ? '<div class="p-hist" id="hist-' + l.id + '">carregando…</div>' : "";
     var canal = '<button type="button" class="p-canal" data-acao="canal" data-id="' + l.id + '" title="Toque para ver o link de origem">' + esc(rotuloCanal(l.canal)) + "</button>";
     var canalInfo = estado.canalAberto[l.id] ? '<div class="p-canal-info">' + esc(detalheCanal(l)) + "</div>" : "";
-    return '<article class="p-card' + (estado.novos[l.id] ? " p-novo" : "") + '" data-lead="' + l.id + '"><h3>' + esc(l.nome) + " " + canal + "</h3>" + canalInfo + "<div class=\"p-meta\">" + esc(meta) + '</div><div class="p-tags">' + tags.join("") + '</div><div class="p-acoes">' + acoes + "</div>" + extra + "</article>";
+    var temp = '<span class="p-temp ' + esc(l.temperatura || "frio") + '">' + esc(rotuloTemp(l.temperatura)) + "</span>";
+    return '<article class="p-card' + (estado.novos[l.id] ? " p-novo" : "") + '" data-lead="' + l.id + '"><h3>' + esc(l.nome) + " " + canal + temp + "</h3>" + canalInfo + "<div class=\"p-meta\">" + esc(meta) + '</div><div class="p-tags">' + tags.join("") + '</div><div class="p-acoes">' + acoes + "</div>" + extra + "</article>";
   }
   function formReserva(l) {
     var ops = ""; for (var i = 1; i <= 10; i++) ops += '<option value="' + i + '">' + i + (i === 1 ? " máquina" : " máquinas") + "</option>";
@@ -113,11 +121,19 @@
       return '<button type="button" data-canal="' + c.canal + '" class="' + (estado.canal === c.canal ? "ativa" : "") + '">' + esc(c.rotulo) + ' <span class="p-n">' + c.n + "</span></button>";
     }).join("");
   }
+  function renderTemps(base) {
+    var n = { quente: 0, morno: 0, frio: 0 }; base.forEach(function (l) { n[l.temperatura || "frio"]++; });
+    el("p-temps").innerHTML = '<button type="button" data-temp="todas" class="' + (estado.temp === "todas" ? "ativa" : "") + '">Todas</button>' + TEMPS.map(function (t) {
+      return '<button type="button" data-temp="' + t[0] + '" class="t-' + t[0] + (estado.temp === t[0] ? " ativa" : "") + '">' + t[1] + ' <span class="p-n">' + n[t[0]] + "</span></button>";
+    }).join("");
+  }
   function render() {
     var base = buscar(filtrar(estado.leads, estado.filtro), estado.busca);
     renderCanais(base);
-    var vis = filtrarCanal(base, estado.canal);
-    el("p-resumo").textContent = vis.length + (vis.length === 1 ? " lead" : " leads") + (estado.filtro !== "todos" || estado.canal !== "todos" ? " neste filtro" : "") + " · " + estado.leads.filter(function (l) { return !l.base_antiga; }).length + " cadastrados pela página";
+    var porCanal = filtrarCanal(base, estado.canal);
+    renderTemps(porCanal);
+    var vis = ordenarTemp(filtrarTemp(porCanal, estado.temp));
+    el("p-resumo").textContent = vis.length + (vis.length === 1 ? " lead" : " leads") + (estado.filtro !== "todos" || estado.canal !== "todos" || estado.temp !== "todas" ? " neste filtro" : "") + " · " + estado.leads.filter(function (l) { return !l.base_antiga; }).length + " cadastrados pela página";
     el("p-lista").innerHTML = vis.length ? vis.map(cartao).join("") : '<div class="p-vazio">Nada aqui com esse filtro.</div>';
     Object.keys(estado.aberto).forEach(function (id) { if (estado.aberto[id] === "historico") carregarHistorico(id); });
   }
@@ -203,6 +219,11 @@
     else if (acao === "fechar") { delete estado.aberto[id]; estado.digitando = false; render(); }
     else if (acao === "canal") { if (estado.canalAberto[id]) delete estado.canalAberto[id]; else estado.canalAberto[id] = true; render(); }
     else if (acao === "historico") { if (estado.aberto[id] === "historico") delete estado.aberto[id]; else estado.aberto[id] = "historico"; render(); }
+    else if (acao === "respondeu") {
+      if (!confirm("Marcar que esta pessoa respondeu à mão no WhatsApp? Conta como sinal de lead quente por 7 dias. Nada é enviado.")) return;
+      b.disabled = true;
+      api("respondeu", { lead_id: id }).then(function (j) { if (!j.ok) erro(j.erro || "erro"); return recarregar(); });
+    }
     else if (acao === "contato") {
       if (!confirm("Marcar como contatado à mão no WhatsApp? O convite automático por WhatsApp é cancelado e a pessoa entra no reaquecimento.")) return;
       b.disabled = true;
@@ -231,6 +252,10 @@
     estado.filtro = b.getAttribute("data-filtro");
     el("p-filtros").querySelectorAll("button").forEach(function (x) { x.classList.toggle("ativa", x === b); });
     render();
+  });
+  el("p-temps").addEventListener("click", function (ev) {
+    var b = ev.target.closest("button[data-temp]"); if (!b) return;
+    estado.temp = b.getAttribute("data-temp"); render();
   });
   el("p-canais").addEventListener("click", function (ev) {
     var b = ev.target.closest("button[data-canal]"); if (!b) return;

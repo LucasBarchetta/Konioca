@@ -100,6 +100,16 @@ Deno.serve(async (req) => {
     return json({ ok: true, convites_whatsapp_cancelados: data }, 200, cors);
   }
 
+  if (acao === "respondeu") {
+    // O time marca quem respondeu à mão no WhatsApp: sinal de lead quente por 7 dias (lead_temperatura). Só registro, nada é enviado.
+    const lead_id = String(b.lead_id ?? "");
+    const { data: existe } = await sb.from("leads").select("id").eq("id", lead_id).maybeSingle();
+    if (!existe) return json({ erro: "lead não encontrado" }, 404, cors);
+    const { error } = await registrar(lead_id, "respondeu", { canal: "whatsapp", observacao: String(b.observacao ?? "").slice(0, 300) || null });
+    if (error) return json({ erro: error.message }, 400, cors);
+    return json({ ok: true }, 200, cors);
+  }
+
   if (acao === "corrigir_email") {
     const lead_id = String(b.lead_id ?? "");
     const novo = String(b.email ?? "").trim().toLowerCase();

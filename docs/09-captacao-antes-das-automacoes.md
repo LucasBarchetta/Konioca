@@ -11,7 +11,7 @@ Decisão do Lucas: abrir a captação já, só para guardar a base. WhatsApp e e
 
 ## Planilha do time
 
-Function `leads-planilha` devolve CSV (Data, Nome, WhatsApp, E-mail, Cidade, Tem negócio, Origem, Canal UTM), mais novo primeiro, sem quem pediu para sair. Só cadastros pela página (decisão de 1/10): contato da base antiga entra quando se cadastrar pela LP. Protegida por chave: a config guarda só o SHA-256 (`planilha_token_hash`); a chave em si fica apenas na fórmula da planilha.
+Function `leads-planilha` devolve CSV (Data, Nome, WhatsApp, E-mail, Cidade, Tem negócio, Temperatura, Origem, Canal UTM, Contato) a partir da view `v_leads_planilha`, mais novo primeiro, sem quem pediu para sair. Só cadastros pela página (decisão de 1/10): contato da base antiga entra quando se cadastrar pela LP. Protegida por chave: a config guarda só o SHA-256 (`planilha_token_hash`); a chave em si fica apenas na fórmula da planilha.
 
 1. No Google Drive, criar uma planilha em branco (só o time com acesso; nunca "qualquer pessoa com o link").
 2. Na célula A1: `=IMPORTDATA("https://ytsildpxummevfkjcjhs.supabase.co/functions/v1/leads-planilha?k=<CHAVE>")`.

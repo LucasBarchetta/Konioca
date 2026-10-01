@@ -25,7 +25,13 @@ body.painel{display:block;margin:0;background:#19422d;font-family:Carlito,Calibr
 .p-canais{margin-top:-2px}
 .p-canais button{font-size:13px;padding:6px 10px;border-color:#e0cfa6;color:#5a6b3a}
 .p-canais button.ativa{background:#6b5312;border-color:#6b5312;color:#f7f0e2}
-.p-canais .p-n{opacity:.75;font-size:12px}
+.p-canais .p-n,.p-temps .p-n{opacity:.75;font-size:12px}
+.p-card h3 .p-temp{display:inline-block;vertical-align:middle;margin-left:6px;font-family:Carlito,Calibri,"Segoe UI",sans-serif;font-size:12px;font-weight:700;line-height:1;padding:4px 9px;border-radius:999px;white-space:nowrap}
+.p-temp.quente{background:#fbe3dc;color:#8a3a08}.p-temp.morno{background:#f5e9c2;color:#6b5312}.p-temp.frio{background:#ececec;color:#555}
+.p-temps{margin-top:-2px}
+.p-temps button{font-size:13px;padding:6px 10px;border-color:#e0cfa6;color:#5a6b3a}
+.p-temps button.ativa{background:#1f4a36;border-color:#1f4a36;color:#f7f0e2}
+.p-temps button.t-quente.ativa{background:#b04d0c;border-color:#b04d0c}
 .p-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
 .p-tag{font-size:12px;padding:3px 8px;border-radius:999px;background:#eee6d2;color:#1f4a36}
 .p-tag.verde{background:#dff0e3;color:#1f4a36;font-weight:700}
