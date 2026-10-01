@@ -2,7 +2,7 @@
 import { formatarWhatsapp } from "./validacao.ts";
 
 export interface LeadPlanilha {
-  criado_em: string; nome: string; whatsapp: string; email: string; cidade: string | null;
+  criado_em: string; nome: string; whatsapp: string | null; email: string; cidade: string | null;
   tem_negocio: boolean | null; origem: string | null; utm_source: string | null; utm_medium: string | null;
   bloqueado_em?: string | null;
 }

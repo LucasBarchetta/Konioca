@@ -1,22 +1,35 @@
 // POST /email-teste — (interno, chave de serviço) manda a prévia de um e-mail de lead só para um aprovador do painel,
 // pela exceção interna (tag "teste"), sem mexer em envios_ativos.
 // Corpo: { tipo?: "convite" | "base_antiga_email", para?: "<e-mail>", imagens_url?: "<base>", prioridade?: "P1", gancho?: "fev/26" }.
+// tipo "texto": { para, assunto, texto } manda um aviso interno em texto puro para um endereço de painel_aprovadores
+// (ex.: a fórmula nova da planilha, gerada no banco, que nunca passa pelo chat). Não grava em mensagens: o corpo pode ter segredo.
 // imagens_url troca a base das imagens só neste teste (prévia do Pages antes de mesclar em main).
 // Sem "para", vai para os aprovadores com papel "principal". Nunca manda para quem não está em painel_aprovadores.
 import { db, exigirServico } from "../_shared/db.ts";
 import { carregarConfig, type Config } from "../_shared/config.ts";
 import { json, lerJson } from "../_shared/http.ts";
-import { aprovadores } from "../_shared/aprovadores.ts";
+import { acharAprovador, aprovadores } from "../_shared/aprovadores.ts";
 import { montarEnvio, type LeadFila } from "../_shared/fila.ts";
 import { enviarEmail } from "../_shared/email.ts";
 
 Deno.serve(async (req) => {
   if (req.method !== "POST") return json({ erro: "método" }, 405);
   if (!(await exigirServico(req))) return json({ erro: "não autorizado" }, 401);
-  const b = (await lerJson<{ tipo?: string; para?: string; imagens_url?: string; prioridade?: string; gancho?: string }>(req)) ?? {};
+  const b = (await lerJson<{ tipo?: string; para?: string; imagens_url?: string; prioridade?: string; gancho?: string; assunto?: string; texto?: string }>(req)) ?? {};
   const tipo = b.tipo ?? "convite";
-  if (tipo !== "convite" && tipo !== "base_antiga_email") return json({ erro: "tipo não suportado: " + tipo }, 400);
+  if (tipo !== "convite" && tipo !== "base_antiga_email" && tipo !== "texto") return json({ erro: "tipo não suportado: " + tipo }, 400);
   const { todos } = await carregarConfig();
+  if (tipo === "texto") {
+    const para = String(b.para ?? "").trim().toLowerCase();
+    if (!para || !acharAprovador(todos, para)) return json({ erro: "destinatário fora da lista de aprovadores" }, 400);
+    const assunto = String(b.assunto ?? "").replace(/[\r\n]+/g, " ").trim().slice(0, 150);
+    const texto = String(b.texto ?? "").trim();
+    if (!assunto || !texto) return json({ erro: "assunto e texto obrigatórios" }, 400);
+    const esc = (x: string) => x.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c] as string));
+    const html = `<p style="font-family:Carlito,Calibri,sans-serif;font-size:16px;white-space:pre-wrap">${esc(texto)}</p>`;
+    const r = await enviarEmail(para, "[Konioca] " + assunto, texto, html, "teste");
+    return json({ ok: r.ok, tipo, motivo: r.motivo ?? null });
+  }
   if (b.imagens_url && /^https:\/\/[a-z0-9.-]+\.(konioca\.com|pages\.dev)(\/|$)/i.test(b.imagens_url)) todos["email_imagens_url"] = b.imagens_url;
   const lista = aprovadores(todos);
   const destinos = b.para ? lista.filter((a) => a.email.toLowerCase() === String(b.para).toLowerCase()) : lista.filter((a) => a.papel === "principal");

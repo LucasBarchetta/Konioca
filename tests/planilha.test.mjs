@@ -24,6 +24,12 @@ test("planilha: texto do lead nunca vira fórmula e aspas são escapadas", () =>
   assert.match(csv, /,"cmd""x""",/);
 });
 
+test("planilha: lead sem WhatsApp (base antiga só com e-mail) vira célula vazia, sem derrubar o CSV", () => {
+  // 1/10: dois leads da base antiga sem número derrubaram a function inteira (TypeError) e o IMPORTDATA parou.
+  const linha = csvPlanilha([{ ...L, whatsapp: null, origem: "base_propria", utm_source: "base", utm_medium: "email" }]).trim().split("\n")[1];
+  assert.equal(linha, "05/10/2026 10h07,Ana Souza,,ana@exemplo.com,\"Campinas, SP\",Sim,Base própria,base / email,");
+});
+
 test("planilha: comparação da chave pelo hash", async () => {
   const h = await sha256Hex("abc");
   assert.equal(h, "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad");

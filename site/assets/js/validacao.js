@@ -44,9 +44,12 @@ function normalizarWhatsapp(entrada        )                    {
   return { ok: true, e164: "+55" + d, ddd, nacional: d };
 }
 
-function formatarWhatsapp(e164        )         {
-  const d = e164.replace(/\D+/g, "").replace(/^55/, "");
-  if (d.length !== 11) return e164;
+/** "(11) 99000-0000". Sem número (lead da base antiga só com e-mail) devolve vazio em vez de quebrar. */
+function formatarWhatsapp(e164                           )         {
+  const bruto = String(e164 ?? "");
+  const d = bruto.replace(/\D+/g, "").replace(/^55/, "");
+  if (!d) return "";
+  if (d.length !== 11) return bruto;
   return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
 }
 
