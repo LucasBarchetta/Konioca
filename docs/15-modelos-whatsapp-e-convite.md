@@ -14,22 +14,40 @@ WhatsApp, modelo `konioca_convite_live_ig` (categoria Marketing, pt_BR). Variáv
 {{3}} dd/mm, {{4}} hora, {{5}} máquinas. Botão de URL fixa para o perfil do Instagram e botão de resposta "Sair".
 
     Oi, {{1}}, seu nome está na lista da pré-venda da nova Konioca.
-    A Marcela apresenta a nova geração ao vivo no Instagram da Konioca: {{2}}, {{3}}, às {{4}}. A pré-venda tem {{5}} máquinas.
+    A Marcela apresenta a nova geração ao vivo no Instagram da Konioca: {{2}}, {{3}}, às {{4}}. A live é aberta, mas só quem está na lista pode reservar uma das {{5}} máquinas.
     Siga o perfil e ative o lembrete. Uma hora antes a gente avisa por aqui. Você consegue estar lá?
     [Botão de URL: Seguir o Instagram]   [Resposta rápida: Sair]
 
-E-mail do convite (assunto: "Seu nome está na lista da pré-venda"):
+E-mail do convite (texto consolidado de 1/10). Assunto: "{Nome}, seu acesso à pré-venda está garantido!" (primeiro
+nome). Remetente na caixa de entrada: "Time da Konioca" (config.email_from; o endereço não muda). Pré-visualização:
+"A pré-venda das 250 máquinas é só para quem está na lista." A data e a hora vêm da config.
 
-    Ana, seu nome está na lista da pré-venda da nova Konioca.
-    A Marcela apresenta a nova geração ao vivo no Instagram da Konioca: quinta, 15/10, às 19h. A pré-venda tem 250 máquinas.
-    Siga o perfil e ative o lembrete: https://www.instagram.com/koniocaoficial/
-    Uma hora antes a gente avisa por aqui e no seu WhatsApp. Você consegue estar lá?
+    Ana, você está na lista da nova Konioca.
+    No dia 15/10, às 19h, a Marcela apresenta a nova geração ao vivo no Instagram. A live é aberta, e muita gente vai assistir. Mas só quem está na lista pode reservar uma das 250 máquinas da pré-venda.
+    Você já está dentro. Até a live, é por aqui que você vê primeiro os bastidores da nova máquina e as novidades da Marcela.
+    [Botão: Seguir o Instagram da Konioca]
+    Uma hora antes, a gente avisa por aqui e no seu WhatsApp. Você consegue estar lá?
 
     Time da Marcela
 
     Para não receber mais mensagens da pré-venda: {link de saída}
 
-Na versão em HTML o link do perfil é o botão "Seguir o Instagram da Konioca".
+Na versão em HTML o link do perfil é o botão "Seguir o Instagram da Konioca". Visual (1/10): faixa verde no topo
+com a logo centralizada (180 px), foto real da máquina atual, inteira, sem recorte, na largura toda (600 px, texto alternativo
+"Máquina Konioca", JPEG abaixo de 150 KB, do arquivo FOTO-HORIZONTAL-PREVIA do Drive), depois o texto. A mesma foto é
+a prévia do link (og:image, 1200x630, foto inteira centralizada sobre fundo desfocado). Sem emoji.
+As imagens ficam hospedadas em `site/assets/img/email/` (Cloudflare Pages), base em `config.email_imagens_url`.
+
+## Reaquecimento de quem foi contatado à mão no WhatsApp
+
+Quem o time já chamou à mão no WhatsApp (botão "contatado à mão" no painel, ou `lead_contato_manual`) não recebe o
+convite padrão por WhatsApp (item cancelado com motivo `contato_manual`). O e-mail de convite segue igual para todos.
+Quando o WhatsApp oficial ligar, essa pessoa recebe o modelo abaixo, uma vez. Se o modelo não estiver aprovado na Meta
+(`config.wa_tpl_reaquecimento_manual_aprovado = false`), o item fica parado na fila e nada sai sozinho.
+
+WhatsApp, modelo `konioca_reaquecimento_manual` (categoria Marketing, pt_BR). Variável única: {{1}} primeiro nome.
+
+    Oi, {{1}}, aqui é do time da Marcela, da Konioca. A gente ficou muito feliz com o seu interesse na nova máquina. Você foi uma das primeiras pessoas a entrar na lista. A Marcela vai mostrar a nova geração ao vivo no Instagram, com as condições da pré-venda das 250 unidades. Quer que a gente te avise uma hora antes?
 
 ## Lembrete de uma hora antes
 

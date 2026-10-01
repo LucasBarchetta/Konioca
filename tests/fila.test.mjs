@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { montarEnvio } from "../supabase/functions/_shared/fila.ts";
+import { conviteWhatsappVencido, emailImagens, montarEnvio } from "../supabase/functions/_shared/fila.ts";
 import { selecionarHeuristica } from "../supabase/functions/_shared/perguntas.ts";
 import { textoHaQuanto } from "../supabase/functions/_shared/datas.ts";
 
@@ -31,7 +31,32 @@ test("Convite por e-mail: Instagram da Konioca, termina em 'Você consegue estar
   assert.match(e.texto, /Você consegue estar lá\?/);
   assert.match(e.texto, /optout\?t=tok/);
   assert.ok(!/escolhid/i.test(e.texto + e.html), "nada de exclusividade falsa");
-  assert.ok(!/reserv|pague|pagamento/i.test(e.texto), "convite não fala em reservar ou pagar na noite da live");
+  assert.equal(e.assunto, "Ana, seu acesso à pré-venda está garantido!");
+  assert.match(e.texto, /^Ana, você está na lista da nova Konioca\./);
+  assert.match(e.texto, /No dia 15\/10, às 19h, a Marcela/);
+  assert.match(e.texto, /só quem está na lista pode reservar uma das 250 máquinas/);
+  assert.match(e.html, /A pré-venda das 250 máquinas é só para quem está na lista\./, "texto de pré-visualização");
+  assert.ok(!/pague|pagamento|pix|boleto/i.test(e.texto), "convite não fala em pagar");
+});
+
+test("Convite por e-mail: logo no topo, foto da máquina hospedada com texto alternativo, sem emoji", () => {
+  const e = montarEnvio("convite", "email", LEAD, CFG, API);
+  assert.match(e.html, /<img src="https:\/\/prevenda\.konioca\.com\/assets\/img\/email\/logo-360\.png" width="180" alt="Konioca"/);
+  assert.match(e.html, /<img src="https:\/\/prevenda\.konioca\.com\/assets\/img\/email\/maquina-600\.jpg" width="600" alt="Máquina Konioca"/);
+  assert.ok(e.html.indexOf("logo-360.png") < e.html.indexOf("maquina-600.jpg"), "logo acima da foto");
+  assert.ok(!/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u.test(e.html + e.texto), "sem emoji");
+  const outra = emailImagens({ email_imagens_url: "https://claude-x.konioca.pages.dev/assets/img/email/" });
+  assert.equal(outra.maquina, "https://claude-x.konioca.pages.dev/assets/img/email/maquina-600.jpg");
+});
+
+test("Reaquecimento de quem foi contatado à mão: só WhatsApp, só com o nome, e só com o modelo aprovado", () => {
+  const cfg = { ...CFG, wa_tpl_reaquecimento_manual: "konioca_reaquecimento_manual" };
+  assert.equal(montarEnvio("reaquecimento_manual", "whatsapp", LEAD, cfg, API).canal, "nenhum", "sem aprovação da Meta nada sai");
+  assert.equal(montarEnvio("reaquecimento_manual", "email", LEAD, { ...cfg, wa_tpl_reaquecimento_manual_aprovado: true }, API).canal, "nenhum");
+  const e = montarEnvio("reaquecimento_manual", "whatsapp", LEAD, { ...cfg, wa_tpl_reaquecimento_manual_aprovado: true }, API);
+  assert.equal(e.canal, "whatsapp");
+  assert.equal(e.nome, "konioca_reaquecimento_manual");
+  assert.deepEqual(e.params, ["Ana"]);
 });
 
 test("Convite e lembrete param com o Instagram entre colchetes", () => {
@@ -95,4 +120,13 @@ test("Base antiga: gancho personaliza e leva à LP, sem oferta de preço", async
   const w = montarEnvio("base_antiga", "whatsapp", lead, CFG, API);
   assert.equal(w.nome, "konioca_base_antiga");
   assert.equal(w.params.length, 5);
+});
+
+test("Convite por WhatsApp vence em convite_whatsapp_ate só se o WhatsApp oficial não estiver ativo", () => {
+  const cfg = { convite_whatsapp_ate: "2026-10-12T23:59:59-03:00" };
+  assert.equal(conviteWhatsappVencido(cfg, false, new Date("2026-10-12T20:00:00-03:00")), false, "antes da data: espera");
+  assert.equal(conviteWhatsappVencido(cfg, false, new Date("2026-10-13T00:00:01-03:00")), true, "depois da data, sem WhatsApp: cancela");
+  assert.equal(conviteWhatsappVencido(cfg, true, new Date("2026-10-20T00:00:00-03:00")), false, "WhatsApp ativo: nunca cancela");
+  assert.equal(conviteWhatsappVencido({}, false, new Date("2026-12-01T00:00:00-03:00")), false, "sem data na config: nunca cancela");
+  assert.equal(conviteWhatsappVencido({ convite_whatsapp_ate: "[DATA]" }, false, new Date("2026-12-01T00:00:00-03:00")), false);
 });

@@ -1,7 +1,7 @@
 // Aprovadores do painel: quem recebe aviso de "conteúdo esperando aprovação" e por qual canal.
 // Fonte única: config.painel_aprovadores (lista JSON, privada). Nada de nome, e-mail ou telefone no código.
 // Exceção da chave envios_ativos: com a chave em false, os únicos e-mails que ainda saem são os avisos internos
-// (tags em TAGS_INTERNAS: painel de aprovação e Monitor técnico) para um endereço que esteja nesta lista.
+// (tags em TAGS_INTERNAS: painel de aprovação, Monitor técnico e prévia de teste) para um endereço que esteja nesta lista.
 // Lead, base antiga e alerta de conversa continuam bloqueados.
 // Puro (sem banco): usado pelas functions e pelos testes no Node.
 import type { Config } from "./cfg.ts";
@@ -15,7 +15,7 @@ export interface Aprovador {
 }
 
 /** Tags de e-mail que a exceção aceita. Qualquer outra tag obedece a envios_ativos sem exceção. */
-export const TAGS_INTERNAS = ["painel", "monitor"] as const;
+export const TAGS_INTERNAS = ["painel", "monitor", "teste"] as const; // teste: prévia de um e-mail de lead, só para aprovador
 export const TAG_PAINEL = "painel";
 
 export function aprovadores(cfg: Config): Aprovador[] {
