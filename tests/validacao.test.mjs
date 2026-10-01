@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { normalizarWhatsapp, validarEmail, validarNome, classificarOrigem, percentualDesconto, formatarWhatsapp } from "../supabase/functions/_shared/validacao.ts";
+import { normalizarWhatsapp, validarEmail, validarNome, classificarOrigem, percentualDesconto, formatarWhatsapp, sugerirEmail } from "../supabase/functions/_shared/validacao.ts";
 
 test("WhatsApp: máscara, +55, zero de operadora e sem o 9", () => {
   assert.deepEqual(normalizarWhatsapp("(11) 99000-0000").ok, true);
@@ -55,4 +55,20 @@ test("Desconto sempre arredondado para baixo", () => {
   assert.equal(percentualDesconto(100, 1), 99);
   assert.equal(percentualDesconto(100, 100), 0);
   assert.equal(percentualDesconto(0, 10), 0);
+});
+
+test("Sugestão de e-mail: erro de digitação comum vira 'Você quis dizer…?'; domínio certo não gera sugestão", () => {
+  assert.equal(sugerirEmail("ericagb12@hotmail.co"), "ericagb12@hotmail.com");
+  assert.equal(sugerirEmail("Ana@GMAIL.CON "), "ana@gmail.com");
+  assert.equal(sugerirEmail("ana@gmai.com"), "ana@gmail.com");
+  assert.equal(sugerirEmail("ana@hotmal.com"), "ana@hotmail.com");
+  assert.equal(sugerirEmail("ana@uol.com"), "ana@uol.com.br");
+  assert.equal(sugerirEmail("ana@empresa.con.br"), "ana@empresa.com.br");
+  assert.equal(sugerirEmail("ana@empresa.cmo"), "ana@empresa.com");
+  assert.equal(sugerirEmail("ana@gmail.com"), null);
+  assert.equal(sugerirEmail("ana@hotmail.com.br"), null);
+  assert.equal(sugerirEmail("ana@empresa.com.br"), null);
+  assert.equal(sugerirEmail("ana@dompa.com.br"), null);
+  assert.equal(sugerirEmail("semarroba"), null);
+  assert.equal(sugerirEmail("ana@"), null);
 });

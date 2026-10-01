@@ -82,6 +82,30 @@
   }
   function erroGeral(msg) { if (!erroBox) return; if (msg) { erroBox.textContent = msg; erroBox.classList.remove("oculto"); } else erroBox.classList.add("oculto"); }
 
+  // ---- "Você quis dizer…?": domínio de e-mail com erro de digitação comum (hotmail.co, gmail.con, gmai.com…).
+  // Só sugere; a pessoa decide com um toque. Nada é corrigido sozinho, e o envio espera a decisão.
+  var emailInput = document.getElementById("f-email"), sugestaoBox = document.getElementById("f-email-sugestao");
+  var sugestao = { valor: "", manter: "" }; // manter: valor que a pessoa mandou deixar como está
+  function emailAtual() { return emailInput ? emailInput.value.trim().toLowerCase() : ""; }
+  function sugerirEmail() {
+    if (!emailInput || !sugestaoBox || !V.sugerirEmail) return null;
+    var atual = emailAtual(), s = atual ? V.sugerirEmail(atual) : null;
+    if (!s || sugestao.manter === atual) { sugestaoBox.classList.add("oculto"); sugestaoBox.innerHTML = ""; sugestao.valor = ""; return null; }
+    if (sugestao.valor !== s) {
+      sugestao.valor = s; sugestaoBox.innerHTML = "";
+      var txt = document.createElement("span"); txt.textContent = "Você quis dizer ";
+      var usar = document.createElement("button"); usar.type = "button"; usar.className = "sugestao-usar"; usar.textContent = s;
+      var fim = document.createElement("span"); fim.textContent = "? ";
+      var manter = document.createElement("button"); manter.type = "button"; manter.className = "sugestao-manter"; manter.textContent = "Não, manter como digitei";
+      usar.addEventListener("click", function () { emailInput.value = sugestao.valor; marcar("f-email", ""); sugerirEmail(); emailInput.focus(); });
+      manter.addEventListener("click", function () { sugestao.manter = emailAtual(); sugerirEmail(); });
+      sugestaoBox.appendChild(txt); sugestaoBox.appendChild(usar); sugestaoBox.appendChild(fim); sugestaoBox.appendChild(manter);
+    }
+    sugestaoBox.classList.remove("oculto");
+    return s;
+  }
+  if (emailInput) { emailInput.addEventListener("blur", sugerirEmail); emailInput.addEventListener("input", function () { if (sugestao.valor) sugerirEmail(); }); }
+
   if (form) form.addEventListener("submit", function (ev) {
     ev.preventDefault();
     erroGeral("");
@@ -90,6 +114,7 @@
     marcar("f-nome", nome.ok ? "" : nome.motivo); marcar("f-whats", w.ok ? "" : w.motivo); marcar("f-email", em.ok ? "" : em.motivo);
     if (!consent) erroGeral("Marque o aceite para receber o link da live.");
     if (!nome.ok || !w.ok || !em.ok || !consent) { var primeiro = form.querySelector(".campo-erro"); if (primeiro) primeiro.focus(); return; }
+    if (sugerirEmail()) { erroGeral("Confira o e-mail: toque na correção sugerida ou em \"manter como digitei\"."); emailInput.focus(); return; }
     if (turnstile.ativo && !turnstile.token && turnstile.estado === "aguardando") { erroGeral("Aguarde a verificação de segurança terminar e tente de novo."); return; }
 
     var r = K.rastreio(), consentTexto = form.querySelector("label span") ? form.querySelector("label span").textContent.replace(/\s+/g, " ").trim() : "";

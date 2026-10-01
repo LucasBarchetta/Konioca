@@ -8,6 +8,10 @@ html:not(.pronto) [data-t],html:not(.pronto) [data-tpl]{visibility:hidden}
 input:focus,button:focus-visible,a:focus-visible{outline:2px solid #c9a227;outline-offset:2px}
 .campo-erro{border-color:#b04d0c !important;background:#fbeee6 !important}
 .msg-erro{font-size:14px;line-height:1.4;color:#b04d0c}
+.msg-sugestao{font-size:15px;line-height:1.5;color:#1f4a36;padding:8px 10px;border:1px solid #c9a227;border-radius:7px;background:#fbf4e2}
+.msg-sugestao button{border:0;background:none;padding:0;font:inherit;cursor:pointer;text-decoration:underline}
+.sugestao-usar{color:#b04d0c;font-weight:700}
+.sugestao-manter{color:#5a6b3a}
 .form-erro{padding:12px 14px;border:1px solid #b04d0c;border-radius:7px;background:#fbeee6;color:#8a3a08;font-size:15px;line-height:1.45}
 button.cta{border:0;cursor:pointer;font-family:Carlito,Calibri,sans-serif;width:100%}
 button.cta[disabled]{opacity:.7;cursor:progress}
