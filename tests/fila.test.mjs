@@ -31,7 +31,12 @@ test("Convite por e-mail: Instagram da Konioca, termina em 'Você consegue estar
   assert.match(e.texto, /Você consegue estar lá\?/);
   assert.match(e.texto, /optout\?t=tok/);
   assert.ok(!/escolhid/i.test(e.texto + e.html), "nada de exclusividade falsa");
-  assert.ok(!/reserv|pague|pagamento/i.test(e.texto), "convite não fala em reservar ou pagar na noite da live");
+  assert.equal(e.assunto, "Você está na lista da nova Konioca");
+  assert.match(e.texto, /^Ana, você está na lista da nova Konioca\./);
+  assert.match(e.texto, /No dia 15\/10, às 19h, a Marcela/);
+  assert.match(e.texto, /só quem está na lista pode reservar uma das 250 máquinas/);
+  assert.match(e.html, /A pré-venda das 250 máquinas é só para quem está na lista\./, "texto de pré-visualização");
+  assert.ok(!/pague|pagamento|pix|boleto/i.test(e.texto), "convite não fala em pagar");
 });
 
 test("Convite por e-mail: logo no topo, foto da máquina hospedada com texto alternativo, sem emoji", () => {

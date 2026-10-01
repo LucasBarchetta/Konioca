@@ -59,31 +59,34 @@ export function montarEnvio(tipo: string, canal: string, lead: LeadFila, cfg: Co
     if (pendente(instagram) || !instagram) return { canal: "nenhum", motivo: "instagram_url pendente" };
     if (canal === "email") {
       const lp = cfgText(cfg, "lp_url");
-      const texto = [
-        `${nome}, seu nome está na lista da pré-venda da nova Konioca.`,
-        `A Marcela apresenta a nova geração ao vivo no Instagram da Konioca: ${live.diaSemana}, ${live.ddmm}, às ${live.hora}. A pré-venda tem ${lote1} máquinas.`,
-        `Siga o perfil e ative o lembrete: ${instagram}`,
-        `Uma hora antes a gente avisa por aqui e no seu WhatsApp. Você consegue estar lá?`, ``, assinatura, ``,
-        `Para não receber mais mensagens da pré-venda: ${apiUrl}/optout?t=${encodeURIComponent(lead.token)}`,
-      ].join("\n");
+      // Texto aprovado em 1/10 (consolidado). A data e a hora vêm da config (live_data / turma), nunca fixas.
+      const previa = `A pré-venda das ${lote1} máquinas é só para quem está na lista.`;
+      const p1 = `${nome}, você está na lista da nova Konioca.`;
+      const p2 = `No dia ${live.ddmm}, às ${live.hora}, a Marcela apresenta a nova geração ao vivo no Instagram. A live é aberta, e muita gente vai assistir. Mas só quem está na lista pode reservar uma das ${lote1} máquinas da pré-venda.`;
+      const p3 = `Você já está dentro. Até a live, é por aqui que você vê primeiro os bastidores da nova máquina e as novidades da Marcela.`;
+      const p4 = `Uma hora antes, a gente avisa por aqui e no seu WhatsApp. Você consegue estar lá?`;
+      const texto = [p1, p2, p3, `Seguir o Instagram da Konioca: ${instagram}`, p4, ``, assinatura, ``,
+        `Para não receber mais mensagens da pré-venda: ${apiUrl}/optout?t=${encodeURIComponent(lead.token)}`].join("\n");
       const img = emailImagens(cfg);
       // Visual aprovado em 1/10: faixa verde com a logo centralizada, foto real da máquina na largura toda (600 px,
       // hospedada, não anexo), texto em seguida. Sem emoji. Tabelas e estilos inline por causa do Gmail e do Outlook.
-      const html = `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Seu nome está na lista da pré-venda</title></head>
+      const html = `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Você está na lista da nova Konioca</title></head>
 <body style="margin:0;padding:0;background:#f4ebdb;font-family:Carlito,Calibri,'Segoe UI',sans-serif;color:#1f4a36">
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:#f4ebdb;font-size:1px;line-height:1px">${esc(previa)}&#8204;&nbsp;&#8204;&nbsp;&#8204;&nbsp;&#8204;&nbsp;&#8204;&nbsp;&#8204;&nbsp;&#8204;&nbsp;&#8204;&nbsp;&#8204;&nbsp;&#8204;&nbsp;&#8204;&nbsp;&#8204;&nbsp;</div>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f4ebdb"><tr><td align="center" style="padding:24px 12px">
 <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;background:#ffffff;border-radius:10px;overflow:hidden">
 <tr><td align="center" style="background:#1f4a36;padding:22px 24px"><img src="${esc(img.logo)}" width="180" alt="Konioca" style="display:block;width:180px;height:auto;border:0"></td></tr>
 <tr><td style="padding:0;line-height:0"><img src="${esc(img.maquina)}" width="600" alt="Nova máquina Konioca" style="display:block;width:100%;max-width:600px;height:auto;border:0"></td></tr>
 <tr><td style="padding:28px 24px 32px">
-<p style="margin:0 0 14px;font-size:17px;line-height:1.6">${esc(nome)}, seu nome está na lista da pré-venda da nova Konioca.</p>
-<p style="margin:0 0 20px;font-size:17px;line-height:1.6">A Marcela apresenta a nova geração ao vivo no Instagram da Konioca: ${live.diaSemana}, ${live.ddmm}, às ${live.hora}. A pré-venda tem ${lote1} máquinas.</p>
+<p style="margin:0 0 14px;font-size:17px;line-height:1.6">${esc(p1)}</p>
+<p style="margin:0 0 14px;font-size:17px;line-height:1.6">${esc(p2)}</p>
+<p style="margin:0 0 20px;font-size:17px;line-height:1.6">${esc(p3)}</p>
 <a href="${esc(instagram)}" style="display:block;text-align:center;padding:16px;background:#b04d0c;color:#f7f0e2;font-size:18px;font-weight:700;text-decoration:none;border-radius:7px">Seguir o Instagram da Konioca</a>
-<p style="margin:20px 0 0;font-size:17px;line-height:1.6">Ative o lembrete no perfil. Uma hora antes a gente avisa por aqui e no seu WhatsApp. Você consegue estar lá?</p>
+<p style="margin:20px 0 0;font-size:17px;line-height:1.6">${esc(p4)}</p>
 <p style="margin:24px 0 0;font-family:Caladea,Cambria,Georgia,serif;font-style:italic;font-size:18px;color:#5a6b3a">${esc(assinatura)}</p>
 <p style="margin:32px 0 0;font-size:12px;line-height:1.6;color:#5a6b3a"><a href="${esc(lp)}" style="color:#5a6b3a">${esc(lp)}</a> · <a href="${esc(apiUrl)}/optout?t=${encodeURIComponent(lead.token)}" style="color:#5a6b3a">Não quero mais receber</a></p>
 </td></tr></table></td></tr></table></body></html>`;
-      return { canal: "email", assunto: "Seu nome está na lista da pré-venda", texto, html };
+      return { canal: "email", assunto: "Você está na lista da nova Konioca", texto, html };
     }
     // Template konioca_convite_live_ig: {{1}} nome, {{2}} dia, {{3}} dd/mm, {{4}} hora, {{5}} máquinas; botão de URL fixa para o Instagram.
     return { canal: "whatsapp", modo: "template", nome: cfgText(cfg, "wa_tpl_convite"), params: [nome, live.diaSemana, live.ddmm, live.hora, lote1] };
