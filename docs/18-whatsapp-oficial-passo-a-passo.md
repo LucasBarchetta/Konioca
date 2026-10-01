@@ -70,16 +70,18 @@ Limites da coexistência que valem para qualquer parceiro (documentação da Met
 Papéis: Lucas contrata e paga; Marcela é a administradora do Business Manager e fica com o celular do (11) 91945-1047
 (só ela faz os passos com o celular); Matheus faz o resto. Nenhuma chave passa pelo chat deste projeto.
 
-### 3.1 Lucas: criar a conta na 360dialog e pagar
+Decisão de 1/10: a contratação fica em espera até segunda, 5/10. O Lucas decide pelos números do P1 e do P2: com a
+lista acima de uns 100 cadastros, contrata. Se vier o OK, a ordem é: 3.2 e 3.1 no mesmo dia; 3.3 no dia seguinte;
+os modelos (3.4) passam pela revisão do Lucas antes de irem para a Meta.
 
-1. Abrir hub.360dialog.com e clicar em "Sign up" (criar conta). Usar um e-mail da empresa que o Lucas controle
-   (sugestão: controladoria@konioca.com com o Matheus copiado, ou o seu). Confirmar o e-mail.
+### 3.1 Matheus: criar a conta na 360dialog (o pagamento é do Lucas)
+
+1. Abrir hub.360dialog.com e clicar em "Sign up" (criar conta) com controladoria@konioca.com. Confirmar o e-mail.
 2. Na primeira tela do Hub, escolher o produto "WhatsApp Business API" e o plano "Regular" (€ 49 por número por
    mês, cobrança mensal, sem prazo mínimo). Dados da empresa: KONIOCA FRANQUIAS E EQUIPAMENTOS LTDA, CNPJ, endereço.
-3. Cadastrar o cartão e confirmar. A cobrança é por número ativo, mês a mês; cancelar é no próprio Hub (vale até o
-   fim do mês corrente).
-4. Convidar o Matheus para o Hub (Configurações > Usuários > convidar, perfil de administrador) e avisar a Marcela
-   de que o próximo passo precisa do celular dela.
+3. Pagamento: o Matheus para na tela do cartão e chama o Lucas, que preenche o cartão e confirma. A cobrança é por
+   número ativo, mês a mês; cancelar é no próprio Hub (vale até o fim do mês corrente).
+4. Avisar a Marcela de que o passo 3.3 precisa do celular dela.
 
 ### 3.2 Marcela: dar ao Matheus acesso de administrador no Business Manager (uma vez)
 
@@ -102,24 +104,27 @@ Papéis: Lucas contrata e paga; Marcela é a administradora do Business Manager 
    envio do histórico (últimos 6 meses). Não desinstalar o app depois: ele precisa ser aberto a cada 13 dias.
 4. Em até 24 h o número aparece como ativo no Hub. O app continua funcionando normal no celular.
 
-### 3.4 Matheus: chave, IDs e modelos (sem o celular)
+### 3.4 Matheus: chave, IDs e modelos (sem o celular); Lucas salva os segredos
 
-1. No Hub > o número > "Chave de API" > gerar. Copiar na hora; ela não aparece de novo. Salvar direto no Supabase
-   (ou mandar ao Lucas por canal seguro), com estes nomes exatos nos segredos das functions:
+O Matheus não tem acesso ao Supabase. Ele gera a chave no site da 360dialog e cola no documento de entregas (o
+canal seguro combinado com o Lucas); quem salva no Supabase é o Lucas. Nada de chave por e-mail aberto ou pelo chat.
+
+1. No Hub > o número > "Chave de API" > gerar. Copiar na hora; ela não aparece de novo. Colar no documento de
+   entregas, junto com o ID do número mostrado no Hub. O Lucas salva nos segredos das functions com estes nomes:
 
    | Segredo | Valor |
    |---|---|
    | `WHATSAPP_PROVEDOR` | `360dialog` |
    | `WHATSAPP_TOKEN` | a chave gerada no Hub (D360-API-KEY) |
-   | `WHATSAPP_WEBHOOK_SEGREDO` | uma frase aleatória longa (32 caracteres ou mais), inventada na hora; protege o nosso webhook |
+   | `WHATSAPP_WEBHOOK_SEGREDO` | frase aleatória gerada pelo Lucas no Terminal do Mac com `openssl rand -hex 24` (48 caracteres); protege o nosso webhook |
    | `WHATSAPP_PHONE_NUMBER_ID` | o ID do número mostrado no Hub (informativo; a 360dialog identifica o número pela chave) |
 
    `WHATSAPP_APP_SECRET` e `WHATSAPP_VERIFY_TOKEN` são só do caminho direto na Meta; ficam vazios.
-2. Avisar o Lucas que os segredos estão salvos. Do nosso lado, a function `whatsapp-config` confere o estado (sem
-   mostrar valores) e registra o webhook na 360dialog com o segredo na URL. A partir daí a fila passa a enviar; a base
+2. Com os segredos salvos pelo Lucas, a function `whatsapp-config` confere o estado (sem mostrar valores) e
+   registra o webhook na 360dialog com o segredo na URL. A partir daí a fila passa a enviar; a base
    antiga continua travada por `base_antiga_whatsapp_ativo` até o Lucas liberar.
-3. Modelos de mensagem. No Hub da 360dialog > Modelos (ou no WhatsApp Manager da Meta, para a mesma conta) >
-   "Criar modelo". Um por vez, categoria, idioma Português (BR), nome exatamente como na config, corpo com as
+3. Modelos de mensagem, só depois da revisão do Lucas (ele confere os textos de docs/15 antes de qualquer envio à
+   Meta). No Hub da 360dialog > Modelos (ou no WhatsApp Manager da Meta, para a mesma conta) > "Criar modelo". Um por vez, categoria, idioma Português (BR), nome exatamente como na config, corpo com as
    variáveis na ordem, botões. Textos em docs/15. Resposta da Meta de minutos a 24 h.
 
    | Nome na config | Categoria | Variáveis | Botões |
@@ -138,10 +143,10 @@ Papéis: Lucas contrata e paga; Marcela é a administradora do Business Manager 
 4. Depois da aprovação, avisar o Lucas com o nome de cada modelo aprovado. `wa_tpl_*` já apontam para esses nomes;
    `wa_tpl_reaquecimento_manual_aprovado` vira true só com o modelo aprovado.
 
-Ordem e prazo (meta: funcionando antes de 12/10): 3.1 e 3.2 no mesmo dia; 3.3 no dia seguinte; 3.4 logo depois,
-com os modelos enviados no mesmo dia para caber a aprovação da Meta.
+Ordem e prazo (meta: funcionando antes de 12/10): com o OK do Lucas na segunda, 3.2 e 3.1 no mesmo dia; 3.3 no dia
+seguinte; 3.4 logo depois, com os modelos revisados pelo Lucas e enviados no mesmo dia para caber a aprovação da Meta.
 
-### Do nosso lado (feito em 1/10 no branch, aguardando o SIM do Lucas para publicar)
+### Do nosso lado (publicado em 1/10; inativo até o segredo WHATSAPP_PROVEDOR existir)
 
 `_shared/whatsapp_regras.ts` (puro, testado) e `_shared/whatsapp.ts`: chave `WHATSAPP_PROVEDOR` escolhe Meta direto ou
 360dialog; muda só o endereço (`waba-v2.360dialog.io/messages`) e o cabeçalho (`D360-API-KEY`); o corpo das mensagens
