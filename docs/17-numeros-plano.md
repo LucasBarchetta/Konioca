@@ -58,3 +58,7 @@ Hoje, últimos 7 dias, desde o início. Dia em America/Sao_Paulo.
 3. Para ver: menu "Analytics & Logs" > "Web Analytics" > o site. Começa a contar na hora; sem cookie.
 4. Conferir uma vez por semana a ordem de grandeza: visitas do Cloudflare x `visitas_dia`. Diferença de até 20% é
    normal (bloqueadores de script, bots filtrados de jeitos diferentes). Diferença maior é sinal para investigar.
+
+## Correção de 1/10 à noite: utm_content no contador
+
+A function `visita` passava só utm_source, utm_medium e referrer, e os cliques dos e-mails da base antiga caíam todos em "base_email" (o clique do P1 de 1/10 está nessa gaveta). Migração 780: `visita_registrar` recebe o utm_content do primeiro toque e do link da visita; gavetas base_p1, base_p2, base_p2_a, base_p2_b (teste A/B do P2) e base_p34. O painel mostra "E-mail base antiga P2 (A)" e "(B)".
