@@ -23,6 +23,18 @@ export function turmaDoLead(cfg: Config, lead: LeadFila): Turma | null {
 
 function esc(s: string): string { return s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c] as string)); }
 
+/**
+ * Convite da live por WhatsApp: se o número oficial ainda não está ativo depois de config.convite_whatsapp_ate,
+ * o item é cancelado e o e-mail sozinho dá conta (decisão de 1/10). Sem data na config, nunca cancela.
+ */
+export function conviteWhatsappVencido(cfg: Config, whatsappAtivo: boolean, agora: Date = new Date()): boolean {
+  if (whatsappAtivo) return false;
+  const ate = cfgText(cfg, "convite_whatsapp_ate");
+  if (!ate || pendente(ate)) return false;
+  const limite = new Date(ate).getTime();
+  return Number.isFinite(limite) && agora.getTime() > limite;
+}
+
 /** Monta o envio para um item da fila. Nunca inventa dados: o que está entre colchetes na config bloqueia o envio. */
 export function montarEnvio(tipo: string, canal: string, lead: LeadFila, cfg: Config, apiUrl: string): Envio {
   const nome = primeiroNome(lead.nome);

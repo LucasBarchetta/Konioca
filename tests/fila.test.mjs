@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { montarEnvio } from "../supabase/functions/_shared/fila.ts";
+import { conviteWhatsappVencido, montarEnvio } from "../supabase/functions/_shared/fila.ts";
 import { selecionarHeuristica } from "../supabase/functions/_shared/perguntas.ts";
 import { textoHaQuanto } from "../supabase/functions/_shared/datas.ts";
 
@@ -95,4 +95,13 @@ test("Base antiga: gancho personaliza e leva à LP, sem oferta de preço", async
   const w = montarEnvio("base_antiga", "whatsapp", lead, CFG, API);
   assert.equal(w.nome, "konioca_base_antiga");
   assert.equal(w.params.length, 5);
+});
+
+test("Convite por WhatsApp vence em convite_whatsapp_ate só se o WhatsApp oficial não estiver ativo", () => {
+  const cfg = { convite_whatsapp_ate: "2026-10-12T23:59:59-03:00" };
+  assert.equal(conviteWhatsappVencido(cfg, false, new Date("2026-10-12T20:00:00-03:00")), false, "antes da data: espera");
+  assert.equal(conviteWhatsappVencido(cfg, false, new Date("2026-10-13T00:00:01-03:00")), true, "depois da data, sem WhatsApp: cancela");
+  assert.equal(conviteWhatsappVencido(cfg, true, new Date("2026-10-20T00:00:00-03:00")), false, "WhatsApp ativo: nunca cancela");
+  assert.equal(conviteWhatsappVencido({}, false, new Date("2026-12-01T00:00:00-03:00")), false, "sem data na config: nunca cancela");
+  assert.equal(conviteWhatsappVencido({ convite_whatsapp_ate: "[DATA]" }, false, new Date("2026-12-01T00:00:00-03:00")), false);
 });

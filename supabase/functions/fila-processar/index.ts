@@ -4,7 +4,7 @@
 import { db, exigirServico } from "../_shared/db.ts";
 import { carregarConfig, cfgBool, cfgNum, cfgText, type Config } from "../_shared/config.ts";
 import { json } from "../_shared/http.ts";
-import { montarEnvio, type LeadFila } from "../_shared/fila.ts";
+import { conviteWhatsappVencido, montarEnvio, type LeadFila } from "../_shared/fila.ts";
 import { enviarTemplate, whatsappConfigurado } from "../_shared/whatsapp.ts";
 import { enviarEmail } from "../_shared/email.ts";
 
@@ -63,6 +63,10 @@ Deno.serve(async (req) => {
     if (!isentos.has(item.tipo)) {
       const { data: n } = await sb.rpc("mensagens_empresa_semana", { p_lead: lead.id });
       if ((n ?? 0) >= maxSemana) { await sb.from("fila_envios").update({ status: "pendente", agendado_para: new Date(Date.now() + 86400_000).toISOString(), motivo: "limite semanal" }).eq("id", item.id); continue; }
+    }
+    if (item.tipo === "convite" && item.canal === "whatsapp" && conviteWhatsappVencido(cfg, whatsappConfigurado())) {
+      // Passou a data-limite sem o WhatsApp oficial: o convite por e-mail já cobre; este item morre com motivo claro.
+      await fechar(item.id, "cancelado", "whatsapp_nao_aprovado_ate_" + cfgText(cfg, "convite_whatsapp_ate").slice(0, 10)); resultados[item.id] = "cancelado: whatsapp não aprovado"; continue;
     }
     if (item.canal === "whatsapp" && !whatsappConfigurado()) { await sb.from("fila_envios").update({ status: "pendente", tentativas: Math.max(0, item.tentativas - 1), agendado_para: new Date(Date.now() + 600_000).toISOString(), motivo: "WhatsApp ainda não configurado (WABA)" }).eq("id", item.id); continue; }
     if (item.canal === "whatsapp" && waEnviados >= limite) { await sb.from("fila_envios").update({ status: "pendente", motivo: "teto por minuto/dia" }).eq("id", item.id); continue; }
