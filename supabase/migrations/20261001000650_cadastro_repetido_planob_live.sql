@@ -73,7 +73,7 @@ update public.config set valor = '"Instagram"' where chave = 'live_plataforma';
 -- Convite por WhatsApp: modelo novo com botão de URL fixa para o Instagram (o antigo tinha botão dinâmico do grupo).
 update public.config set valor = '"konioca_convite_live_ig"' where chave = 'wa_tpl_convite';
 insert into public.config (chave, valor, publico, descricao) values
-  ('instagram_url',          '"[INSTAGRAM DA KONIOCA]"', true, 'Perfil do Instagram da Konioca (https://www.instagram.com/...). Botão da página de obrigado, convite, lembrete e agenda. Entre colchetes = convite e lembrete ficam parados'),
+  ('instagram_url',          '"https://www.instagram.com/koniocaoficial/"', true, 'Perfil do Instagram da Konioca. Botão da página de obrigado, convite, lembrete e agenda'),
   ('cadastro_limite_ip_sem_selo', '{"max": 3, "janela_min": 30}', false, 'Limite por IP para cadastro que chega sem o selo do Turnstile verificado (token ausente)'),
   ('turnstile_espera_ms',  '15000', true,  'Quanto a página espera o selo antes de liberar o botão e mandar sem token'),
   ('planob_espera_ms',     '8000',  true,  'Plano B: tempo máximo da lead-intake antes de mostrar o WhatsApp e guardar os dados'),

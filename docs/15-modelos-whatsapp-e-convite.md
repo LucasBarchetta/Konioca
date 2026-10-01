@@ -22,7 +22,7 @@ E-mail do convite (assunto: "Seu nome está na lista da pré-venda"):
 
     Ana, seu nome está na lista da pré-venda da nova Konioca.
     A Marcela apresenta a nova geração ao vivo no Instagram da Konioca: quinta, 15/10, às 19h. A pré-venda tem 250 máquinas.
-    Siga o perfil e ative o lembrete: {instagram_url}
+    Siga o perfil e ative o lembrete: https://www.instagram.com/koniocaoficial/
     Uma hora antes a gente avisa por aqui e no seu WhatsApp. Você consegue estar lá?
 
     Time da Marcela

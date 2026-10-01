@@ -27,8 +27,13 @@
       agenda.addEventListener("click", function () { if (token) K.post("lead-evento", { token: token, tipo: "clicou_agenda" }).catch(function () {}); });
     }
 
+    // Instagram da Konioca: vem da configuração (instagram_url); enquanto a chave não existir, usa o perfil oficial.
     var ig = document.getElementById("btn-instagram");
-    if (ig) ig.addEventListener("click", function () { if (token) K.post("lead-evento", { token: token, tipo: "clicou_instagram" }).catch(function () {}); });
+    if (ig) {
+      var perfil = cfg && typeof cfg.instagram_url === "string" && cfg.instagram_url && !/\[[^\]]*\]/.test(cfg.instagram_url) ? cfg.instagram_url : "https://www.instagram.com/koniocaoficial/";
+      ig.href = perfil;
+      ig.addEventListener("click", function () { if (token) K.post("lead-evento", { token: token, tipo: "clicou_instagram" }).catch(function () {}); });
+    }
 
     var time = document.getElementById("btn-time");
     if (time) time.addEventListener("click", function () { if (token) K.post("lead-evento", { token: token, tipo: "clicou_whatsapp_time" }).catch(function () {}); });
