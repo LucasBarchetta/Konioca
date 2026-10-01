@@ -31,7 +31,7 @@ test("Convite por e-mail: Instagram da Konioca, termina em 'Você consegue estar
   assert.match(e.texto, /Você consegue estar lá\?/);
   assert.match(e.texto, /optout\?t=tok/);
   assert.ok(!/escolhid/i.test(e.texto + e.html), "nada de exclusividade falsa");
-  assert.equal(e.assunto, "Você está na lista da nova Konioca");
+  assert.equal(e.assunto, "Ana, seu acesso à pré-venda está garantido!");
   assert.match(e.texto, /^Ana, você está na lista da nova Konioca\./);
   assert.match(e.texto, /No dia 15\/10, às 19h, a Marcela/);
   assert.match(e.texto, /só quem está na lista pode reservar uma das 250 máquinas/);

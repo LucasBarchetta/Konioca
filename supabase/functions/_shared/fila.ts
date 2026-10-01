@@ -59,7 +59,8 @@ export function montarEnvio(tipo: string, canal: string, lead: LeadFila, cfg: Co
     if (pendente(instagram) || !instagram) return { canal: "nenhum", motivo: "instagram_url pendente" };
     if (canal === "email") {
       const lp = cfgText(cfg, "lp_url");
-      // Texto aprovado em 1/10 (consolidado). A data e a hora vêm da config (live_data / turma), nunca fixas.
+      // Texto aprovado em 1/10 (consolidado + ajuste do assunto). A data e a hora vêm da config (live_data / turma), nunca fixas.
+      const assunto = `${nome}, seu acesso à pré-venda está garantido!`;
       const previa = `A pré-venda das ${lote1} máquinas é só para quem está na lista.`;
       const p1 = `${nome}, você está na lista da nova Konioca.`;
       const p2 = `No dia ${live.ddmm}, às ${live.hora}, a Marcela apresenta a nova geração ao vivo no Instagram. A live é aberta, e muita gente vai assistir. Mas só quem está na lista pode reservar uma das ${lote1} máquinas da pré-venda.`;
@@ -70,7 +71,7 @@ export function montarEnvio(tipo: string, canal: string, lead: LeadFila, cfg: Co
       const img = emailImagens(cfg);
       // Visual aprovado em 1/10: faixa verde com a logo centralizada, foto real da máquina na largura toda (600 px,
       // hospedada, não anexo), texto em seguida. Sem emoji. Tabelas e estilos inline por causa do Gmail e do Outlook.
-      const html = `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Você está na lista da nova Konioca</title></head>
+      const html = `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>${esc(assunto)}</title></head>
 <body style="margin:0;padding:0;background:#f4ebdb;font-family:Carlito,Calibri,'Segoe UI',sans-serif;color:#1f4a36">
 <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:#f4ebdb;font-size:1px;line-height:1px">${esc(previa)}&#8204;&nbsp;&#8204;&nbsp;&#8204;&nbsp;&#8204;&nbsp;&#8204;&nbsp;&#8204;&nbsp;&#8204;&nbsp;&#8204;&nbsp;&#8204;&nbsp;&#8204;&nbsp;&#8204;&nbsp;&#8204;&nbsp;</div>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f4ebdb"><tr><td align="center" style="padding:24px 12px">
@@ -86,7 +87,7 @@ export function montarEnvio(tipo: string, canal: string, lead: LeadFila, cfg: Co
 <p style="margin:24px 0 0;font-family:Caladea,Cambria,Georgia,serif;font-style:italic;font-size:18px;color:#5a6b3a">${esc(assinatura)}</p>
 <p style="margin:32px 0 0;font-size:12px;line-height:1.6;color:#5a6b3a"><a href="${esc(lp)}" style="color:#5a6b3a">${esc(lp)}</a> · <a href="${esc(apiUrl)}/optout?t=${encodeURIComponent(lead.token)}" style="color:#5a6b3a">Não quero mais receber</a></p>
 </td></tr></table></td></tr></table></body></html>`;
-      return { canal: "email", assunto: "Você está na lista da nova Konioca", texto, html };
+      return { canal: "email", assunto, texto, html };
     }
     // Template konioca_convite_live_ig: {{1}} nome, {{2}} dia, {{3}} dd/mm, {{4}} hora, {{5}} máquinas; botão de URL fixa para o Instagram.
     return { canal: "whatsapp", modo: "template", nome: cfgText(cfg, "wa_tpl_convite"), params: [nome, live.diaSemana, live.ddmm, live.hora, lote1] };

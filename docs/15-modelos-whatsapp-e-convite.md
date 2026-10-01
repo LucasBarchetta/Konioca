@@ -18,7 +18,8 @@ WhatsApp, modelo `konioca_convite_live_ig` (categoria Marketing, pt_BR). Variáv
     Siga o perfil e ative o lembrete. Uma hora antes a gente avisa por aqui. Você consegue estar lá?
     [Botão de URL: Seguir o Instagram]   [Resposta rápida: Sair]
 
-E-mail do convite (texto consolidado de 1/10). Assunto: "Você está na lista da nova Konioca". Pré-visualização:
+E-mail do convite (texto consolidado de 1/10). Assunto: "{Nome}, seu acesso à pré-venda está garantido!" (primeiro
+nome). Remetente na caixa de entrada: "Time da Konioca" (config.email_from; o endereço não muda). Pré-visualização:
 "A pré-venda das 250 máquinas é só para quem está na lista." A data e a hora vêm da config.
 
     Ana, você está na lista da nova Konioca.
