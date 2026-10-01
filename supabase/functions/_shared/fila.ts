@@ -1,7 +1,7 @@
 // Montagem dos envios da fila: para cada tipo, qual template/texto e com quais variáveis.
 // A parte pura (montarEnvio) é testável; o envio real fica no worker fila-processar.
 import { type Config, cfgBool, cfgNum, cfgText, pendente } from "./cfg.ts";
-import { ganchoTexto, limiteRecebimentoCircular, partesData } from "./datas.ts";
+import { formatarReais, ganchoMesesAtras, ganchoTexto, limiteRecebimentoCircular, partesData } from "./datas.ts";
 import { primeiroNome } from "./conversa.ts";
 
 export interface LeadFila {
@@ -139,20 +139,35 @@ export function montarEnvio(tipo: string, canal: string, lead: LeadFila, cfg: Co
       return { canal: "whatsapp", modo: "template", nome: cfgText(cfg, "wa_tpl_base_antiga"), params: [nome, quando || "antes", live.diaSemana, live.ddmm, live.hora] };
     }
     const url = `${lp.replace(/\/$/, "")}/?utm_source=base&utm_medium=email&utm_campaign=base_antiga&utm_content=${versao}`;
-    // Versão P1 (quem voltou a procurar ou procurou há pouco). P2 e P3/P4 ganham versão própria depois do "sim" de cada teste;
-    // até lá, usam o mesmo texto, com a abertura pelo gancho.
-    // Assunto e pré-visualização do P1 definidos pelo Lucas em 1/10. P2 e P3/P4: a definir no teste de cada versão.
+    // Texto das três versões definido pelo Lucas em 1/10. Só a abertura muda por grupo:
+    //   P1: "procurou mais de uma vez"; P1 recente (gancho nos últimos 3 meses) e P2: "em {mês}";
+    //   P3/P4: "faz mais de um ano, em {mês de ano}"; se o gancho tem menos de um ano, cai na abertura do P2.
+    // Preços e parceiro vêm da config (preco_atual, preco_prevenda, financiamento_parceiro), nunca fixos.
+    const recente = ganchoMesesAtras(lead.base_antiga_gancho) <= 3;
+    const maisDeUmAno = ganchoMesesAtras(lead.base_antiga_gancho) > 12;
+    const abertura = versao === "p1" && !recente
+      ? `${nome}, você procurou a Konioca mais de uma vez, e a gente guardou o seu contato.`
+      : versao === "p34" && maisDeUmAno && quando
+      ? `${nome}, faz mais de um ano que você procurou a Konioca, ${quando}, e a gente guardou o seu contato.`
+      : `${nome}, você procurou a Konioca ${quando || "há algum tempo"} e a gente guardou o seu contato.`;
+    const precoNovo = formatarReais(cfgNum(cfg, "preco_prevenda"));
+    const precoAtual = formatarReais(cfgNum(cfg, "preco_atual"));
+    const diferencaMil = Math.floor((cfgNum(cfg, "preco_atual") - cfgNum(cfg, "preco_prevenda")) / 1000);
+    const parceiro = cfgText(cfg, "financiamento_parceiro");
+    if (!parceiro || pendente(parceiro) || !(cfgNum(cfg, "preco_atual") > cfgNum(cfg, "preco_prevenda"))) return { canal: "nenhum", motivo: "preco_atual, preco_prevenda ou financiamento_parceiro pendente" };
     const assunto = versao === "p1" ? `${nome}, você procurou a Konioca mais de uma vez` : `${nome}, a Konioca que você procurou mudou`;
-    const previa = versao === "p1" ? `A máquina mudou. E você está entre as primeiras pessoas que estamos chamando.` : `A máquina que você viu foi refeita. A nova geração aparece ao vivo no dia ${live.ddmm}.`;
-    const p1 = versao === "p1"
-      ? `${nome}, você procurou a Konioca ${quando || "há algum tempo"} e a gente guardou o seu contato. A máquina que você viu naquela época não existe mais: foi refeita.`
-      : `${nome}, você procurou a Konioca ${quando || "há algum tempo"}. A máquina que você viu naquela época não existe mais: foi refeita.`;
-    const p2 = `No dia ${live.ddmm}, às ${live.hora}, a Marcela apresenta a nova geração ao vivo no Instagram. A live é aberta, mas só quem está na lista pode reservar uma das ${lote1} máquinas da pré-venda.`;
-    const p3 = `Quem procurou antes entra primeiro. Para garantir o seu lugar na lista, é um cadastro de um minuto:`;
-    const p4 = `Se não fizer mais sentido para você, é só ignorar este e-mail ou clicar em sair, aqui embaixo.`;
+    const previa = versao === "p1" ? `A máquina mudou. E você está entre as primeiras pessoas que estamos chamando.` : `A máquina mudou. A nova geração aparece ao vivo no dia ${live.ddmm}.`;
+    const l1 = `Desde então, a Marcela redesenhou a máquina.`;
+    const l2 = `A nova geração custa ${precoNovo}. A atual custa ${precoAtual}.`;
+    const l3 = `São R$ ${diferencaMil} mil a menos, com financiamento pelo ${parceiro}.`;
+    const l4a = `No dia ${live.ddmm}, às ${live.hora}, ela apresenta tudo ao vivo no Instagram. A live é aberta, mas `;
+    const l4b = `só quem está na lista pode reservar uma das ${lote1} máquinas da pré-venda.`;
+    const l5 = `Entrar na lista leva um minuto:`;
+    const l6 = `Se não fizer mais sentido para você, é só ignorar este e-mail ou clicar em sair, aqui embaixo.`;
     const optout = `${apiUrl}/optout?t=${encodeURIComponent(lead.token)}`;
-    const texto = [p1, p2, p3, url, p4, ``, assinatura, ``, `Para não receber mais mensagens: ${optout}`].join("\n");
+    const texto = [abertura, l1, l2, l3, l4a + l4b, l5, url, l6, ``, assinatura, ``, `Para não receber mais mensagens: ${optout}`].join("\n");
     const img = emailImagens(cfg);
+    const P = (t: string) => `<p style="margin:0 0 14px;font-size:17px;line-height:1.6">${t}</p>`;
     const html = `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>${esc(assunto)}</title></head>
 <body style="margin:0;padding:0;background:#f4ebdb;font-family:Carlito,Calibri,'Segoe UI',sans-serif;color:#1f4a36">
 <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:#f4ebdb;font-size:1px;line-height:1px">${esc(previa)}&#8204;&nbsp;&#8204;&nbsp;&#8204;&nbsp;&#8204;&nbsp;&#8204;&nbsp;&#8204;&nbsp;&#8204;&nbsp;&#8204;&nbsp;&#8204;&nbsp;&#8204;&nbsp;&#8204;&nbsp;&#8204;&nbsp;</div>
@@ -161,11 +176,14 @@ export function montarEnvio(tipo: string, canal: string, lead: LeadFila, cfg: Co
 <tr><td align="center" style="background:#1f4a36;padding:22px 24px"><img src="${esc(img.logo)}" width="180" alt="Konioca" style="display:block;width:180px;height:auto;border:0"></td></tr>
 <tr><td style="padding:0;line-height:0;background:#1f4a36"><img src="${esc(img.cones)}" width="600" alt="Cones Konioca: beijinho, pizza e brigadeiro" style="display:block;width:100%;max-width:600px;height:auto;border:0"></td></tr>
 <tr><td style="padding:28px 24px 32px">
-<p style="margin:0 0 14px;font-size:17px;line-height:1.6">${esc(p1)}</p>
-<p style="margin:0 0 14px;font-size:17px;line-height:1.6">${esc(p2)}</p>
-<p style="margin:0 0 20px;font-size:17px;line-height:1.6">${esc(p3)}</p>
+${P(esc(abertura))}
+${P(esc(l1))}
+${P("<strong>" + esc(l2) + "</strong>")}
+${P(esc(l3))}
+${P(esc(l4a) + "<strong>" + esc(l4b) + "</strong>")}
+<p style="margin:0 0 20px;font-size:17px;line-height:1.6">${esc(l5)}</p>
 <a href="${esc(url)}" style="display:block;text-align:center;padding:16px;background:#b04d0c;color:#f7f0e2;font-size:18px;font-weight:700;text-decoration:none;border-radius:7px">Quero entrar na lista</a>
-<p style="margin:20px 0 0;font-size:15px;line-height:1.6;color:#5a6b3a">${esc(p4)}</p>
+<p style="margin:20px 0 0;font-size:15px;line-height:1.6;color:#5a6b3a">${esc(l6)}</p>
 <p style="margin:24px 0 0;font-family:Caladea,Cambria,Georgia,serif;font-style:italic;font-size:18px;color:#5a6b3a">${esc(assinatura)}</p>
 <p style="margin:32px 0 0;font-size:12px;line-height:1.6;color:#5a6b3a"><a href="${esc(optout)}" style="color:#5a6b3a">Não quero mais receber mensagens</a></p>
 </td></tr></table></td></tr></table></body></html>`;
