@@ -56,7 +56,7 @@ Deno.serve(async (req) => {
   let enviados = 0, waEnviados = 0; const resultados: Record<string, string> = {};
 
   for (const item of (itens ?? []) as { id: number; lead_id: string; tipo: string; canal: string; payload: Record<string, unknown> | null; tentativas: number }[]) {
-    const { data: lead } = await sb.from("leads").select("id, nome, whatsapp, email, token, turma, pergunta_live, estado_conversa, optout_em, grupo_controle, wa_invalido_em, base_antiga_gancho, base_antiga_prioridade, contato_manual_em, email_bloqueado_em").eq("id", item.lead_id).single();
+    const { data: lead } = await sb.from("leads").select("id, nome, whatsapp, email, token, turma, pergunta_live, estado_conversa, optout_em, grupo_controle, wa_invalido_em, base_antiga_gancho, base_antiga_prioridade, base_antiga_variante, contato_manual_em, email_bloqueado_em").eq("id", item.lead_id).single();
     if (!lead || lead.optout_em) { await fechar(item.id, "cancelado", "optout"); continue; }
     if (lead.grupo_controle && item.tipo !== "circular_lembrete") { await fechar(item.id, "pulado", "grupo_controle"); continue; }
     if (item.canal === "whatsapp" && (lead.wa_invalido_em || !lead.whatsapp)) { await fechar(item.id, "pulado", "numero_invalido"); continue; }

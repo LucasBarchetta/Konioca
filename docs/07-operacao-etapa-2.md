@@ -82,3 +82,7 @@ Para recarregar uma planilha nova (dados nunca no repositório):
 SUPABASE_URL=https://ytsildpxummevfkjcjhs.supabase.co SUPABASE_SERVICE_ROLE_KEY=... python3 scripts/base_antiga_preparar.py /caminho/fora/do/repo/base.xlsx --enviar
 ```
 Linhas já promovidas não são sobrescritas.
+
+## P2 em teste A/B (decisão do Lucas, 1/10 à noite)
+
+Substitui o disparo único de 2/10. Versão A: texto aprovado (abertura do P2, link `utm_content=p2_a`). Versão B: assunto e abertura pelo preço, na voz da Marcela (`p2_b`), só sai com o SIM do Lucas; sem o SIM até 8h, o dia vira 350 com a A às 9h e o resto com a A às 15h. Com o SIM: 9h, 350 pessoas sorteadas, 175 A e 175 B (`base_antiga_promover_ab(350, array['P2'], '2026-10-02T09:00-03:00')`); 15h, as outras 353 recebem a versão com mais cadastros pela página (empate: mais cliques; zero a zero: espera segunda), com `base_antiga_promover_ab(400, array['P2'], '2026-10-02T15:00-03:00', array['a'])` ou `array['b']`. A variante fica em `leads.base_antiga_variante` e o painel e a aba Desempenho separam pelo link. Migração 770.

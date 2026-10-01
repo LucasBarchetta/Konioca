@@ -7,6 +7,7 @@ import { primeiroNome } from "./conversa.ts";
 export interface LeadFila {
   id: string; nome: string; whatsapp: string | null; email: string; token: string; turma: string | null;
   pergunta_live: string | null; estado_conversa: string; base_antiga_gancho?: string | null; base_antiga_prioridade?: string | null;
+  base_antiga_variante?: string | null; // teste A/B do P2 (2/10): "a" = texto aprovado, "b" = versão de impacto; links p2_a / p2_b
 }
 export interface Turma { nome: string; live: string; subgrupo_link: string }
 
@@ -138,8 +139,55 @@ export function montarEnvio(tipo: string, canal: string, lead: LeadFila, cfg: Co
       // Template: {{1}} nome, {{2}} "em fevereiro" (ou "antes"), {{3}} dia, {{4}} dd/mm, {{5}} hora. Botão de URL fixa para a LP com UTMs.
       return { canal: "whatsapp", modo: "template", nome: cfgText(cfg, "wa_tpl_base_antiga"), params: [nome, quando || "antes", live.diaSemana, live.ddmm, live.hora] };
     }
-    const url = `${lp.replace(/\/$/, "")}/?utm_source=base&utm_medium=email&utm_campaign=base_antiga&utm_content=${versao}`;
-    // Texto das três versões definido pelo Lucas em 1/10. Só a abertura muda por grupo:
+    // Teste A/B do P2 (2/10): a variante vai no link (p2_a / p2_b) para o painel e a aba Desempenho separarem os resultados.
+    const variante = versao === "p2" && (lead.base_antiga_variante === "a" || lead.base_antiga_variante === "b") ? lead.base_antiga_variante : null;
+    const url = `${lp.replace(/\/$/, "")}/?utm_source=base&utm_medium=email&utm_campaign=base_antiga&utm_content=${variante ? `p2_${variante}` : versao}`;
+    const precoNovo = formatarReais(cfgNum(cfg, "preco_prevenda"));
+    const precoAtual = formatarReais(cfgNum(cfg, "preco_atual"));
+    const diferencaMil = Math.floor((cfgNum(cfg, "preco_atual") - cfgNum(cfg, "preco_prevenda")) / 1000);
+    const parceiro = cfgText(cfg, "financiamento_parceiro");
+    if (!parceiro || pendente(parceiro) || !(cfgNum(cfg, "preco_atual") > cfgNum(cfg, "preco_prevenda"))) return { canal: "nenhum", motivo: "preco_atual, preco_prevenda ou financiamento_parceiro pendente" };
+    const optout = `${apiUrl}/optout?t=${encodeURIComponent(lead.token)}`;
+    const l6 = `Se não fizer mais sentido para você, é só ignorar este e-mail ou clicar em sair, aqui embaixo.`;
+    const img = emailImagens(cfg);
+    const P = (t: string) => `<p style="margin:0 0 14px;font-size:17px;line-height:1.6">${t}</p>`;
+    // Mesmo visual para A e B: faixa verde com a logo, faixa de cones, parágrafos, botão, linha de saída, assinatura, opt-out.
+    const montarHtml = (assunto: string, previa: string, paragrafos: string[], chamada: string, botao: string, assina: string) => `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>${esc(assunto)}</title></head>
+<body style="margin:0;padding:0;background:#f4ebdb;font-family:Carlito,Calibri,'Segoe UI',sans-serif;color:#1f4a36">
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:#f4ebdb;font-size:1px;line-height:1px">${esc(previa)}&#8204;&nbsp;&#8204;&nbsp;&#8204;&nbsp;&#8204;&nbsp;&#8204;&nbsp;&#8204;&nbsp;&#8204;&nbsp;&#8204;&nbsp;&#8204;&nbsp;&#8204;&nbsp;&#8204;&nbsp;&#8204;&nbsp;</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f4ebdb"><tr><td align="center" style="padding:24px 12px">
+<table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;background:#ffffff;border-radius:10px;overflow:hidden">
+<tr><td align="center" style="background:#1f4a36;padding:22px 24px"><img src="${esc(img.logo)}" width="180" alt="Konioca" style="display:block;width:180px;height:auto;border:0"></td></tr>
+<tr><td style="padding:0;line-height:0;background:#1f4a36"><img src="${esc(img.cones)}" width="600" alt="Cones Konioca: beijinho, pizza e brigadeiro" style="display:block;width:100%;max-width:600px;height:auto;border:0"></td></tr>
+<tr><td style="padding:28px 24px 32px">
+${paragrafos.map(P).join("\n")}
+<p style="margin:0 0 20px;font-size:17px;line-height:1.6">${esc(chamada)}</p>
+<a href="${esc(url)}" style="display:block;text-align:center;padding:16px;background:#b04d0c;color:#f7f0e2;font-size:18px;font-weight:700;text-decoration:none;border-radius:7px">${esc(botao)}</a>
+<p style="margin:20px 0 0;font-size:15px;line-height:1.6;color:#5a6b3a">${esc(l6)}</p>
+<p style="margin:24px 0 0;font-family:Caladea,Cambria,Georgia,serif;font-style:italic;font-size:18px;color:#5a6b3a">${esc(assina)}</p>
+<p style="margin:32px 0 0;font-size:12px;line-height:1.6;color:#5a6b3a"><a href="${esc(optout)}" style="color:#5a6b3a">Não quero mais receber mensagens</a></p>
+</td></tr></table></td></tr></table></body></html>`;
+
+    if (variante === "b") {
+      // Versão B (proposta de 1/10 para o teste A/B do P2): assunto e abertura pelo preço, na voz da Marcela.
+      // Preço só como na página (config), sem "de/por" (são máquinas diferentes), sem escassez falsa, sem promessa de ganho, sem emoji.
+      const assinaB = cfgText(cfg, "assinatura_marcela", "Marcela, da Konioca");
+      const assunto = `${nome}, a nova Konioca custa ${precoNovo}`;
+      const previa = `A atual custa ${precoAtual}. No dia ${live.ddmm}, eu mostro ao vivo o que mudou.`;
+      const b1 = `${nome}, quando você procurou a Konioca ${quando || "da última vez"}, a máquina custava ${precoAtual}. Para muita gente, esse número encerrava a conversa.`;
+      const b2a = `Eu passei os últimos meses redesenhando a máquina para mudar isso. `;
+      const b2b = `A nova geração custa ${precoNovo}, com financiamento pelo ${parceiro}.`;
+      const b2c = ` A atual continua custando ${precoAtual}: são máquinas diferentes.`;
+      const b3a = `No dia ${live.ddmm}, às ${live.hora}, eu apresento a nova Konioca ao vivo no Instagram. A live é aberta, mas `;
+      const b3b = `só quem está na lista pode reservar uma das ${lote1} máquinas da pré-venda.`;
+      const b4 = `Se a conversa parou no preço, ela pode recomeçar agora. Entrar na lista leva um minuto:`;
+      const botao = `Entrar na lista agora`;
+      const texto = [b1, b2a + b2b + b2c, b3a + b3b, b4, url, l6, ``, assinaB, ``, `Para não receber mais mensagens: ${optout}`].join("\n");
+      const html = montarHtml(assunto, previa, [esc(b1), esc(b2a) + "<strong>" + esc(b2b) + "</strong>" + esc(b2c), esc(b3a) + "<strong>" + esc(b3b) + "</strong>"], b4, botao, assinaB);
+      return { canal: "email", assunto, texto, html };
+    }
+
+    // Texto das três versões definido pelo Lucas em 1/10 (versão A no teste do P2). Só a abertura muda por grupo:
     //   P1: "procurou mais de uma vez"; P1 recente (gancho nos últimos 3 meses) e P2: "em {mês}";
     //   P3/P4: "faz mais de um ano, em {mês de ano}"; se o gancho tem menos de um ano, cai na abertura do P2.
     // Preços e parceiro vêm da config (preco_atual, preco_prevenda, financiamento_parceiro), nunca fixos.
@@ -150,11 +198,6 @@ export function montarEnvio(tipo: string, canal: string, lead: LeadFila, cfg: Co
       : versao === "p34" && maisDeUmAno && quando
       ? `${nome}, faz mais de um ano que você procurou a Konioca, ${quando}, e a gente guardou o seu contato.`
       : `${nome}, você procurou a Konioca ${quando || "há algum tempo"} e a gente guardou o seu contato.`;
-    const precoNovo = formatarReais(cfgNum(cfg, "preco_prevenda"));
-    const precoAtual = formatarReais(cfgNum(cfg, "preco_atual"));
-    const diferencaMil = Math.floor((cfgNum(cfg, "preco_atual") - cfgNum(cfg, "preco_prevenda")) / 1000);
-    const parceiro = cfgText(cfg, "financiamento_parceiro");
-    if (!parceiro || pendente(parceiro) || !(cfgNum(cfg, "preco_atual") > cfgNum(cfg, "preco_prevenda"))) return { canal: "nenhum", motivo: "preco_atual, preco_prevenda ou financiamento_parceiro pendente" };
     const assunto = versao === "p1" ? `${nome}, você procurou a Konioca mais de uma vez` : `${nome}, a Konioca que você procurou mudou`;
     const previa = versao === "p1" ? `A máquina mudou. E você está entre as primeiras pessoas que estamos chamando.` : `A máquina mudou. A nova geração aparece ao vivo no dia ${live.ddmm}.`;
     const l1 = `Desde então, a Marcela redesenhou a máquina.`;
@@ -163,30 +206,8 @@ export function montarEnvio(tipo: string, canal: string, lead: LeadFila, cfg: Co
     const l4a = `No dia ${live.ddmm}, às ${live.hora}, ela apresenta tudo ao vivo no Instagram. A live é aberta, mas `;
     const l4b = `só quem está na lista pode reservar uma das ${lote1} máquinas da pré-venda.`;
     const l5 = `Entrar na lista leva um minuto:`;
-    const l6 = `Se não fizer mais sentido para você, é só ignorar este e-mail ou clicar em sair, aqui embaixo.`;
-    const optout = `${apiUrl}/optout?t=${encodeURIComponent(lead.token)}`;
     const texto = [abertura, l1, l2, l3, l4a + l4b, l5, url, l6, ``, assinatura, ``, `Para não receber mais mensagens: ${optout}`].join("\n");
-    const img = emailImagens(cfg);
-    const P = (t: string) => `<p style="margin:0 0 14px;font-size:17px;line-height:1.6">${t}</p>`;
-    const html = `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>${esc(assunto)}</title></head>
-<body style="margin:0;padding:0;background:#f4ebdb;font-family:Carlito,Calibri,'Segoe UI',sans-serif;color:#1f4a36">
-<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:#f4ebdb;font-size:1px;line-height:1px">${esc(previa)}&#8204;&nbsp;&#8204;&nbsp;&#8204;&nbsp;&#8204;&nbsp;&#8204;&nbsp;&#8204;&nbsp;&#8204;&nbsp;&#8204;&nbsp;&#8204;&nbsp;&#8204;&nbsp;&#8204;&nbsp;&#8204;&nbsp;</div>
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f4ebdb"><tr><td align="center" style="padding:24px 12px">
-<table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;background:#ffffff;border-radius:10px;overflow:hidden">
-<tr><td align="center" style="background:#1f4a36;padding:22px 24px"><img src="${esc(img.logo)}" width="180" alt="Konioca" style="display:block;width:180px;height:auto;border:0"></td></tr>
-<tr><td style="padding:0;line-height:0;background:#1f4a36"><img src="${esc(img.cones)}" width="600" alt="Cones Konioca: beijinho, pizza e brigadeiro" style="display:block;width:100%;max-width:600px;height:auto;border:0"></td></tr>
-<tr><td style="padding:28px 24px 32px">
-${P(esc(abertura))}
-${P(esc(l1))}
-${P("<strong>" + esc(l2) + "</strong>")}
-${P(esc(l3))}
-${P(esc(l4a) + "<strong>" + esc(l4b) + "</strong>")}
-<p style="margin:0 0 20px;font-size:17px;line-height:1.6">${esc(l5)}</p>
-<a href="${esc(url)}" style="display:block;text-align:center;padding:16px;background:#b04d0c;color:#f7f0e2;font-size:18px;font-weight:700;text-decoration:none;border-radius:7px">Quero entrar na lista</a>
-<p style="margin:20px 0 0;font-size:15px;line-height:1.6;color:#5a6b3a">${esc(l6)}</p>
-<p style="margin:24px 0 0;font-family:Caladea,Cambria,Georgia,serif;font-style:italic;font-size:18px;color:#5a6b3a">${esc(assinatura)}</p>
-<p style="margin:32px 0 0;font-size:12px;line-height:1.6;color:#5a6b3a"><a href="${esc(optout)}" style="color:#5a6b3a">Não quero mais receber mensagens</a></p>
-</td></tr></table></td></tr></table></body></html>`;
+    const html = montarHtml(assunto, previa, [esc(abertura), esc(l1), "<strong>" + esc(l2) + "</strong>", esc(l3), esc(l4a) + "<strong>" + esc(l4b) + "</strong>"], l5, "Quero entrar na lista", assinatura);
     return { canal: "email", assunto, texto, html };
   }
 
