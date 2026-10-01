@@ -1,6 +1,28 @@
 # Mudança de escopo de 30/09: fechamento com o time humano · plano e ordem
 
-Nada daqui está publicado. Plano para o "sim" do Lucas. A Fase A (revisor, painel e e-mail) continua com prazo em 5/10.
+Construído em 1/10 (migração 700, functions `painel-api` e `painel-avisar`, página `site/painel/`), na prévia para o
+"sim" do Lucas antes de ir para main. Prazo da Fase A: 5/10.
+
+## Como o painel funciona (Fase A)
+
+- Links de acesso só por e-mail (`painel-avisar` com `link_para`), nunca pelo chat. Depois de qualquer link exposto, troca-se
+  `painel_links_versao`.
+- Endereço: `/painel/` no site (noindex, fora do robots). Sem login: cada aprovador de `config.painel_aprovadores`
+  tem um link assinado (`?t=` derivado da chave de serviço, do e-mail e de `config.painel_links_versao`). Trocar a
+  versão invalida todos os links. O link é pessoal: toda ação grava "Nome (papel)" no evento do lead.
+- Lista de leads reais (sem teste do Monitor), com busca e filtros: todos, pode cobrar, sem Circular, reservados,
+  contatados à mão, saíram, base antiga. Em cada lead: contato, cidade, data do cadastro, estado da cobrança
+  ("Circular não confirmada" em vermelho, "Faltam X dias" em cinza, "Pode cobrar desde dd/mm" em verde, regra na
+  view `v_lead_cobranca`), convite, contato manual, bloqueio de e-mail, reserva.
+- Ações por lead: "Reservou" só para lead com "pode cobrar" (Circular confirmada há pelo menos o prazo legal; a função
+  `lead_reservar` recusa fora disso, e o botão aparece desativado com "Circular não confirmada" ou "Faltam X dias").
+  Quantidade de 1 a 10 e observação; soma no placar das 250 e tira o lead das réguas, menos o lembrete da Circular), "Desfazer reserva", "Contatado à mão" (cancela o convite por WhatsApp e enfileira o
+  reaquecimento), "Corrigir e-mail" (com opção de reenviar o convite), "Histórico" (eventos e mensagens).
+- Aba "Aprovações": itens da tabela `aprovacoes` (texto, e-mail, peça, config) com aprovar, aprovar com edição ou
+  recusar (motivo obrigatório). `painel-avisar` manda o aviso por e-mail aos aprovadores do papel, com o link de cada
+  um (tag `painel`, sai pela exceção interna). Nenhum item é criado automaticamente nesta fase.
+- Placar no topo: reservas do lote 1 sobre `lote1_tamanho`. O `public-config` lê o mesmo placar para a LP quando
+  `contador_visivel` estiver ligado.
 
 ## O que sai da fila (etapa 3)
 
@@ -42,9 +64,9 @@ a exportação. Regra fixa no banco, não no navegador, para o time nunca cobrar
 
 | # | Entrega | Quando | Depende de |
 |---|---|---|---|
-| 1 | Migração: `reservas`, `lead_reservar`, `v_placar`, `v_lead_cobranca`, fila ignorando reservados | 1/10 | "sim" neste plano |
-| 2 | Painel (Fase A): lista de leads com data da Circular, "pode cobrar", botão "Reservou" com quantidade | até 5/10 | item 1 |
-| 3 | Revisor e e-mail do painel (Fase A) | até 5/10 | aprovadores já na config (feito em 30/09) |
+| 1 | Migração 700: `reservas` (uma linha por máquina, numerada), `lead_reservar`, `lead_reserva_cancelar`, `v_lead_cobranca`, `v_painel_leads`, fila ignorando reservados | feito em 1/10 | |
+| 2 | Painel (Fase A): lista de leads com data da Circular, "pode cobrar", botão "Reservou" com quantidade | feito em 1/10, na prévia | item 1 |
+| 3 | Revisor e e-mail do painel (Fase A): tabela `aprovacoes`, aba no painel, `painel-avisar` | feito em 1/10, na prévia | aprovadores na config |
 | 4 | Contador das 250 na LP ligado ao placar real (`contador_visivel`) | quando você mandar ligar | item 1 |
 | 5 | Régua de pós-venda | depois da live, com o texto aprovado | itens 1 e 2 |
 
