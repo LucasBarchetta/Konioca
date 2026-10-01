@@ -29,7 +29,21 @@ E-mail do convite (assunto: "Seu nome está na lista da pré-venda"):
 
     Para não receber mais mensagens da pré-venda: {link de saída}
 
-Na versão em HTML o link do perfil é o botão "Seguir o Instagram da Konioca".
+Na versão em HTML o link do perfil é o botão "Seguir o Instagram da Konioca". Visual (1/10): faixa verde no topo
+com a logo centralizada (180 px), foto real da máquina na largura toda (600 px, texto alternativo "Nova máquina
+Konioca", JPEG de 65 KB, recorte horizontal do arquivo FOTO-HORIZONTAL-PREVIA do Drive), depois o texto. Sem emoji.
+As imagens ficam hospedadas em `site/assets/img/email/` (Cloudflare Pages), base em `config.email_imagens_url`.
+
+## Reaquecimento de quem foi contatado à mão no WhatsApp
+
+Quem o time já chamou à mão no WhatsApp (botão "contatado à mão" no painel, ou `lead_contato_manual`) não recebe o
+convite padrão por WhatsApp (item cancelado com motivo `contato_manual`). O e-mail de convite segue igual para todos.
+Quando o WhatsApp oficial ligar, essa pessoa recebe o modelo abaixo, uma vez. Se o modelo não estiver aprovado na Meta
+(`config.wa_tpl_reaquecimento_manual_aprovado = false`), o item fica parado na fila e nada sai sozinho.
+
+WhatsApp, modelo `konioca_reaquecimento_manual` (categoria Marketing, pt_BR). Variável única: {{1}} primeiro nome.
+
+    Oi, {{1}}, aqui é do time da Marcela, da Konioca. A gente ficou muito feliz com o seu interesse na nova máquina. Você foi uma das primeiras pessoas a entrar na lista. A Marcela vai mostrar a nova geração ao vivo no Instagram, com as condições da pré-venda das 250 unidades. Quer que a gente te avise uma hora antes?
 
 ## Lembrete de uma hora antes
 

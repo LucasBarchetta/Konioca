@@ -1,5 +1,6 @@
 // POST /email-teste — (interno, chave de serviço) manda a prévia de um e-mail de lead só para um aprovador do painel,
-// pela exceção interna (tag "teste"), sem mexer em envios_ativos. Corpo: { tipo?: "convite", para?: "<e-mail>" }.
+// pela exceção interna (tag "teste"), sem mexer em envios_ativos. Corpo: { tipo?: "convite", para?: "<e-mail>", imagens_url?: "<base>" }.
+// imagens_url troca a base das imagens só neste teste (prévia do Pages antes de mesclar em main).
 // Sem "para", vai para os aprovadores com papel "principal". Nunca manda para quem não está em painel_aprovadores.
 import { db, exigirServico } from "../_shared/db.ts";
 import { carregarConfig, type Config } from "../_shared/config.ts";
@@ -11,10 +12,11 @@ import { enviarEmail } from "../_shared/email.ts";
 Deno.serve(async (req) => {
   if (req.method !== "POST") return json({ erro: "método" }, 405);
   if (!(await exigirServico(req))) return json({ erro: "não autorizado" }, 401);
-  const b = (await lerJson<{ tipo?: string; para?: string }>(req)) ?? {};
+  const b = (await lerJson<{ tipo?: string; para?: string; imagens_url?: string }>(req)) ?? {};
   const tipo = b.tipo ?? "convite";
   if (tipo !== "convite") return json({ erro: "tipo não suportado: " + tipo }, 400);
   const { todos } = await carregarConfig();
+  if (b.imagens_url && /^https:\/\/[a-z0-9.-]+\.(konioca\.com|pages\.dev)(\/|$)/i.test(b.imagens_url)) todos["email_imagens_url"] = b.imagens_url;
   const lista = aprovadores(todos);
   const destinos = b.para ? lista.filter((a) => a.email.toLowerCase() === String(b.para).toLowerCase()) : lista.filter((a) => a.papel === "principal");
   if (!destinos.length) return json({ erro: "destinatário fora da lista de aprovadores" }, 400);

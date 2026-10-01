@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { conviteWhatsappVencido, montarEnvio } from "../supabase/functions/_shared/fila.ts";
+import { conviteWhatsappVencido, emailImagens, montarEnvio } from "../supabase/functions/_shared/fila.ts";
 import { selecionarHeuristica } from "../supabase/functions/_shared/perguntas.ts";
 import { textoHaQuanto } from "../supabase/functions/_shared/datas.ts";
 
@@ -32,6 +32,26 @@ test("Convite por e-mail: Instagram da Konioca, termina em 'Você consegue estar
   assert.match(e.texto, /optout\?t=tok/);
   assert.ok(!/escolhid/i.test(e.texto + e.html), "nada de exclusividade falsa");
   assert.ok(!/reserv|pague|pagamento/i.test(e.texto), "convite não fala em reservar ou pagar na noite da live");
+});
+
+test("Convite por e-mail: logo no topo, foto da máquina hospedada com texto alternativo, sem emoji", () => {
+  const e = montarEnvio("convite", "email", LEAD, CFG, API);
+  assert.match(e.html, /<img src="https:\/\/prevenda\.konioca\.com\/assets\/img\/email\/logo-360\.png" width="180" alt="Konioca"/);
+  assert.match(e.html, /<img src="https:\/\/prevenda\.konioca\.com\/assets\/img\/email\/maquina-600\.jpg" width="600" alt="Nova máquina Konioca"/);
+  assert.ok(e.html.indexOf("logo-360.png") < e.html.indexOf("maquina-600.jpg"), "logo acima da foto");
+  assert.ok(!/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u.test(e.html + e.texto), "sem emoji");
+  const outra = emailImagens({ email_imagens_url: "https://claude-x.konioca.pages.dev/assets/img/email/" });
+  assert.equal(outra.maquina, "https://claude-x.konioca.pages.dev/assets/img/email/maquina-600.jpg");
+});
+
+test("Reaquecimento de quem foi contatado à mão: só WhatsApp, só com o nome, e só com o modelo aprovado", () => {
+  const cfg = { ...CFG, wa_tpl_reaquecimento_manual: "konioca_reaquecimento_manual" };
+  assert.equal(montarEnvio("reaquecimento_manual", "whatsapp", LEAD, cfg, API).canal, "nenhum", "sem aprovação da Meta nada sai");
+  assert.equal(montarEnvio("reaquecimento_manual", "email", LEAD, { ...cfg, wa_tpl_reaquecimento_manual_aprovado: true }, API).canal, "nenhum");
+  const e = montarEnvio("reaquecimento_manual", "whatsapp", LEAD, { ...cfg, wa_tpl_reaquecimento_manual_aprovado: true }, API);
+  assert.equal(e.canal, "whatsapp");
+  assert.equal(e.nome, "konioca_reaquecimento_manual");
+  assert.deepEqual(e.params, ["Ana"]);
 });
 
 test("Convite e lembrete param com o Instagram entre colchetes", () => {
