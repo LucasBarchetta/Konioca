@@ -2,6 +2,7 @@
 // obrigado.js (sendBeacon em text/plain, sem preflight) e soma contadores por dia e origem em visitas_dia.
 // Nada por pessoa: não guarda IP, user agent, cookie nem o corpo. Responde 204 sempre (o navegador nem lê).
 // Só conta o domínio oficial (config.lp_url): prévia *.pages.dev e testes ficam de fora. utm_source teste/monitor não conta.
+// utm_content vai junto (1/10): separa P1/P2/P3-P4 da base antiga e as versões A/B do P2 (p2_a / p2_b).
 import { db } from "../_shared/db.ts";
 import { carregarConfig, cfgText } from "../_shared/config.ts";
 import { corsHeaders } from "../_shared/http.ts";
@@ -32,8 +33,8 @@ Deno.serve(async (req) => {
   if (IGNORAR.test(texto(pt.utm_source)) || IGNORAR.test(texto(vs.utm_source))) return vazio();
   const { error } = await db().rpc("visita_registrar", {
     p_pagina: texto(b.pagina, 10) || "lp",
-    p_src: texto(pt.utm_source), p_med: texto(pt.utm_medium), p_ref: host(texto(pt.referrer, 500)),
-    p_src_v: texto(vs.utm_source), p_med_v: texto(vs.utm_medium), p_ref_v: host(texto(vs.referrer, 500)),
+    p_src: texto(pt.utm_source), p_med: texto(pt.utm_medium), p_ref: host(texto(pt.referrer, 500)), p_content: texto(pt.utm_content, 60),
+    p_src_v: texto(vs.utm_source), p_med_v: texto(vs.utm_medium), p_ref_v: host(texto(vs.referrer, 500)), p_content_v: texto(vs.utm_content, 60),
     p_nova: b.nova === true,
   });
   if (error) console.error("visita_registrar", error.message);

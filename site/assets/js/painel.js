@@ -9,7 +9,7 @@
 
   var estado = { quem: null, leads: [], filtro: "todos", canal: "todos", temp: "todas", busca: "", aba: "leads", aberto: {}, canalAberto: {}, aprovacoes: [], novos: {}, atualizadoEm: 0, digitando: false, carregando: false, adiada: false };
   // Etiqueta de canal (primeiro toque, mesma gaveta da aba Desempenho: v_painel_leads.canal). Espelho de painel_regras.ts.
-  var CANAIS = [["stories", "Stories"], ["bio_instagram", "Bio do Instagram"], ["bio_tiktok", "Bio do TikTok"], ["whatsapp", "WhatsApp"], ["base_p1", "E-mail base antiga P1"], ["base_p2", "E-mail base antiga P2"], ["base_p34", "E-mail base antiga P3-P4"], ["base_email", "E-mail base antiga"], ["convite", "Convite"], ["direto", "Direto"], ["outros", "Outros"]];
+  var CANAIS = [["stories", "Stories"], ["bio_instagram", "Bio do Instagram"], ["bio_tiktok", "Bio do TikTok"], ["whatsapp", "WhatsApp"], ["base_p1", "E-mail base antiga P1"], ["base_p2", "E-mail base antiga P2"], ["base_p2_a", "E-mail base antiga P2 (A)"], ["base_p2_b", "E-mail base antiga P2 (B)"], ["base_p34", "E-mail base antiga P3-P4"], ["base_email", "E-mail base antiga"], ["convite", "Convite"], ["direto", "Direto"], ["outros", "Outros"]];
   function rotuloCanal(c) { for (var i = 0; i < CANAIS.length; i++) if (CANAIS[i][0] === (c || "outros")) return CANAIS[i][1]; return "Outros"; }
   function detalheCanal(l) {
     var crus = [l.utm_source, l.utm_medium, l.utm_campaign].map(function (x) { return String(x || "").trim(); }).filter(Boolean).join(" / ");

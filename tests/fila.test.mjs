@@ -137,7 +137,18 @@ test("Base antiga: três versões (texto do Lucas de 1/10), preços da config, a
   // P2: pelo mês; P3/P4 com mais de um ano: "faz mais de um ano"
   const p2 = montarEnvio("base_antiga_email", "email", { ...base, base_antiga_prioridade: "P2" }, cfg, API);
   assert.match(p2.texto, /^Ana, você procurou a Konioca em fevereiro e a gente guardou o seu contato\./);
-  assert.match(p2.texto, /utm_content=p2/);
+  assert.match(p2.texto, /utm_content=p2\b/);
+  // Teste A/B do P2 (2/10): A = texto aprovado com link p2_a; B = assunto e abertura pelo preço, na voz da Marcela, link p2_b.
+  const p2a = montarEnvio("base_antiga_email", "email", { ...base, base_antiga_prioridade: "P2", base_antiga_variante: "a" }, cfg, API);
+  assert.equal(p2a.assunto, p2.assunto); assert.equal(p2a.texto.replace("utm_content=p2_a", "utm_content=p2"), p2.texto);
+  const p2b = montarEnvio("base_antiga_email", "email", { ...base, base_antiga_prioridade: "P2", base_antiga_variante: "b" }, cfg, API);
+  assert.equal(p2b.assunto, "Ana, a nova Konioca custa R$ 9.900");
+  assert.match(p2b.texto, /^Ana, quando você procurou a Konioca em fevereiro, a máquina custava R\$ 25\.900\./);
+  assert.match(p2b.texto, /A nova geração custa R\$ 9\.900, com financiamento pelo Bradesco\. A atual continua custando R\$ 25\.900: são máquinas diferentes\./);
+  assert.match(p2b.texto, /utm_content=p2_b/); assert.doesNotMatch(p2b.texto, /de R\$|por R\$|últimas|restam/i);
+  assert.match(p2b.html, /Entrar na lista agora/); assert.match(p2b.html, /cones-600x240\.jpg/);
+  // P1 e P3/P4 não têm variante: o link continua p1 / p34 mesmo se a coluna vier preenchida.
+  assert.match(montarEnvio("base_antiga_email", "email", { ...base, base_antiga_prioridade: "P1", base_antiga_variante: "b" }, cfg, API).texto, /utm_content=p1\b/);
   const p3 = montarEnvio("base_antiga_email", "email", { ...base, base_antiga_prioridade: "P3", base_antiga_gancho: "set/25" }, cfg, API);
   assert.match(p3.texto, /^Ana, faz mais de um ano que você procurou a Konioca, em setembro de 2025, e a gente guardou o seu contato\./);
   assert.match(p3.texto, /utm_content=p34/);
