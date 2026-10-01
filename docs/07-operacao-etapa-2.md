@@ -62,11 +62,17 @@ Carregada em `base_antiga` a partir da planilha do Drive, sem passar pelo reposi
 
 Duas linhas marcadas como possível cadastro de teste ficam fora (`status = 'revisar'`). Sem WhatsApp: 10 sem telefone, 18 com 10 dígitos e 23 números que não são celular válido.
 
-Em 5/10, promover e agendar os e-mails (lotes de 150 por hora):
+Calendário de 1/10 (substitui o anterior): P1 em 1/10; P2 em 2/10 às 9h; P3 e P4 em 5/10 às 9h. Cada versão do e-mail
+sai só depois do "sim" do Lucas no teste (`email-teste` com `tipo: base_antiga_email` e `prioridade`). Lotes de 150 por
+hora, pausa automática com devolução acima de 3% (docs/16). Nenhum WhatsApp para a base antiga até o número oficial
+ligar (`base_antiga_whatsapp_ativo = false`). Promoção por prioridade, com hora de início (migração 730):
+```sql
+select * from public.base_antiga_promover(2000, array['P1']);                                   -- agora
+select * from public.base_antiga_promover(2000, array['P2'], '2026-10-02T09:00:00-03:00');       -- sexta 9h
+select * from public.base_antiga_promover(2000, array['P3','P4'], '2026-10-05T09:00:00-03:00');  -- segunda 9h
 ```
-curl -X POST -H "Authorization: Bearer <SERVICE_ROLE_KEY>" https://ytsildpxummevfkjcjhs.supabase.co/functions/v1/base-antiga-importar
-```
-A function recusa rodar antes de `captacao_inicio`. Depois disso, o `base-antiga-processar` (a cada 30 minutos) manda WhatsApp a quem clicou no e-mail, em lotes de 15, uma tentativa por pessoa, e para se a fila for pausada por qualidade do número. P1 já recebe WhatsApp junto com o e-mail. Para voltar a regra original do P2 (WhatsApp em lotes 48h depois do e-mail, mesmo sem clique):
+O e-mail de cada prioridade leva `utm_content=p1|p2|p34`, que o painel usa para separar os canais. O caminho antigo
+(`base-antiga-importar`, tudo de uma vez em `captacao_inicio`) continua existindo, mas não é o calendário em vigor. Depois disso, o `base-antiga-processar` (a cada 30 minutos) manda WhatsApp a quem clicou no e-mail, em lotes de 15, uma tentativa por pessoa, e para se a fila for pausada por qualidade do número. P1 já recebe WhatsApp junto com o e-mail. Para voltar a regra original do P2 (WhatsApp em lotes 48h depois do e-mail, mesmo sem clique):
 ```sql
 update config set valor = '"lotes"' where chave = 'base_antiga_p2_regra';
 ```

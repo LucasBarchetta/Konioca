@@ -105,19 +105,45 @@ test("Texto do lembrete acompanha as horas configuradas", () => {
   assert.equal(textoHaQuanto(6), "há 6 horas");
 });
 
-test("Base antiga: gancho personaliza e leva à LP, sem oferta de preço", async () => {
-  const { ganchoTexto } = await import("../supabase/functions/_shared/datas.ts");
+test("Base antiga: três versões (texto do Lucas de 1/10), preços da config, abertura por grupo", async () => {
+  const { ganchoTexto, ganchoMesesAtras } = await import("../supabase/functions/_shared/datas.ts");
   const agora = new Date("2026-10-06T12:00:00-03:00");
   assert.equal(ganchoTexto("fev/26", agora), "em fevereiro");
   assert.equal(ganchoTexto("set/25", agora), "em setembro de 2025");
   assert.equal(ganchoTexto("xyz", agora), "");
-  const lead = { ...LEAD, base_antiga_gancho: "fev/26" };
-  const e = montarEnvio("base_antiga_email", "email", lead, CFG, API);
+  assert.equal(ganchoMesesAtras("set/26", agora), 1);
+  assert.equal(ganchoMesesAtras("fev/26", agora), 8);
+  assert.equal(ganchoMesesAtras("set/25", agora), 13);
+  const cfg = { ...CFG, preco_atual: 25900, preco_prevenda: 9900, financiamento_parceiro: "Bradesco" };
+  const base = { ...LEAD, base_antiga_gancho: "fev/26", base_antiga_prioridade: "P1" };
+  const e = montarEnvio("base_antiga_email", "email", base, cfg, API);
   assert.equal(e.canal, "email");
-  assert.match(e.texto, /você procurou a Konioca em (fevereiro|fevereiro de 2026)\./);
-  assert.match(e.texto, /utm_campaign=base_antiga/);
-  assert.ok(!/R\$/.test(e.texto), "convite sem oferta de produto");
-  const w = montarEnvio("base_antiga", "whatsapp", lead, CFG, API);
+  assert.equal(e.assunto, "Ana, você procurou a Konioca mais de uma vez");
+  assert.match(e.texto, /^Ana, você procurou a Konioca mais de uma vez, e a gente guardou o seu contato\./);
+  assert.match(e.texto, /A nova geração custa R\$ 9\.900\. A atual custa R\$ 25\.900\./);
+  assert.match(e.texto, /São R\$ 16 mil a menos, com financiamento pelo Bradesco\./);
+  assert.match(e.texto, /No dia 15\/10, às 19h, ela apresenta tudo ao vivo no Instagram\. A live é aberta, mas só quem está na lista pode reservar uma das 250 máquinas/);
+  assert.match(e.texto, /utm_campaign=base_antiga&utm_content=p1/);
+  assert.ok(!/não existe mais|entra primeiro/.test(e.texto), "frases retiradas em 1/10");
+  assert.match(e.html, /A máquina mudou\. E você está entre as primeiras pessoas que estamos chamando\./);
+  assert.match(e.html, /<strong>A nova geração custa/);
+  assert.match(e.html, /cones-600x240\.jpg/);
+  // P1 recente (gancho nos últimos 3 meses): abertura pelo mês
+  const hoje = new Intl.DateTimeFormat("en-US", { timeZone: "America/Sao_Paulo", month: "numeric", year: "2-digit" }).formatToParts(new Date());
+  const mm = Number(hoje.find((x) => x.type === "month").value), aa = hoje.find((x) => x.type === "year").value;
+  const ganchoAtual = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"][mm - 1] + "/" + aa;
+  const r = montarEnvio("base_antiga_email", "email", { ...base, base_antiga_gancho: ganchoAtual }, cfg, API);
+  assert.match(r.texto, /^Ana, você procurou a Konioca em [a-zç]+ e a gente guardou o seu contato\./);
+  // P2: pelo mês; P3/P4 com mais de um ano: "faz mais de um ano"
+  const p2 = montarEnvio("base_antiga_email", "email", { ...base, base_antiga_prioridade: "P2" }, cfg, API);
+  assert.match(p2.texto, /^Ana, você procurou a Konioca em fevereiro e a gente guardou o seu contato\./);
+  assert.match(p2.texto, /utm_content=p2/);
+  const p3 = montarEnvio("base_antiga_email", "email", { ...base, base_antiga_prioridade: "P3", base_antiga_gancho: "set/25" }, cfg, API);
+  assert.match(p3.texto, /^Ana, faz mais de um ano que você procurou a Konioca, em setembro de 2025, e a gente guardou o seu contato\./);
+  assert.match(p3.texto, /utm_content=p34/);
+  // Sem preço na config, nada sai
+  assert.equal(montarEnvio("base_antiga_email", "email", base, CFG, API).canal, "nenhum");
+  const w = montarEnvio("base_antiga", "whatsapp", base, cfg, API);
   assert.equal(w.nome, "konioca_base_antiga");
   assert.equal(w.params.length, 5);
 });

@@ -101,3 +101,14 @@ export function ganchoTexto(gancho: string | null | undefined, agora: Date = new
   const anoAtual = Number(new Intl.DateTimeFormat("en-US", { timeZone: "America/Sao_Paulo", year: "numeric" }).format(agora));
   return ano === anoAtual ? `em ${MESES[m[1]]}` : `em ${MESES[m[1]]} de ${ano}`;
 }
+
+/** Quantos meses atrás é o gancho ("fev/26"), contando meses de calendário. Infinito se não reconhecer. */
+export function ganchoMesesAtras(gancho: string | null | undefined, agora: Date = new Date()): number {
+  const m = String(gancho ?? "").trim().toLowerCase().match(/^([a-zç]{3})\/(\d{2})$/);
+  if (!m || !MESES[m[1]]) return Number.POSITIVE_INFINITY;
+  const mes = Object.keys(MESES).indexOf(m[1]);
+  const f = new Intl.DateTimeFormat("en-US", { timeZone: "America/Sao_Paulo", year: "numeric", month: "numeric" });
+  const p: Record<string, string> = {};
+  for (const x of f.formatToParts(agora)) p[x.type] = x.value;
+  return (Number(p.year) - (2000 + Number(m[2]))) * 12 + (Number(p.month) - 1 - mes);
+}

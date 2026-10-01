@@ -40,4 +40,7 @@ body.painel{display:block;margin:0;background:#19422d;font-family:Carlito,Calibr
 .p-vazio{padding:24px;text-align:center;color:#5a6b3a}
 .p-rodape{margin:0;padding:12px 16px 28px;font-size:12px;color:#c9c9b8;background:#19422d;text-align:center}
 .p-ok{color:#1f4a36;font-size:13px;margin-top:6px}
+.p-restrito{min-height:100vh;display:flex;align-items:center;justify-content:center;font-family:Caladea,Cambria,Georgia,serif;font-size:22px;color:#c9c9b8}
+.p-card.p-novo{animation:p-novo 6s ease-out forwards}
+@keyframes p-novo{0%,60%{background:#f5e9c2;border-color:#c9a227}100%{background:#fff;border-color:#e4d7bf}}
 .oculto{display:none !important}
