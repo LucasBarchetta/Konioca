@@ -22,6 +22,13 @@ base antiga. Contagem só do domínio oficial, sem cookie, sem IP, sem user agen
 
 Hoje, últimos 7 dias, desde o início. Dia em America/Sao_Paulo.
 
+## Entrega em duas partes (decisão do Lucas em 1/10)
+
+- Parte 1, 2/10, depois do disparo do P2: blocos 1 (resumo), 2 (tabela por canal) e 5 (disparos de e-mail), com o
+  filtro de período e a atualização automática. Fica na prévia até o SIM.
+- Parte 2, 5/10: blocos 3 (funil), 4 (gráfico por dia) e 6 (links com mais cadastros).
+- A aba só lê: nenhuma ação dela envia mensagem ou altera lead ou fila (ação `desempenho` da painel-api é só leitura).
+
 ## Blocos, nesta ordem
 
 1. Resumo: visitantes novos, cadastros, taxa de cadastro, Circulares confirmadas, reservas, placar das 250.

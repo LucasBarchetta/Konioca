@@ -11,13 +11,23 @@ Decisão do Lucas: abrir a captação já, só para guardar a base. WhatsApp e e
 
 ## Planilha do time
 
-Function `leads-planilha` devolve CSV (Data, Nome, WhatsApp, E-mail, Cidade, Tem negócio, Origem, Canal UTM), mais novo primeiro, sem quem pediu para sair. Protegida por chave: a config guarda só o SHA-256 (`planilha_token_hash`); a chave em si fica apenas na fórmula da planilha.
+Function `leads-planilha` devolve CSV (Data, Nome, WhatsApp, E-mail, Cidade, Tem negócio, Origem, Canal UTM), mais novo primeiro, sem quem pediu para sair. Só cadastros pela página (decisão de 1/10): contato da base antiga entra quando se cadastrar pela LP. Protegida por chave: a config guarda só o SHA-256 (`planilha_token_hash`); a chave em si fica apenas na fórmula da planilha.
 
 1. No Google Drive, criar uma planilha em branco (só o time com acesso; nunca "qualquer pessoa com o link").
 2. Na célula A1: `=IMPORTDATA("https://ytsildpxummevfkjcjhs.supabase.co/functions/v1/leads-planilha?k=<CHAVE>")`.
 3. O Google atualiza sozinho, em geral a cada hora. Não editar as colunas importadas; anotações do time vão em colunas à direita ou em outra aba.
 
-Trocar a chave (alguém saiu do time, link vazou): gerar uma nova, gravar o SHA-256 em `planilha_token_hash` e atualizar a fórmula. A chave antiga para na hora.
+Trocar a chave (alguém saiu do time, link vazou): gerar uma nova, gravar o SHA-256 em `planilha_token_hash` e atualizar a fórmula. A chave antiga para na hora. A chave nunca passa pelo chat nem pelo repositório: ela nasce no banco e vai por e-mail para um aprovador, em um comando só (a chave só existe no e-mail):
+
+```sql
+with k as (select encode(extensions.gen_random_bytes(32), 'hex') as chave),
+u as (update public.config set valor = to_jsonb(encode(extensions.digest(k.chave, 'sha256'), 'hex')) from k where chave = 'planilha_token_hash' returning 1)
+select public.chamar_function('email-teste', jsonb_build_object('tipo', 'texto', 'para', '<e-mail de painel_aprovadores>',
+  'assunto', 'Fórmula nova da aba Total', 'texto', 'Cole na célula A1 da aba Total:' || E'\n\n' ||
+  '=IMPORTDATA("https://<REF>.supabase.co/functions/v1/leads-planilha?k=' || k.chave || '")')) from k, u;
+```
+
+Feito em 1/10 (a chave anterior apareceu num print no chat).
 
 ## Nada se perde enquanto os canais estão desligados
 

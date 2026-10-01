@@ -50,3 +50,34 @@ export function filtrarLeads<T extends { pode_cobrar?: boolean | null; circular_
     default: return leads.filter((l) => !l.base_antiga);
   }
 }
+
+/** Canal de origem do lead (primeiro toque, mesma gaveta da aba Desempenho: v_painel_leads.canal) -> etiqueta. */
+export const CANAIS: readonly { canal: string; rotulo: string }[] = [
+  { canal: "stories", rotulo: "Stories" }, { canal: "bio_instagram", rotulo: "Bio do Instagram" }, { canal: "bio_tiktok", rotulo: "Bio do TikTok" },
+  { canal: "whatsapp", rotulo: "WhatsApp" }, { canal: "base_p1", rotulo: "E-mail base antiga P1" }, { canal: "base_p2", rotulo: "E-mail base antiga P2" },
+  { canal: "base_p34", rotulo: "E-mail base antiga P3-P4" }, { canal: "base_email", rotulo: "E-mail base antiga" }, { canal: "convite", rotulo: "Convite" },
+  { canal: "direto", rotulo: "Direto" }, { canal: "outros", rotulo: "Outros" },
+];
+
+export function rotuloCanal(canal: string | null | undefined): string {
+  return CANAIS.find((c) => c.canal === (canal ?? "outros"))?.rotulo ?? "Outros";
+}
+
+/** O que aparece ao tocar na etiqueta: o link específico (utm_content, ex.: roteiro de vídeo) e os UTMs crus. */
+export function detalheCanal(l: { utm_source?: string | null; utm_medium?: string | null; utm_campaign?: string | null; utm_content?: string | null }): string {
+  const crus = [l.utm_source, l.utm_medium, l.utm_campaign].map((x) => String(x ?? "").trim()).filter(Boolean).join(" / ");
+  const link = String(l.utm_content ?? "").trim();
+  return (link ? `Link: ${link}` : "Sem link específico") + (crus ? ` · ${crus}` : " · sem UTM");
+}
+
+export function filtrarCanal<T extends { canal?: string | null }>(leads: T[], canal: string): T[] {
+  if (!canal || canal === "todos") return leads;
+  return leads.filter((l) => (l.canal ?? "outros") === canal);
+}
+
+/** Canais presentes na lista visível, na ordem de CANAIS, com contagem (para os botões do filtro). */
+export function canaisPresentes(leads: { canal?: string | null }[]): { canal: string; rotulo: string; n: number }[] {
+  const n: Record<string, number> = {};
+  for (const l of leads) { const c = l.canal ?? "outros"; n[c] = (n[c] ?? 0) + 1; }
+  return CANAIS.filter((c) => n[c.canal]).map((c) => ({ ...c, n: n[c.canal] }));
+}

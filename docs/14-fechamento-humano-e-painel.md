@@ -108,3 +108,7 @@ até a foto chegar. Quando a foto vier, entra em `site/assets/img/previa-lp.jpg`
 
 Sem o token, a parte por HTTP do Monitor (`monitor-checar`) já roda no Supabase; só o clique real em tela de
 celular espera a Cloudflare.
+
+## Etiqueta de canal (1/10)
+
+Cada lead mostra, ao lado do nome, o canal de origem pelo primeiro toque, com a mesma regra da aba Desempenho (`origem_numeros` sobre os UTMs guardados no cadastro, coluna `canal` da view `v_painel_leads`): Stories, Bio do Instagram, Bio do TikTok, WhatsApp, E-mail base antiga P1/P2/P3-P4, Convite, Direto, Outros. Tocar na etiqueta mostra o link específico (`utm_content`, ex.: o roteiro de vídeo) e os UTMs crus. No topo da lista há um filtro por canal, com a contagem de cada um dentro do filtro atual. Migração `20261001000750_painel_canal.sql` (só leitura, aplicada junto com a publicação do painel).

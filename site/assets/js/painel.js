@@ -7,7 +7,20 @@
   try { if (token) sessionStorage.setItem("k_painel_t", token); else token = sessionStorage.getItem("k_painel_t") || ""; } catch (e) { /* sem storage */ }
   if (q.get("t")) { try { history.replaceState(null, "", location.pathname); } catch (e) { /* ok */ } }
 
-  var estado = { quem: null, leads: [], filtro: "todos", busca: "", aba: "leads", aberto: {}, aprovacoes: [], novos: {}, atualizadoEm: 0, digitando: false, carregando: false, adiada: false };
+  var estado = { quem: null, leads: [], filtro: "todos", canal: "todos", busca: "", aba: "leads", aberto: {}, canalAberto: {}, aprovacoes: [], novos: {}, atualizadoEm: 0, digitando: false, carregando: false, adiada: false };
+  // Etiqueta de canal (primeiro toque, mesma gaveta da aba Desempenho: v_painel_leads.canal). Espelho de painel_regras.ts.
+  var CANAIS = [["stories", "Stories"], ["bio_instagram", "Bio do Instagram"], ["bio_tiktok", "Bio do TikTok"], ["whatsapp", "WhatsApp"], ["base_p1", "E-mail base antiga P1"], ["base_p2", "E-mail base antiga P2"], ["base_p34", "E-mail base antiga P3-P4"], ["base_email", "E-mail base antiga"], ["convite", "Convite"], ["direto", "Direto"], ["outros", "Outros"]];
+  function rotuloCanal(c) { for (var i = 0; i < CANAIS.length; i++) if (CANAIS[i][0] === (c || "outros")) return CANAIS[i][1]; return "Outros"; }
+  function detalheCanal(l) {
+    var crus = [l.utm_source, l.utm_medium, l.utm_campaign].map(function (x) { return String(x || "").trim(); }).filter(Boolean).join(" / ");
+    var link = String(l.utm_content || "").trim();
+    return (link ? "Link: " + link : "Sem link específico") + (crus ? " · " + crus : " · sem UTM");
+  }
+  function filtrarCanal(leads, canal) { if (!canal || canal === "todos") return leads; return leads.filter(function (l) { return (l.canal || "outros") === canal; }); }
+  function canaisPresentes(leads) {
+    var n = {}; leads.forEach(function (l) { var c = l.canal || "outros"; n[c] = (n[c] || 0) + 1; });
+    return CANAIS.filter(function (c) { return n[c[0]]; }).map(function (c) { return { canal: c[0], rotulo: c[1], n: n[c[0]] }; });
+  }
   var INTERVALO = 30000; // atualização automática com a página visível
   var el = function (id) { return document.getElementById(id); };
   function erro(msg) { var e = el("p-erro"); if (!msg) { e.classList.add("oculto"); return; } e.textContent = msg; e.classList.remove("oculto"); }
@@ -77,7 +90,9 @@
     }
     acoes += '<button type="button" class="discreto" data-acao="historico" data-id="' + l.id + '">' + (estado.aberto[l.id] === "historico" ? "Fechar histórico" : "Histórico") + "</button>";
     var extra = estado.aberto[l.id] === "reservar" ? formReserva(l) : estado.aberto[l.id] === "cancelar" ? formCancelar(l) : estado.aberto[l.id] === "email" ? formEmail(l) : estado.aberto[l.id] === "historico" ? '<div class="p-hist" id="hist-' + l.id + '">carregando…</div>' : "";
-    return '<article class="p-card' + (estado.novos[l.id] ? " p-novo" : "") + '" data-lead="' + l.id + '"><h3>' + esc(l.nome) + "</h3><div class=\"p-meta\">" + esc(meta) + '</div><div class="p-tags">' + tags.join("") + '</div><div class="p-acoes">' + acoes + "</div>" + extra + "</article>";
+    var canal = '<button type="button" class="p-canal" data-acao="canal" data-id="' + l.id + '" title="Toque para ver o link de origem">' + esc(rotuloCanal(l.canal)) + "</button>";
+    var canalInfo = estado.canalAberto[l.id] ? '<div class="p-canal-info">' + esc(detalheCanal(l)) + "</div>" : "";
+    return '<article class="p-card' + (estado.novos[l.id] ? " p-novo" : "") + '" data-lead="' + l.id + '"><h3>' + esc(l.nome) + " " + canal + "</h3>" + canalInfo + "<div class=\"p-meta\">" + esc(meta) + '</div><div class="p-tags">' + tags.join("") + '</div><div class="p-acoes">' + acoes + "</div>" + extra + "</article>";
   }
   function formReserva(l) {
     var ops = ""; for (var i = 1; i <= 10; i++) ops += '<option value="' + i + '">' + i + (i === 1 ? " máquina" : " máquinas") + "</option>";
@@ -90,9 +105,19 @@
     return '<form class="p-form" data-form="email" data-id="' + l.id + '"><input name="email" type="email" value="' + esc(l.email) + '" required style="flex:1;min-width:200px"><label><input type="checkbox" name="reenviar" ' + (l.convidado_em ? "checked" : "") + '> reenviar o convite por e-mail</label><button type="submit" class="primario">Salvar</button><button type="button" data-acao="fechar" data-id="' + l.id + '">Cancelar</button><div class="p-ajuda">O endereço antigo continua bloqueado se tiver devolvido. Fica registrado como "e-mail corrigido" com o seu nome.</div></form>';
   }
 
+  function renderCanais(base) {
+    // Filtro por canal: só os canais presentes na lista do filtro atual, com a contagem. Some se o canal filtrado sumir.
+    var cs = canaisPresentes(base);
+    if (estado.canal !== "todos" && !cs.some(function (c) { return c.canal === estado.canal; })) estado.canal = "todos";
+    el("p-canais").innerHTML = '<button type="button" data-canal="todos" class="' + (estado.canal === "todos" ? "ativa" : "") + '">Todos os canais</button>' + cs.map(function (c) {
+      return '<button type="button" data-canal="' + c.canal + '" class="' + (estado.canal === c.canal ? "ativa" : "") + '">' + esc(c.rotulo) + ' <span class="p-n">' + c.n + "</span></button>";
+    }).join("");
+  }
   function render() {
-    var vis = buscar(filtrar(estado.leads, estado.filtro), estado.busca);
-    el("p-resumo").textContent = vis.length + (vis.length === 1 ? " lead" : " leads") + (estado.filtro !== "todos" ? " neste filtro" : "") + " · " + estado.leads.filter(function (l) { return !l.base_antiga; }).length + " cadastrados pela página";
+    var base = buscar(filtrar(estado.leads, estado.filtro), estado.busca);
+    renderCanais(base);
+    var vis = filtrarCanal(base, estado.canal);
+    el("p-resumo").textContent = vis.length + (vis.length === 1 ? " lead" : " leads") + (estado.filtro !== "todos" || estado.canal !== "todos" ? " neste filtro" : "") + " · " + estado.leads.filter(function (l) { return !l.base_antiga; }).length + " cadastrados pela página";
     el("p-lista").innerHTML = vis.length ? vis.map(cartao).join("") : '<div class="p-vazio">Nada aqui com esse filtro.</div>';
     Object.keys(estado.aberto).forEach(function (id) { if (estado.aberto[id] === "historico") carregarHistorico(id); });
   }
@@ -176,6 +201,7 @@
     else if (acao === "cancelar-form") { estado.aberto[id] = "cancelar"; render(); }
     else if (acao === "email-form") { estado.aberto[id] = "email"; render(); }
     else if (acao === "fechar") { delete estado.aberto[id]; estado.digitando = false; render(); }
+    else if (acao === "canal") { if (estado.canalAberto[id]) delete estado.canalAberto[id]; else estado.canalAberto[id] = true; render(); }
     else if (acao === "historico") { if (estado.aberto[id] === "historico") delete estado.aberto[id]; else estado.aberto[id] = "historico"; render(); }
     else if (acao === "contato") {
       if (!confirm("Marcar como contatado à mão no WhatsApp? O convite automático por WhatsApp é cancelado e a pessoa entra no reaquecimento.")) return;
@@ -205,6 +231,10 @@
     estado.filtro = b.getAttribute("data-filtro");
     el("p-filtros").querySelectorAll("button").forEach(function (x) { x.classList.toggle("ativa", x === b); });
     render();
+  });
+  el("p-canais").addEventListener("click", function (ev) {
+    var b = ev.target.closest("button[data-canal]"); if (!b) return;
+    estado.canal = b.getAttribute("data-canal"); render();
   });
   el("p-abas").addEventListener("click", function (ev) {
     var b = ev.target.closest("button[data-aba]"); if (!b) return;

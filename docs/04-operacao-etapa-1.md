@@ -36,6 +36,7 @@
 5. Clicar em "Não quero mais receber". Esperado: `optout_em` preenchido, `status_funil = saiu`.
 6. Meta Events Manager (Test Events) e GA4 DebugView: um evento `Lead` / `generate_lead` na página de obrigado, só no cadastro novo. Com `meta_capi_ativo`, o Events Manager mostra o mesmo `Lead` vindo do navegador e do servidor com o mesmo event_id e o marca como deduplicado. Para testar sem sujar produção, preencher `meta_test_event_code`.
 7. Rodar a exportação: `curl -X POST -H "Authorization: Bearer <SERVICE_ROLE_KEY>" https://<REF>.supabase.co/functions/v1/sults-export`. Esperado: `exports/leads-AAAA-MM-DD.csv` no Storage.
+8. Depois de cada publicação (function ou site), rodar `./scripts/smoke.sh` (ou o equivalente pelo banco, descrito no cabeçalho do script). Ele confere a config pública, a LP e a `leads-planilha`: chave errada tem de voltar 401 com o texto "não autorizado" (prova que a function não voltou a exigir JWT), e o smoke (`POST {"smoke": true}` com a chave de serviço) monta o CSV inteiro e devolve `{"ok":true,"linhas":N}`. Em 1/10 dois leads da base antiga sem WhatsApp derrubaram a function e a aba "Total" do Sheets ficou sem resposta até alguém notar.
 
 ## Operar
 

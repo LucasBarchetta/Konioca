@@ -1,10 +1,13 @@
-// WhatsApp Cloud API (Meta). Única forma de WhatsApp permitida no projeto.
-// Envio de template, texto, botões e áudio; verificação de assinatura do webhook; parse dos eventos.
-// Chave mestra config.envios_ativos: com false, nenhuma mensagem sai pela Cloud API.
+// WhatsApp Cloud API (Meta), direto ou pela 360dialog (coexistência com o app, decisão de 1/10). Única forma de
+// WhatsApp permitida no projeto. Envio de template, texto, botões e áudio; verificação do webhook; parse dos eventos.
+// Chave mestra config.envios_ativos: com false, nenhuma mensagem sai.
+// Segredos: WHATSAPP_PROVEDOR ("meta" ou "360dialog"), WHATSAPP_TOKEN (token da Meta ou chave D360-API-KEY),
+// WHATSAPP_PHONE_NUMBER_ID (só Meta), WHATSAPP_APP_SECRET e WHATSAPP_VERIFY_TOKEN (só Meta), WHATSAPP_WEBHOOK_SEGREDO (só 360dialog).
 import { normalizarWhatsapp } from "./validacao.ts";
 import { carregarConfig, cfgBool } from "./config.ts";
+import { BASE_360, cabecalhosAuth, configuradoCom, enderecoEnvio, provedorDe, segredoUrlOk, urlWebhook } from "./whatsapp_regras.ts";
 
-const GRAPH = "https://graph.facebook.com/v21.0";
+export function provedor() { return provedorDe(Deno.env.get("WHATSAPP_PROVEDOR")); }
 
 function env(nome: string): string {
   const v = Deno.env.get(nome);
@@ -15,18 +18,16 @@ function env(nome: string): string {
 export interface EnvioResultado { ok: boolean; wamid?: string; erro?: string; codigo?: number }
 
 export function whatsappConfigurado(): boolean {
-  return !!Deno.env.get("WHATSAPP_TOKEN") && !!Deno.env.get("WHATSAPP_PHONE_NUMBER_ID");
+  return configuradoCom(provedor(), Deno.env.get("WHATSAPP_TOKEN"), Deno.env.get("WHATSAPP_PHONE_NUMBER_ID"));
 }
 
 async function postMensagem(corpo: Record<string, unknown>): Promise<EnvioResultado> {
-  if (!whatsappConfigurado()) return { ok: false, erro: "WHATSAPP_TOKEN/WHATSAPP_PHONE_NUMBER_ID ausentes", codigo: -1 };
+  if (!whatsappConfigurado()) return { ok: false, erro: "WHATSAPP_TOKEN (e WHATSAPP_PHONE_NUMBER_ID na Meta) ausentes", codigo: -1 };
   const { todos } = await carregarConfig();
   if (!cfgBool(todos, "envios_ativos", false)) return { ok: false, erro: "envios pausados (config.envios_ativos)", codigo: -2 };
-  const token = env("WHATSAPP_TOKEN");
-  const phone = env("WHATSAPP_PHONE_NUMBER_ID");
-  const r = await fetch(`${GRAPH}/${phone}/messages`, {
+  const r = await fetch(enderecoEnvio(provedor(), Deno.env.get("WHATSAPP_PHONE_NUMBER_ID") ?? ""), {
     method: "POST",
-    headers: { "authorization": `Bearer ${token}`, "content-type": "application/json" },
+    headers: cabecalhosAuth(provedor(), env("WHATSAPP_TOKEN")),
     body: JSON.stringify({ messaging_product: "whatsapp", recipient_type: "individual", ...corpo }),
   });
   const j = await r.json().catch(() => ({})) as { messages?: { id: string }[]; error?: { message?: string; code?: number; error_data?: { details?: string } } };
@@ -64,14 +65,31 @@ export function enviarAudio(e164: string, mediaId: string): Promise<EnvioResulta
 
 export async function marcarLida(wamid: string): Promise<void> {
   try {
-    await fetch(`${GRAPH}/${env("WHATSAPP_PHONE_NUMBER_ID")}/messages`, {
-      method: "POST", headers: { "authorization": `Bearer ${env("WHATSAPP_TOKEN")}`, "content-type": "application/json" },
+    await fetch(enderecoEnvio(provedor(), Deno.env.get("WHATSAPP_PHONE_NUMBER_ID") ?? ""), {
+      method: "POST", headers: cabecalhosAuth(provedor(), env("WHATSAPP_TOKEN")),
       body: JSON.stringify({ messaging_product: "whatsapp", status: "read", message_id: wamid }),
     });
   } catch { /* melhor esforço */ }
 }
 
+/** 360dialog: registra a URL do nosso webhook (com o segredo) na conta deles. Só com o provedor 360dialog. */
+export async function registrarWebhook360(): Promise<{ ok: boolean; url?: string; erro?: string }> {
+  if (provedor() !== "360dialog") return { ok: false, erro: "WHATSAPP_PROVEDOR não é 360dialog" };
+  const segredo = Deno.env.get("WHATSAPP_WEBHOOK_SEGREDO") ?? "";
+  if (segredo.length < 16) return { ok: false, erro: "WHATSAPP_WEBHOOK_SEGREDO ausente ou curto (mínimo 16)" };
+  const url = urlWebhook(Deno.env.get("SUPABASE_URL") ?? "", segredo);
+  const r = await fetch(`${BASE_360}/v1/configs/webhook`, { method: "POST", headers: cabecalhosAuth("360dialog", env("WHATSAPP_TOKEN")), body: JSON.stringify({ url }) });
+  if (!r.ok) return { ok: false, erro: `360dialog ${r.status}: ${(await r.text()).slice(0, 200)}` };
+  return { ok: true, url: url.replace(segredo, "[segredo]") };
+}
+
 // ---- Webhook ---------------------------------------------------------------
+
+/** Meta: assinatura X-Hub-Signature-256 com o app secret. 360dialog: segredo nosso na URL (eles não assinam). */
+export function verificarWebhook(req: Request, corpo: string): Promise<boolean> {
+  if (provedor() === "360dialog") return Promise.resolve(segredoUrlOk(req.url, Deno.env.get("WHATSAPP_WEBHOOK_SEGREDO")));
+  return verificarAssinaturaMeta(req, corpo);
+}
 
 export async function verificarAssinaturaMeta(req: Request, corpo: string): Promise<boolean> {
   const segredo = Deno.env.get("WHATSAPP_APP_SECRET") ?? "";
@@ -93,7 +111,9 @@ export interface MensagemRecebida {
 }
 export interface StatusRecebido { wamid: string; status: string; quando: string; erro: string | null; codigo: number | null; bruto: unknown }
 
-/** Extrai mensagens e status do payload do webhook (várias entradas por chamada). */
+/** Extrai mensagens e status do payload do webhook (várias entradas por chamada). O formato é o mesmo na Meta e na
+ *  360dialog. Em coexistência, o que o time manda pelo app chega como eco (value.message_echoes) e é ignorado aqui:
+ *  não é mensagem do lead nem envio nosso. */
 export function parseWebhook(payload: unknown): { mensagens: MensagemRecebida[]; status: StatusRecebido[] } {
   const mensagens: MensagemRecebida[] = [];
   const status: StatusRecebido[] = [];

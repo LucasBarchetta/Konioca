@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { quantidadeValida, textoCobranca, assinaturaAprovador, filtrarLeads, ddmm, botaoReservar } from "../supabase/functions/_shared/painel_regras.ts";
+import { quantidadeValida, textoCobranca, assinaturaAprovador, filtrarLeads, ddmm, botaoReservar, rotuloCanal, detalheCanal, filtrarCanal, canaisPresentes } from "../supabase/functions/_shared/painel_regras.ts";
 
 test("Quantidade do 'Reservou': inteiro de 1 a 10", () => {
   assert.equal(quantidadeValida(1), 1); assert.equal(quantidadeValida("3"), 3); assert.equal(quantidadeValida(10), 10);
@@ -44,4 +44,15 @@ test("'Reservou' só com pode cobrar; fora disso, desativado com o motivo", () =
   assert.deepEqual(botaoReservar({ circular_confirmada_em: "x", pode_cobrar: true, liberado_em: "2026-09-30T12:00:00Z" }), { ativo: true, texto: "Reservou" });
   assert.equal(botaoReservar({ circular_confirmada_em: "x", pode_cobrar: true, reservou_em: "x" }).ativo, false);
   assert.equal(botaoReservar({ circular_confirmada_em: "x", pode_cobrar: true, optout_em: "x" }).ativo, false);
+});
+
+test("Etiqueta de canal: mesma gaveta da aba Desempenho, com o link específico ao tocar", () => {
+  assert.equal(rotuloCanal("stories"), "Stories"); assert.equal(rotuloCanal("base_p34"), "E-mail base antiga P3-P4");
+  assert.equal(rotuloCanal(null), "Outros"); assert.equal(rotuloCanal("inventado"), "Outros");
+  assert.equal(detalheCanal({ utm_source: "instagram", utm_medium: "stories", utm_campaign: "prevenda_captacao", utm_content: "roteiro_01_preco" }), "Link: roteiro_01_preco · instagram / stories / prevenda_captacao");
+  assert.equal(detalheCanal({ utm_source: "instagram", utm_medium: "stories" }), "Sem link específico · instagram / stories");
+  assert.equal(detalheCanal({}), "Sem link específico · sem UTM");
+  const leads = [{ canal: "stories" }, { canal: "stories" }, { canal: "direto" }, { canal: null }, { canal: "base_p1" }];
+  assert.equal(filtrarCanal(leads, "todos").length, 5); assert.equal(filtrarCanal(leads, "stories").length, 2); assert.equal(filtrarCanal(leads, "outros").length, 1);
+  assert.deepEqual(canaisPresentes(leads).map((c) => c.canal + ":" + c.n), ["stories:2", "base_p1:1", "direto:1", "outros:1"]);
 });

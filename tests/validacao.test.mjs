@@ -23,6 +23,9 @@ test("WhatsApp: recusa DDD inexistente, fixo, curto e repetido", () => {
 
 test("WhatsApp: formatação de volta", () => {
   assert.equal(formatarWhatsapp("+5511990000000"), "(11) 99000-0000");
+  assert.equal(formatarWhatsapp(null), "");
+  assert.equal(formatarWhatsapp(undefined), "");
+  assert.equal(formatarWhatsapp(""), "");
 });
 
 test("E-mail e nome", () => {
