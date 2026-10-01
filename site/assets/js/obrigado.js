@@ -27,6 +27,9 @@
       agenda.addEventListener("click", function () { if (token) K.post("lead-evento", { token: token, tipo: "clicou_agenda" }).catch(function () {}); });
     }
 
+    var ig = document.getElementById("btn-instagram");
+    if (ig) ig.addEventListener("click", function () { if (token) K.post("lead-evento", { token: token, tipo: "clicou_instagram" }).catch(function () {}); });
+
     var time = document.getElementById("btn-time");
     if (time) time.addEventListener("click", function () { if (token) K.post("lead-evento", { token: token, tipo: "clicou_whatsapp_time" }).catch(function () {}); });
   });

@@ -21,12 +21,6 @@ export function turmaDoLead(cfg: Config, lead: LeadFila): Turma | null {
   return turmas.find((t) => t.nome === lead.turma) ?? turmas[0] ?? null;
 }
 
-function sufixoGrupo(link: string): string | undefined {
-  // Botão de URL dinâmica: base https://chat.whatsapp.com/{{1}}
-  const m = link.match(/chat\.whatsapp\.com\/([A-Za-z0-9_-]+)/);
-  return m ? m[1] : undefined;
-}
-
 function esc(s: string): string { return s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c] as string)); }
 
 /** Monta o envio para um item da fila. Nunca inventa dados: o que está entre colchetes na config bloqueia o envio. */
@@ -36,37 +30,41 @@ export function montarEnvio(tipo: string, canal: string, lead: LeadFila, cfg: Co
   const live = partesData(turma?.live ?? cfgText(cfg, "live_data"));
   const lote1 = String(cfgNum(cfg, "lote1_tamanho"));
   const grupo = turma?.subgrupo_link && !pendente(turma.subgrupo_link) ? turma.subgrupo_link : cfgText(cfg, "whatsapp_grupo_link");
+  // Live aberta no Instagram da Konioca (decisão de 1/10): convite e lembrete apontam para o perfil, não para link de sala.
+  const instagram = cfgText(cfg, "instagram_url");
+  void grupo;
   const assinatura = cfgText(cfg, "assinatura_time", "Time da Marcela");
   const idioma = cfgText(cfg, "wa_idioma", "pt_BR");
   void idioma;
 
   if (tipo === "convite") {
+    if (pendente(instagram) || !instagram) return { canal: "nenhum", motivo: "instagram_url pendente" };
     if (canal === "email") {
       const lp = cfgText(cfg, "lp_url");
       const texto = [
         `${nome}, seu nome está na lista da pré-venda da nova Konioca.`,
-        `A live é fechada para quem está na lista: ${live.diaSemana}, ${live.ddmm}, às ${live.hora}. A pré-venda tem ${lote1} máquinas.`,
-        `O link chega pelo grupo da pré-venda: ${grupo}`,
-        `Você consegue estar lá?`, ``, assinatura, ``,
+        `A Marcela apresenta a nova geração ao vivo no Instagram da Konioca: ${live.diaSemana}, ${live.ddmm}, às ${live.hora}. A pré-venda tem ${lote1} máquinas.`,
+        `Siga o perfil e ative o lembrete: ${instagram}`,
+        `Uma hora antes a gente avisa por aqui e no seu WhatsApp. Você consegue estar lá?`, ``, assinatura, ``,
         `Para não receber mais mensagens da pré-venda: ${apiUrl}/optout?t=${encodeURIComponent(lead.token)}`,
       ].join("\n");
       const html = `<!doctype html><html lang="pt-BR"><body style="margin:0;background:#f4ebdb;font-family:Carlito,Calibri,'Segoe UI',sans-serif;color:#1f4a36"><div style="max-width:560px;margin:0 auto;padding:32px 24px">
 <p style="margin:0 0 14px;font-size:17px;line-height:1.6">${esc(nome)}, seu nome está na lista da pré-venda da nova Konioca.</p>
-<p style="margin:0 0 14px;font-size:17px;line-height:1.6">A live é fechada para quem está na lista: ${live.diaSemana}, ${live.ddmm}, às ${live.hora}. A pré-venda tem ${lote1} máquinas.</p>
-<a href="${esc(grupo)}" style="display:block;text-align:center;padding:16px;background:#b04d0c;color:#f7f0e2;font-size:18px;font-weight:700;text-decoration:none;border-radius:7px">Entrar no grupo da pré-venda</a>
-<p style="margin:20px 0 0;font-size:17px;line-height:1.6">Você consegue estar lá?</p>
+<p style="margin:0 0 14px;font-size:17px;line-height:1.6">A Marcela apresenta a nova geração ao vivo no Instagram da Konioca: ${live.diaSemana}, ${live.ddmm}, às ${live.hora}. A pré-venda tem ${lote1} máquinas.</p>
+<a href="${esc(instagram)}" style="display:block;text-align:center;padding:16px;background:#b04d0c;color:#f7f0e2;font-size:18px;font-weight:700;text-decoration:none;border-radius:7px">Seguir o Instagram da Konioca</a>
+<p style="margin:20px 0 0;font-size:17px;line-height:1.6">Ative o lembrete no perfil. Uma hora antes a gente avisa por aqui e no seu WhatsApp. Você consegue estar lá?</p>
 <p style="margin:24px 0 0;font-family:Caladea,Cambria,Georgia,serif;font-style:italic;font-size:18px;color:#5a6b3a">${esc(assinatura)}</p>
 <p style="margin:32px 0 0;font-size:12px;color:#5a6b3a"><a href="${esc(lp)}" style="color:#5a6b3a">${esc(lp)}</a> · <a href="${esc(apiUrl)}/optout?t=${encodeURIComponent(lead.token)}" style="color:#5a6b3a">Não quero mais receber</a></p></div></body></html>`;
       return { canal: "email", assunto: "Seu nome está na lista da pré-venda", texto, html };
     }
-    const suf = sufixoGrupo(grupo);
-    if (!suf) return { canal: "nenhum", motivo: "whatsapp_grupo_link pendente" };
-    return { canal: "whatsapp", modo: "template", nome: cfgText(cfg, "wa_tpl_convite"), params: [nome, live.diaSemana, live.ddmm, live.hora, lote1], botaoUrlSufixo: suf };
+    // Template konioca_convite_live_ig: {{1}} nome, {{2}} dia, {{3}} dd/mm, {{4}} hora, {{5}} máquinas; botão de URL fixa para o Instagram.
+    return { canal: "whatsapp", modo: "template", nome: cfgText(cfg, "wa_tpl_convite"), params: [nome, live.diaSemana, live.ddmm, live.hora, lote1] };
   }
 
   if (tipo === "lembrete_live" || tipo === "lembrete_live_pergunta") {
-    const link = cfgText(cfg, "live_link");
-    if (pendente(link) || !link) return { canal: "nenhum", motivo: "live_link pendente" };
+    // Lembrete de 1 h antes: o "link" é o perfil do Instagram (live aberta). live_link fica como alternativa se um dia houver sala.
+    const link = !pendente(instagram) && instagram ? instagram : cfgText(cfg, "live_link");
+    if (pendente(link) || !link) return { canal: "nenhum", motivo: "instagram_url pendente" };
     if (tipo === "lembrete_live_pergunta" && lead.pergunta_live) {
       return { canal: "whatsapp", modo: "template", nome: cfgText(cfg, "wa_tpl_lembrete_live_pergunta"), params: [nome, live.hora, lead.pergunta_live.slice(0, 120), link] };
     }

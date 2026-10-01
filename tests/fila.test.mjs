@@ -9,32 +9,41 @@ const CFG = {
   whatsapp_grupo_link: "https://chat.whatsapp.com/AbCdEf123", lp_url: "https://prevenda.konioca.com", assinatura_time: "Time da Marcela",
   wa_tpl_convite: "konioca_convite_live", wa_tpl_lembrete_live: "konioca_lembrete_live", wa_tpl_lembrete_live_pergunta: "konioca_lembrete_live_pergunta",
   wa_tpl_gravacao: "konioca_gravacao", wa_tpl_circular_lembrete: "konioca_circular_lembrete", wa_tpl_base_antiga: "konioca_base_antiga",
-  live_link: "https://meet.google.com/abc-defg-hij", live_gravacao_link: "[LINK DA GRAVAÇÃO]",
+  live_link: "[LINK DA LIVE]", live_gravacao_link: "[LINK DA GRAVAÇÃO]", instagram_url: "https://www.instagram.com/konioca",
   turmas: [{ nome: "Turma de quinta · 15/10", live: "2026-10-15T19:00:00-03:00", subgrupo_link: "https://chat.whatsapp.com/[SUBGRUPO-15-10]" }],
   wa_audios: {},
 };
 const LEAD = { id: "l1", nome: "Ana Paula", whatsapp: "+5511990000000", email: "ana@exemplo.com", token: "tok", turma: "Turma de quinta · 15/10", pergunta_live: "Cabe numa academia pequena?", estado_conversa: "inicio" };
 const API = "https://x.supabase.co/functions/v1";
 
-test("Convite por WhatsApp: template com nome, data, hora e lote; botão do grupo; sem 'escolhido'", () => {
+test("Convite por WhatsApp: template com nome, data, hora e lote; botão de URL fixa (Instagram); sem 'escolhido'", () => {
   const e = montarEnvio("convite", "whatsapp", LEAD, CFG, API);
   assert.equal(e.canal, "whatsapp");
   assert.equal(e.nome, "konioca_convite_live");
   assert.deepEqual(e.params, ["Ana", "quinta", "15/10", "19h", "250"]);
-  assert.equal(e.botaoUrlSufixo, "AbCdEf123", "subgrupo pendente cai no grupo geral");
+  assert.equal(e.botaoUrlSufixo, undefined, "botão de URL fixa: nada de sufixo dinâmico");
 });
 
-test("Convite por e-mail (plano B): termina em 'Você consegue estar lá?' e tem saída", () => {
+test("Convite por e-mail: Instagram da Konioca, termina em 'Você consegue estar lá?' e tem saída", () => {
   const e = montarEnvio("convite", "email", LEAD, CFG, API);
   assert.equal(e.canal, "email");
+  assert.match(e.texto, /instagram\.com\/konioca/);
   assert.match(e.texto, /Você consegue estar lá\?/);
   assert.match(e.texto, /optout\?t=tok/);
   assert.ok(!/escolhid/i.test(e.texto + e.html), "nada de exclusividade falsa");
+  assert.ok(!/reserv|pague|pagamento/i.test(e.texto), "convite não fala em reservar ou pagar na noite da live");
+});
+
+test("Convite e lembrete param com o Instagram entre colchetes", () => {
+  const cfg = { ...CFG, instagram_url: "[INSTAGRAM DA KONIOCA]" };
+  assert.equal(montarEnvio("convite", "email", LEAD, cfg, API).canal, "nenhum");
+  assert.equal(montarEnvio("lembrete_live", "whatsapp", LEAD, cfg, API).canal, "nenhum");
 });
 
 test("Lembrete da live: cita a pergunta só na variante de pergunta selecionada", () => {
   const a = montarEnvio("lembrete_live", "whatsapp", LEAD, CFG, API);
   assert.equal(a.nome, "konioca_lembrete_live");
+  assert.ok(a.params.includes("https://www.instagram.com/konioca"), "lembrete leva ao perfil do Instagram");
   assert.ok(!a.params.some((p) => p.includes("academia")));
   const b = montarEnvio("lembrete_live_pergunta", "whatsapp", LEAD, CFG, API);
   assert.equal(b.nome, "konioca_lembrete_live_pergunta");

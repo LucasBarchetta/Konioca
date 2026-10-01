@@ -68,9 +68,10 @@ end $$;
 -- 2) Lead de teste do Monitor técnico: marcado, fora da planilha, dos envios e dos pixels; apagado pelo próprio Monitor.
 alter table public.leads add column if not exists monitor_teste boolean not null default false;
 
--- 3) Live no YouTube; Plano B da página; limite apertado para cadastro sem selo; espera do selo.
-update public.config set valor = '"YouTube"' where chave = 'live_plataforma';
+-- 3) Live aberta no Instagram da Konioca (decisão de 1/10); Plano B da página; limite apertado para cadastro sem selo; espera do selo.
+update public.config set valor = '"Instagram"' where chave = 'live_plataforma';
 insert into public.config (chave, valor, publico, descricao) values
+  ('instagram_url',          '"[INSTAGRAM DA KONIOCA]"', true, 'Perfil do Instagram da Konioca (https://www.instagram.com/...). Botão da página de obrigado, convite, lembrete e agenda. Entre colchetes = convite e lembrete ficam parados'),
   ('cadastro_limite_ip_sem_selo', '{"max": 3, "janela_min": 30}', false, 'Limite por IP para cadastro que chega sem o selo do Turnstile verificado (token ausente)'),
   ('turnstile_espera_ms',  '15000', true,  'Quanto a página espera o selo antes de liberar o botão e mandar sem token'),
   ('planob_espera_ms',     '8000',  true,  'Plano B: tempo máximo da lead-intake antes de mostrar o WhatsApp e guardar os dados'),

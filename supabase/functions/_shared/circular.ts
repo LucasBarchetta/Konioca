@@ -49,7 +49,7 @@ export function montarEmailCircular(opts: {
     ``,
     `Confirmo que recebi a Circular: ${confirmar}`,
     ``,
-    `A live é ${live.diaSemana}, ${live.ddmm}, às ${live.hora}, pelo ${opts.livePlataforma}. O link chega pelo grupo da pré-venda: ${opts.grupoLink}`,
+    `A live é ${live.diaSemana}, ${live.ddmm}, às ${live.hora}, no ${opts.livePlataforma} da Konioca: ${opts.grupoLink}. Siga o perfil e ative o lembrete; o aviso chega por aqui e no seu WhatsApp.`,
     ``,
     opts.assinatura,
     ``,
@@ -64,7 +64,7 @@ export function montarEmailCircular(opts: {
 <p style="margin:0 0 14px;font-size:17px;line-height:1.6">${esc(anexoLinha)} É o documento que a lei pede que você tenha em mãos antes de qualquer pagamento. Leia com calma.</p>
 <p style="margin:0 0 20px;font-size:17px;line-height:1.6">Um detalhe de calendário: a lei dá ${opts.prazoDias} dias entre o recebimento da Circular e qualquer pagamento, e o prazo começa a contar quando você confirma o recebimento no botão abaixo. A pré-venda fecha em ${fim.ddmm}, às ${fim.hora}. Quem confirma até <strong>${lim.ddmm}</strong> consegue fazer a pré-reserva dentro do prazo.</p>
 <a href="${esc(confirmar)}" style="display:block;text-align:center;padding:16px;background:#b04d0c;color:#f7f0e2;font-size:18px;font-weight:700;text-decoration:none;border-radius:7px">Confirmo que recebi a Circular</a>
-<p style="margin:24px 0 0;font-size:16px;line-height:1.6">A live é ${live.diaSemana}, ${live.ddmm}, às ${live.hora}, pelo ${esc(opts.livePlataforma)}. O link chega pelo <a href="${esc(opts.grupoLink)}" style="color:#1f4a36">grupo da pré-venda</a>.</p>
+<p style="margin:24px 0 0;font-size:16px;line-height:1.6">A live é ${live.diaSemana}, ${live.ddmm}, às ${live.hora}, no <a href="${esc(opts.grupoLink)}" style="color:#1f4a36">${esc(opts.livePlataforma)} da Konioca</a>. Siga o perfil e ative o lembrete; o aviso chega por aqui e no seu WhatsApp.</p>
 <p style="margin:24px 0 0;font-family:Caladea,Cambria,Georgia,serif;font-style:italic;font-size:18px;color:#5a6b3a">${esc(opts.assinatura)}</p>
 <p style="margin:32px 0 0;font-size:12px;line-height:1.5;color:#5a6b3a">Você recebe este e-mail porque se cadastrou na pré-venda da Konioca em <a href="${esc(opts.lpUrl)}" style="color:#5a6b3a">${esc(opts.lpUrl)}</a>. <a href="${esc(sair)}" style="color:#5a6b3a">Não quero mais receber mensagens da pré-venda</a>.</p>
 </div></body></html>`;
@@ -111,8 +111,8 @@ export async function enviarCircular(leadId: string, opts: { forcar?: boolean } 
     prevendaFimIso: cfgText(todos, "prevenda_fim"),
     prazoDias: cfgNum(todos, "circular_prazo_dias", 10),
     liveIso: cfgText(todos, "live_data"),
-    livePlataforma: cfgText(todos, "live_plataforma", "Google Meet"),
-    grupoLink: cfgText(todos, "whatsapp_grupo_link"),
+    livePlataforma: cfgText(todos, "live_plataforma", "Instagram"),
+    grupoLink: cfgText(todos, "instagram_url"),
     assinatura: cfgText(todos, "assinatura_time", "Time da Marcela"),
     anexoNome: anexo.filename,
   });
