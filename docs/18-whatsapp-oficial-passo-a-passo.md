@@ -1,4 +1,4 @@
-# WhatsApp oficial (Cloud API da Meta) · o que não depende da verificação e o passo a passo para o Matheus
+# WhatsApp oficial (Cloud API da Meta) · coexistência via parceiro e o passo a passo para o Matheus
 
 Consulta de 1/10. Nada foi configurado. Verificação da empresa (KONIOCA FRANQUIAS E EQUIPAMENTOS LTDA) enviada em
 1/10, prazo de cerca de 2 dias úteis. Sem a verificação o número funciona com limite baixo (250 pessoas por 24 h) e
@@ -32,41 +32,67 @@ dependência de parceiro e aceitar um número novo para a pré-venda. C não.
 Tudo o que o código espera funciona nas três opções (a Cloud API é a mesma): segredos `WHATSAPP_TOKEN`,
 `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_APP_SECRET`, `WHATSAPP_VERIFY_TOKEN` e os modelos de mensagem.
 
-## 2. Passo a passo para o Matheus (opção B, app próprio; a opção A troca o passo 3 pelo fluxo do parceiro)
+## 2. Decisão de 1/10: coexistência via parceiro, mantendo o (11) 91945-1047
 
-Precisa: acesso de administrador ao Portfólio empresarial da Konioca no Meta Business Suite, um e-mail para a conta
-de desenvolvedor e o número que vai ficar na API com o celular por perto (SMS ou ligação).
+Comparação feita em 1/10 com as páginas dos parceiros e da Meta (valores podem mudar; conferir na contratação).
+Meta cobra por mensagem de modelo em qualquer parceiro: no Brasil cerca de US$ 0,0625 (marketing), US$ 0,007
+(utilidade), US$ 0,0225 (autenticação); resposta dentro de 24 h depois de a pessoa escrever não paga.
 
-1. Conta de desenvolvedor. developers.facebook.com, entrar com o perfil pessoal que administra a Konioca no Business
-   Suite, aceitar os termos. Nada de conta nova de Facebook: usa a que já é administradora.
-2. Criar o app. "Meus apps" > "Criar app" > caso de uso "Outro" > tipo "Empresa" (Business). Nome: "Konioca
-   Pré-venda". Portfólio empresarial: escolher o da KONIOCA FRANQUIAS E EQUIPAMENTOS LTDA. Criar.
-3. Adicionar o WhatsApp ao app. No painel do app, "Adicionar produto" > WhatsApp > "Configurar". A Meta cria uma conta
-   do WhatsApp Business (WABA) ligada ao portfólio. Na tela "Configuração da API":
-   - "Adicionar número de telefone": nome de exibição "Konioca", categoria, descrição, e o número. Confirmar por SMS
-     ou ligação. Importante: o número não pode estar ativo no app do celular (opção B usa número novo; opção A, o
-     app mostra o botão de conectar e o Matheus segue o parceiro escolhido).
-   - Anotar, nessa mesma tela, o "ID do número de telefone" e o "ID da conta do WhatsApp Business". São o
-     `WHATSAPP_PHONE_NUMBER_ID` e o WABA ID.
-4. Chave permanente (token). O token da tela de configuração dura 24 h; não serve. Fazer:
-   business.facebook.com > Configurações da empresa > Usuários > Usuários do sistema > "Adicionar" > nome "konioca-api",
-   função Administrador. Depois "Adicionar ativos" > Apps > marcar o app "Konioca Pré-venda" com controle total; e
-   Contas do WhatsApp > marcar a WABA. "Gerar novo token" > escolher o app > validade "nunca expira" > permissões
-   `whatsapp_business_messaging` e `whatsapp_business_management`. Copiar o token na hora (não aparece de novo).
-   Esse é o `WHATSAPP_TOKEN`.
-5. Segredo do app. No painel do app > Configurações do app > Básico > "Chave secreta do app" > Mostrar. É o
-   `WHATSAPP_APP_SECRET` (o webhook confere a assinatura das mensagens com ele).
-6. Webhook. No app > WhatsApp > Configuração > Webhook > "Editar": URL de callback
-   `https://ytsildpxummevfkjcjhs.supabase.co/functions/v1/whatsapp-webhook`, token de verificação: uma frase longa
-   inventada na hora (é o `WHATSAPP_VERIFY_TOKEN`; o Lucas salva no Supabase antes de clicar em "Verificar e salvar").
-   Depois, em "Campos do webhook", assinar `messages`.
-7. Guardar os quatro segredos. Mandar ao Lucas por canal seguro (nunca por e-mail aberto, nunca no chat deste
-   projeto): `WHATSAPP_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_APP_SECRET`, `WHATSAPP_VERIFY_TOKEN`. O Lucas
-   salva nos segredos das functions do Supabase. Com os quatro no lugar a fila passa a enviar (os itens parados com
-   "WhatsApp ainda não configurado" saem sozinhos); a base antiga continua travada por `base_antiga_whatsapp_ativo`.
-8. Modelos de mensagem. business.facebook.com > WhatsApp Manager > Ferramentas da conta > Modelos de mensagem >
-   "Criar modelo". Para cada um: categoria, idioma Português (BR), nome exatamente como está na config, corpo com as
-   variáveis na ordem, botões. Textos em docs/15. Um por vez; a Meta responde de minutos a 24 h.
+| | 360dialog | Gupshup | Wati | Zenvia (Brasil) |
+|---|---|---|---|---|
+| Coexistência hoje | Sim, documentada no fluxo de cadastro (com limites abaixo) | Sim, existe na API de parceiros ("enablement"), mas a documentação pública não diz se está aberta a cliente comum ou só a parceiros | Sim, anunciada para o inbox deles | Sim, na Zenvia Customer Cloud, com requisitos iguais aos da Meta |
+| Tempo para funcionar | Mesmo dia: cadastro, pagamento, QR code no app; histórico de 6 meses sobe em até 24 h | Depende de abertura do recurso; sem prazo claro | Mesmo dia (teste grátis de 7 dias) | Dias: contrato comercial com a Zenvia antes |
+| Mensalidade | € 49 (US$ 59) por número | Sem mensalidade no plano self-service | US$ 69 por mês (Growth), US$ 149 (Pro) | A partir de R$ 399 por mês |
+| Custo por mensagem além da Meta | Nenhum acréscimo (modelo sem markup) | Cerca de US$ 0,001 por mensagem; mais 6% sobre marketing em alguns casos | Tabela própria da Wati, com acréscimo | Pacotes de conversa da Zenvia |
+| Cancelar sem multa | Mês a mês, sem prazo mínimo; cancela e vale até o fim do mês | Mês a mês, cancela quando quiser | Sem multa, cancela quando quiser | Conferir no contrato (planos de software com termos próprios) |
+| Encaixe no nosso código | Melhor: a API é espelho da Cloud API (mesmo formato de mensagem); muda só o endereço e o cabeçalho da chave | Pior: formato de API próprio; reescrever o envio e o webhook | Pior: é um inbox; a API deles é limitada no plano barato (sem webhook) e não é a Cloud API | Pior: plataforma própria; API no formato Zenvia |
+
+Recomendação: 360dialog, plano Regular (€ 49 por número por mês), pagamento mensal, sem contrato. É o único dos
+quatro que combina coexistência documentada, sem acréscimo por mensagem, cancelamento a qualquer momento e API no
+mesmo formato da Meta (a adaptação no código é pequena: endereço `waba-v2.360dialog.io`, cabeçalho `D360-API-KEY`
+no lugar do token da Meta, e o webhook passa a ser registrado pela API deles, com um segredo nosso na URL porque
+eles não assinam a chamada como a Meta). Gupshup seria mais barato no mês, mas o recurso não está claramente aberto
+a cliente comum e exigiria reescrever a integração. Wati e Zenvia vendem a plataforma de atendimento, que não
+usamos.
+
+Limites da coexistência que valem para qualquer parceiro (documentação da Meta e da 360dialog):
+- WhatsApp Business (app verde) versão 2.24.17 ou mais nova, já em uso ativo no número (não serve número novo);
+- o app precisa ser aberto pelo menos uma vez a cada 13 dias; desinstalar o app desconecta a API;
+- 20 mensagens por segundo pela API (sobra para nós);
+- no app, somem: mensagens temporárias, visualização única, localização ao vivo e listas de transmissão;
+  grupos, chamadas e catálogo não passam pela API (continuam no app);
+- aparelhos conectados (WhatsApp Web no computador) são desconectados na hora de ligar e precisam ser religados;
+- sem selo azul (OBA) no número em coexistência; a verificação da empresa em andamento continua valendo para
+  limites de envio, mas o nome de exibição não entra em revisão automática.
+
+## 3. Passo a passo para o Matheus (coexistência via 360dialog; só depois da escolha do Lucas)
+
+Precisa: o celular com o WhatsApp Business do (11) 91945-1047 atualizado (versão 2.24.17 ou mais nova), acesso
+de administrador ao Portfólio empresarial da Konioca no Meta Business Suite, um cartão para a assinatura.
+
+1. Atualizar o app. Na loja do celular, atualizar o WhatsApp Business. Conferir em Configurações > Ajuda que a
+   versão é 2.24.17 ou mais nova. Avisar quem usa o WhatsApp Web desse número que ele vai desconectar uma vez.
+2. Conta na 360dialog. hub.360dialog.com > criar conta com o e-mail controladoria@konioca.com > escolher o plano
+   Regular (mensal) > pagar. Nome da empresa: KONIOCA FRANQUIAS E EQUIPAMENTOS LTDA.
+3. Ligar o número com coexistência. No Hub, "Adicionar número" > escolher a opção de usar um número que já está no
+   WhatsApp Business app (coexistência). Abre o cadastro da Meta: entrar com o perfil que administra a Konioca,
+   escolher o Portfólio empresarial da Konioca, e seguir até o QR code. No celular: WhatsApp Business >
+   Configurações > Ferramentas comerciais > a opção de conectar à plataforma/API > ler o QR code. Confirmar o
+   envio do histórico (6 meses). Em até 24 h o número aparece como ativo no Hub.
+4. Chave da API. No Hub > o número > "Gerar chave de API" (D360-API-KEY). Copiar na hora. É o segredo
+   `WHATSAPP_TOKEN` do nosso lado (o código passa a mandar essa chave para a 360dialog em vez do token da Meta).
+5. Anotar no Hub o ID do número (Phone Number ID) e o ID da conta do WhatsApp Business (WABA ID). O primeiro é o
+   `WHATSAPP_PHONE_NUMBER_ID`.
+6. Webhook. Não é no painel da Meta: quem registra é o nosso código pela API da 360dialog, com a URL
+   `https://ytsildpxummevfkjcjhs.supabase.co/functions/v1/whatsapp-webhook` e um segredo nosso. O Matheus não precisa
+   fazer nada aqui; só avisar quando a chave estiver salva.
+7. Guardar os segredos. Mandar ao Lucas por canal seguro (nunca e-mail aberto, nunca o chat deste projeto):
+   `WHATSAPP_TOKEN` (chave D360), `WHATSAPP_PHONE_NUMBER_ID`, WABA ID. O Lucas salva nos segredos das functions.
+   `WHATSAPP_APP_SECRET` e `WHATSAPP_VERIFY_TOKEN` deixam de ser da Meta e passam a ser um segredo nosso para o
+   webhook; o Lucas gera na hora de salvar.
+8. Modelos de mensagem. No Hub da 360dialog > Modelos (ou no WhatsApp Manager da Meta, que também funciona para a
+   WABA ligada) > "Criar modelo". Um por vez, categoria, idioma Português (BR), nome exatamente como na config,
+   corpo com as variáveis na ordem, botões. Textos em docs/15. Resposta da Meta de minutos a 24 h.
 
    | Nome na config | Categoria | Variáveis | Botões |
    |---|---|---|---|
@@ -79,10 +105,14 @@ de desenvolvedor e o número que vai ficar na API com o celular por perto (SMS o
    | konioca_reaquecimento_manual | Marketing | {{1}} nome | |
 
    Regras que evitam recusa: nenhuma variável no início ou no fim do texto; exemplo preenchido em cada variável;
-   sem "clique aqui" solto; a categoria Marketing para tudo que convida ou oferece, Utilidade só para lembrete de
-   algo que a pessoa já pediu.
-9. Depois da aprovação, avisar o Lucas com o nome de cada modelo aprovado. No banco: `wa_tpl_*` já apontam para esses
-   nomes; `wa_tpl_reaquecimento_manual_aprovado` vira true só com o modelo aprovado.
+   sem "clique aqui" solto; Marketing para tudo que convida ou oferece, Utilidade só para lembrete de algo que a
+   pessoa já pediu.
+9. Depois da aprovação, avisar o Lucas com o nome de cada modelo aprovado. No banco, `wa_tpl_*` já apontam para
+   esses nomes; `wa_tpl_reaquecimento_manual_aprovado` vira true só com o modelo aprovado.
+
+Do nosso lado, antes do passo 4: adaptar `_shared/whatsapp.ts` (endereço e cabeçalho da 360dialog) e o webhook
+(segredo na URL, sem assinatura da Meta), com testes, na prévia, para o SIM do Lucas. Meta: número ligado e pelo
+menos o modelo do convite aprovado antes de 12/10.
 
 ## O que fica para depois da verificação
 
