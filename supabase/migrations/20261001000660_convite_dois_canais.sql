@@ -118,3 +118,21 @@ where f.tipo = 'convite' and f.canal = 'whatsapp' and f.status = 'pendente'
   and not exists (select 1 from public.fila_envios e where e.lead_id = f.lead_id and e.tipo = 'convite' and e.canal = 'email');
 
 update public.config set descricao = 'Canais do convite com o link da live: a fila cria um item por canal. O e-mail sai com envios_ativos; o WhatsApp espera o número oficial' where chave = 'convite_canais';
+
+-- e) "Contatado à mão no WhatsApp": marcação por lead, com data e quem marcou. Cancela o convite por WhatsApp
+--    pendente daquele lead (motivo contato_manual); o e-mail segue normal. Botão no painel da Fase A.
+alter table public.leads add column if not exists contato_manual_em timestamptz;
+alter table public.leads add column if not exists contato_manual_por text;
+
+create or replace function public.lead_contato_manual(p_lead uuid, p_por text default 'time')
+returns integer language plpgsql as $$
+declare
+  v_n integer;
+begin
+  update public.leads set contato_manual_em = coalesce(contato_manual_em, now()), contato_manual_por = coalesce(contato_manual_por, p_por) where id = p_lead;
+  update public.fila_envios set status = 'cancelado', motivo = 'contato_manual', processado_em = now()
+    where lead_id = p_lead and tipo = 'convite' and canal = 'whatsapp' and status in ('pendente', 'processando');
+  get diagnostics v_n = row_count;
+  insert into public.lead_eventos (lead_id, tipo, origem, dados) values (p_lead, 'contato_manual', 'humano', jsonb_build_object('por', p_por, 'convites_whatsapp_cancelados', v_n));
+  return v_n;
+end $$;

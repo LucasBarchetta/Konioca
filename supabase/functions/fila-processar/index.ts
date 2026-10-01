@@ -56,13 +56,17 @@ Deno.serve(async (req) => {
   let enviados = 0, waEnviados = 0; const resultados: Record<string, string> = {};
 
   for (const item of (itens ?? []) as { id: number; lead_id: string; tipo: string; canal: string; payload: Record<string, unknown> | null; tentativas: number }[]) {
-    const { data: lead } = await sb.from("leads").select("id, nome, whatsapp, email, token, turma, pergunta_live, estado_conversa, optout_em, grupo_controle, wa_invalido_em, base_antiga_gancho").eq("id", item.lead_id).single();
+    const { data: lead } = await sb.from("leads").select("id, nome, whatsapp, email, token, turma, pergunta_live, estado_conversa, optout_em, grupo_controle, wa_invalido_em, base_antiga_gancho, contato_manual_em").eq("id", item.lead_id).single();
     if (!lead || lead.optout_em) { await fechar(item.id, "cancelado", "optout"); continue; }
     if (lead.grupo_controle && item.tipo !== "circular_lembrete") { await fechar(item.id, "pulado", "grupo_controle"); continue; }
     if (item.canal === "whatsapp" && (lead.wa_invalido_em || !lead.whatsapp)) { await fechar(item.id, "pulado", "numero_invalido"); continue; }
     if (!isentos.has(item.tipo)) {
       const { data: n } = await sb.rpc("mensagens_empresa_semana", { p_lead: lead.id });
       if ((n ?? 0) >= maxSemana) { await sb.from("fila_envios").update({ status: "pendente", agendado_para: new Date(Date.now() + 86400_000).toISOString(), motivo: "limite semanal" }).eq("id", item.id); continue; }
+    }
+    if (item.tipo === "convite" && item.canal === "whatsapp" && lead.contato_manual_em) {
+      // O time já falou com a pessoa no WhatsApp à mão: o convite automático por WhatsApp não sai. O e-mail segue.
+      await fechar(item.id, "cancelado", "contato_manual"); resultados[item.id] = "cancelado: contato manual"; continue;
     }
     if (item.tipo === "convite" && item.canal === "whatsapp" && conviteWhatsappVencido(cfg, whatsappConfigurado())) {
       // Passou a data-limite sem o WhatsApp oficial: o convite por e-mail já cobre; este item morre com motivo claro.

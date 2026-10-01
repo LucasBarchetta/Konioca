@@ -56,7 +56,10 @@ deduplicação passa a ser por lead, tipo e canal, e quem já está na lista com
 de e-mail. O e-mail sai assim que `envios_ativos` for ligado. O item de WhatsApp espera o número oficial; se em
 12/10 o WhatsApp oficial ainda não estiver ativo, a fila-processar cancela os itens de WhatsApp do convite com motivo
 "whatsapp_nao_aprovado_ate_2026-10-12" e o e-mail sozinho dá conta. Com o WhatsApp ativo antes da data, os dois
-canais saem, como o Lucas decidiu.
+canais saem, como o Lucas decidiu. Marcação "contatado à mão no WhatsApp" (`lead_contato_manual`): grava data e quem
+marcou, cancela o convite por WhatsApp pendente daquele lead com motivo `contato_manual` e deixa o e-mail seguir; botão
+no painel da Fase A. Prévia de e-mail para aprovador: function `email-teste` (chave de serviço), tag `teste` na exceção
+interna, só para endereços de `painel_aprovadores`.
 
 ## Prévia do link e favicon
 
