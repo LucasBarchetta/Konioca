@@ -57,6 +57,37 @@ function validarEmail(entrada        )                                          
   return { ok: true, email: e };
 }
 
+// Domínios de e-mail com erro de digitação comum -> domínio certo. Só sugestão: a página pergunta "Você quis dizer…?"
+// e a pessoa decide com um toque; nada é corrigido sozinho (decisão de 1/10, depois do caso hotmail.co).
+const DOMINIOS_CORRIGIDOS                         = {
+  "hotmail.co": "hotmail.com", "hotmail.con": "hotmail.com", "hotmail.cm": "hotmail.com", "hotmail.om": "hotmail.com", "hotmail.comm": "hotmail.com",
+  "hotmal.com": "hotmail.com", "hotmai.com": "hotmail.com", "hotmial.com": "hotmail.com", "homail.com": "hotmail.com", "hotmil.com": "hotmail.com", "hotamil.com": "hotmail.com",
+  "gmail.co": "gmail.com", "gmail.con": "gmail.com", "gmail.cm": "gmail.com", "gmail.om": "gmail.com", "gmail.comm": "gmail.com", "gmail.com.br": "gmail.com", "gmail.co.br": "gmail.com",
+  "gmai.com": "gmail.com", "gmial.com": "gmail.com", "gamil.com": "gmail.com", "gmaill.com": "gmail.com", "gnail.com": "gmail.com", "gmali.com": "gmail.com", "gemail.com": "gmail.com", "gmeil.com": "gmail.com",
+  "outlook.co": "outlook.com", "outlook.con": "outlook.com", "outlook.cm": "outlook.com", "outlok.com": "outlook.com", "outllok.com": "outlook.com", "outloo.com": "outlook.com", "oulook.com": "outlook.com",
+  "yahoo.con": "yahoo.com", "yahoo.co": "yahoo.com", "yahoo.cm": "yahoo.com", "yaho.com": "yahoo.com", "yahooo.com": "yahoo.com", "yahoo.com.b": "yahoo.com.br", "yahoo.con.br": "yahoo.com.br",
+  "icloud.con": "icloud.com", "icloud.co": "icloud.com", "iclod.com": "icloud.com", "icould.com": "icloud.com", "live.con": "live.com", "live.co": "live.com",
+  "uol.com": "uol.com.br", "uol.con.br": "uol.com.br", "uol.com.b": "uol.com.br", "bol.com": "bol.com.br", "bol.con.br": "bol.com.br", "terra.com": "terra.com.br", "terra.con.br": "terra.com.br", "ig.com": "ig.com.br",
+};
+const DOMINIOS_CERTOS                      = new Set(Object.values(DOMINIOS_CORRIGIDOS).concat(["msn.com", "me.com", "globo.com", "protonmail.com", "proton.me", "hotmail.com.br", "outlook.com.br", "live.com.br"]));
+
+/** Sugestão de e-mail corrigido ("ana@hotmail.co" -> "ana@hotmail.com"), ou null quando não há o que sugerir. Nunca altera sozinho. */
+function sugerirEmail(entrada        )                {
+  const e = String(entrada ?? "").trim().toLowerCase();
+  const arroba = e.lastIndexOf("@");
+  if (arroba < 1 || arroba === e.length - 1) return null;
+  const usuario = e.slice(0, arroba), dominio = e.slice(arroba + 1);
+  if (DOMINIOS_CERTOS.has(dominio)) return null;
+  let certo = DOMINIOS_CORRIGIDOS[dominio] ?? null;
+  if (!certo) {
+    // Terminações trocadas em qualquer domínio: ".con", ".cmo", ".coom" -> ".com"; ".con.br", ".com.b" -> ".com.br".
+    if (/\.con\.br$/.test(dominio) || /\.com\.b$/.test(dominio)) certo = dominio.replace(/\.con\.br$|\.com\.b$/, ".com.br");
+    else if (/\.(con|cmo|coom|comm|vom|xom)$/.test(dominio)) certo = dominio.replace(/\.(con|cmo|coom|comm|vom|xom)$/, ".com");
+  }
+  if (!certo || certo === dominio) return null;
+  return usuario + "@" + certo;
+}
+
 function limparTexto(entrada         , max = 120)         {
   // deno-lint-ignore no-control-regex
   return String(entrada ?? "").replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim().slice(0, max);
@@ -110,5 +141,5 @@ function percentualDesconto(precoAtual        , precoNovo        )         {
   return Math.floor(((precoAtual - precoNovo) / precoAtual) * 100);
 }
 
-window.KValid = { DDDS_VALIDOS, normalizarWhatsapp, formatarWhatsapp, validarEmail, limparTexto, validarNome, classificarOrigem, percentualDesconto };
+window.KValid = { DDDS_VALIDOS, normalizarWhatsapp, formatarWhatsapp, validarEmail, sugerirEmail, limparTexto, validarNome, classificarOrigem, percentualDesconto };
 })();
