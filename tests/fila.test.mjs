@@ -53,7 +53,7 @@ test("Lembrete da live: cita a pergunta só na variante de pergunta selecionada"
 test("Colchete na config bloqueia o envio, nunca manda placeholder", () => {
   const e = montarEnvio("gravacao", "whatsapp", LEAD, CFG, API);
   assert.equal(e.canal, "nenhum");
-  const sem = montarEnvio("convite", "whatsapp", LEAD, { ...CFG, whatsapp_grupo_link: "https://chat.whatsapp.com/[LINK]" }, API);
+  const sem = montarEnvio("convite", "whatsapp", LEAD, { ...CFG, instagram_url: "https://www.instagram.com/[PERFIL]" }, API);
   assert.equal(sem.canal, "nenhum");
 });
 
