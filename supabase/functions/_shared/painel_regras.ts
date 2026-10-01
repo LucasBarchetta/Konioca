@@ -25,6 +25,13 @@ export function ddmm(iso?: string | null, timeZone = "America/Sao_Paulo"): strin
   return `${p.day}/${p.month}`;
 }
 
+/** "Reservou" só com pode cobrar (regra do banco em lead_reservar; aqui o estado do botão). */
+export function botaoReservar(l: { circular_confirmada_em?: string | null; liberado_em?: string | null; pode_cobrar?: boolean | null; dias_faltam?: number | null; reservou_em?: string | null; optout_em?: string | null }): { ativo: boolean; texto: string } {
+  if (l.reservou_em || l.optout_em) return { ativo: false, texto: "Reservou" };
+  if (l.pode_cobrar) return { ativo: true, texto: "Reservou" };
+  return { ativo: false, texto: textoCobranca(l).texto };
+}
+
 /** Nome curto de quem agiu, para registrar nos eventos: "Lucas (principal)". */
 export function assinaturaAprovador(a: { nome?: string; papel?: string; email?: string }): string {
   const nome = (a.nome ?? "").trim() || (a.email ?? "").split("@")[0] || "time";

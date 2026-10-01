@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { quantidadeValida, textoCobranca, assinaturaAprovador, filtrarLeads, ddmm } from "../supabase/functions/_shared/painel_regras.ts";
+import { quantidadeValida, textoCobranca, assinaturaAprovador, filtrarLeads, ddmm, botaoReservar } from "../supabase/functions/_shared/painel_regras.ts";
 
 test("Quantidade do 'Reservou': inteiro de 1 a 10", () => {
   assert.equal(quantidadeValida(1), 1); assert.equal(quantidadeValida("3"), 3); assert.equal(quantidadeValida(10), 10);
@@ -36,4 +36,12 @@ test("Filtros da lista", () => {
   assert.deepEqual(filtrarLeads(L, "contatados").map((l) => l.id), [2]);
   assert.deepEqual(filtrarLeads(L, "sairam").map((l) => l.id), [4]);
   assert.deepEqual(filtrarLeads(L, "base_antiga").map((l) => l.id), [5]);
+});
+
+test("'Reservou' só com pode cobrar; fora disso, desativado com o motivo", () => {
+  assert.deepEqual(botaoReservar({ circular_confirmada_em: null }), { ativo: false, texto: "Circular não confirmada" });
+  assert.deepEqual(botaoReservar({ circular_confirmada_em: "x", pode_cobrar: false, dias_faltam: 4 }), { ativo: false, texto: "Faltam 4 dias" });
+  assert.deepEqual(botaoReservar({ circular_confirmada_em: "x", pode_cobrar: true, liberado_em: "2026-09-30T12:00:00Z" }), { ativo: true, texto: "Reservou" });
+  assert.equal(botaoReservar({ circular_confirmada_em: "x", pode_cobrar: true, reservou_em: "x" }).ativo, false);
+  assert.equal(botaoReservar({ circular_confirmada_em: "x", pode_cobrar: true, optout_em: "x" }).ativo, false);
 });

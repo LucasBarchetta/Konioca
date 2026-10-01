@@ -5,7 +5,7 @@ import { db, exigirServico } from "../_shared/db.ts";
 import { carregarConfig, cfgNum, cfgText, type Config } from "../_shared/config.ts";
 import { corsHeaders, json, lerJson } from "../_shared/http.ts";
 import { aprovadores, type Aprovador } from "../_shared/aprovadores.ts";
-import { assinaturaAprovador, quantidadeValida } from "../_shared/painel_regras.ts";
+import { assinaturaAprovador, botaoReservar, quantidadeValida } from "../_shared/painel_regras.ts";
 
 async function tokenDe(email: string, versao: string): Promise<string> {
   const chave = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
@@ -79,6 +79,10 @@ Deno.serve(async (req) => {
     const lead_id = String(b.lead_id ?? "");
     const q = quantidadeValida(b.quantidade);
     if (!q) return json({ erro: "quantidade de 1 a 10" }, 400, cors);
+    // Só com "pode cobrar". O banco recusa de qualquer jeito (lead_reservar); aqui a mensagem fica clara para a tela.
+    const { data: cob } = await sb.from("v_painel_leads").select("circular_confirmada_em, liberado_em, pode_cobrar, dias_faltam, reservou_em, optout_em").eq("id", lead_id).maybeSingle();
+    const bt = cob ? botaoReservar(cob) : { ativo: false, texto: "lead não encontrado" };
+    if (!bt.ativo) return json({ erro: "Reserva bloqueada: " + bt.texto }, 400, cors);
     const { data, error } = await sb.rpc("lead_reservar", { p_lead: lead_id, p_quantidade: q, p_por: por, p_observacao: String(b.observacao ?? "").slice(0, 300) || null });
     if (error) return json({ erro: error.message }, 400, cors);
     const r = Array.isArray(data) ? data[0] : data;

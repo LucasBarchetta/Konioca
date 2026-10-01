@@ -5,6 +5,8 @@ Construído em 1/10 (migração 700, functions `painel-api` e `painel-avisar`, p
 
 ## Como o painel funciona (Fase A)
 
+- Links de acesso só por e-mail (`painel-avisar` com `link_para`), nunca pelo chat. Depois de qualquer link exposto, troca-se
+  `painel_links_versao`.
 - Endereço: `/painel/` no site (noindex, fora do robots). Sem login: cada aprovador de `config.painel_aprovadores`
   tem um link assinado (`?t=` derivado da chave de serviço, do e-mail e de `config.painel_links_versao`). Trocar a
   versão invalida todos os links. O link é pessoal: toda ação grava "Nome (papel)" no evento do lead.
@@ -12,8 +14,9 @@ Construído em 1/10 (migração 700, functions `painel-api` e `painel-avisar`, p
   contatados à mão, saíram, base antiga. Em cada lead: contato, cidade, data do cadastro, estado da cobrança
   ("Circular não confirmada" em vermelho, "Faltam X dias" em cinza, "Pode cobrar desde dd/mm" em verde, regra na
   view `v_lead_cobranca`), convite, contato manual, bloqueio de e-mail, reserva.
-- Ações por lead: "Reservou" (quantidade de 1 a 10, observação; soma no placar das 250 e tira o lead das réguas,
-  menos o lembrete da Circular), "Desfazer reserva", "Contatado à mão" (cancela o convite por WhatsApp e enfileira o
+- Ações por lead: "Reservou" só para lead com "pode cobrar" (Circular confirmada há pelo menos o prazo legal; a função
+  `lead_reservar` recusa fora disso, e o botão aparece desativado com "Circular não confirmada" ou "Faltam X dias").
+  Quantidade de 1 a 10 e observação; soma no placar das 250 e tira o lead das réguas, menos o lembrete da Circular), "Desfazer reserva", "Contatado à mão" (cancela o convite por WhatsApp e enfileira o
   reaquecimento), "Corrigir e-mail" (com opção de reenviar o convite), "Histórico" (eventos e mensagens).
 - Aba "Aprovações": itens da tabela `aprovacoes` (texto, e-mail, peça, config) com aprovar, aprovar com edição ou
   recusar (motivo obrigatório). `painel-avisar` manda o aviso por e-mail aos aprovadores do papel, com o link de cada

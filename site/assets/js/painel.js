@@ -65,7 +65,11 @@
     var meta = [fmtWhats(l.whatsapp), l.email, l.cidade, "cadastro " + dataHora(l.criado_em)].filter(Boolean).join(" · ");
     var acoes = "";
     if (!l.optout_em) {
-      if (!l.reservou_em) acoes += '<button type="button" class="primario" data-acao="reservar-form" data-id="' + l.id + '">Reservou</button>';
+      if (!l.reservou_em) {
+        // Só com "pode cobrar" (regra do banco em lead_reservar; a tela espelha). Fora disso, botão desativado com o motivo.
+        if (l.pode_cobrar) acoes += '<button type="button" class="primario" data-acao="reservar-form" data-id="' + l.id + '">Reservou</button>';
+        else acoes += '<button type="button" class="primario" disabled title="A reserva só pode ser marcada depois do prazo legal da Circular">Reservou · ' + esc(c.texto) + '</button>';
+      }
       else acoes += '<button type="button" class="discreto" data-acao="cancelar-form" data-id="' + l.id + '">Desfazer reserva</button>';
       if (!l.contato_manual_em) acoes += '<button type="button" data-acao="contato" data-id="' + l.id + '">Contatado à mão</button>';
       acoes += '<button type="button" class="discreto" data-acao="email-form" data-id="' + l.id + '">Corrigir e-mail</button>';
