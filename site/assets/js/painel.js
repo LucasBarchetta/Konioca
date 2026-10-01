@@ -177,7 +177,7 @@
   }
   function recarregar(auto) {
     if (estado.carregando) { if (!auto) estado.pendente = true; return Promise.resolve(); }
-    if (auto && ocupado()) { estado.adiada = true; return Promise.resolve(); }
+    if (auto && ocupado()) { estado.adiada = true; mostrarAtualizado(); return Promise.resolve(); }
     estado.carregando = true; estado.adiada = false;
     return Promise.all([api("quem"), api("leads"), api("aprovacoes")]).then(function (r) {
       var quem = r[0], leads = r[1], ap = r[2];
@@ -191,13 +191,18 @@
       estado.atualizadoEm = Date.now(); estado.digitando = false;
       liberar(); erro(""); render(); renderAprovacoes(); mostrarAtualizado();
       if (Object.keys(estado.novos).length) setTimeout(function () { estado.novos = {}; document.querySelectorAll(".p-card.p-novo").forEach(function (c) { c.classList.remove("p-novo"); }); }, 6500);
-    }).catch(function () { if (!auto) erro("Sem conexão com o painel. Tente de novo."); else mostrarAtualizado("sem conexão, tentando de novo"); })
+    }).catch(function () { if (!auto) erro("Sem conexão com o painel. Tente de novo."); else { estado.atualizadoEm = Date.now(); mostrarAtualizado("sem conexão, tentando de novo em " + Math.round(INTERVALO / 1000) + " s"); } })
       .then(function () { estado.carregando = false; if (estado.pendente) { estado.pendente = false; return recarregar(); } });
   }
+  // Contagem regressiva até a próxima atualização (pedido de 1/10). Com a página escondida o relógio para e a contagem
+  // congela; ao voltar, atualiza na hora e a contagem reinicia. Esperando um formulário aberto, mostra o aviso no lugar.
   function mostrarAtualizado(extra) {
     var e = el("p-atualizado"); if (!estado.atualizadoEm) { e.textContent = ""; return; }
-    var s = Math.max(0, Math.round((Date.now() - estado.atualizadoEm) / 1000));
-    e.textContent = "atualizado há " + (s < 60 ? s + " s" : Math.floor(s / 60) + " min") + (extra ? " · " + extra : estado.adiada ? " · atualiza quando você terminar" : "");
+    if (extra) { e.textContent = extra; return; }
+    if (estado.adiada) { e.textContent = "atualiza quando você terminar"; return; }
+    if (estado.carregando) { e.textContent = "atualizando…"; return; }
+    var falta = Math.max(0, Math.ceil((INTERVALO - (Date.now() - estado.atualizadoEm)) / 1000));
+    e.textContent = "próxima atualização em " + falta + " s";
   }
   var relogio = null;
   function ligarAutomatico() {
