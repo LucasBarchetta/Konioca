@@ -70,6 +70,8 @@ alter table public.leads add column if not exists monitor_teste boolean not null
 
 -- 3) Live aberta no Instagram da Konioca (decisão de 1/10); Plano B da página; limite apertado para cadastro sem selo; espera do selo.
 update public.config set valor = '"Instagram"' where chave = 'live_plataforma';
+-- Convite por WhatsApp: modelo novo com botão de URL fixa para o Instagram (o antigo tinha botão dinâmico do grupo).
+update public.config set valor = '"konioca_convite_live_ig"' where chave = 'wa_tpl_convite';
 insert into public.config (chave, valor, publico, descricao) values
   ('instagram_url',          '"[INSTAGRAM DA KONIOCA]"', true, 'Perfil do Instagram da Konioca (https://www.instagram.com/...). Botão da página de obrigado, convite, lembrete e agenda. Entre colchetes = convite e lembrete ficam parados'),
   ('cadastro_limite_ip_sem_selo', '{"max": 3, "janela_min": 30}', false, 'Limite por IP para cadastro que chega sem o selo do Turnstile verificado (token ausente)'),
