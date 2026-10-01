@@ -1,10 +1,11 @@
-// Webhook da WhatsApp Cloud API.
-// GET: verificação do endpoint (hub.challenge). POST: mensagens e status, com assinatura X-Hub-Signature-256.
+// Webhook da WhatsApp Cloud API (Meta direto ou via 360dialog).
+// GET: verificação do endpoint (hub.challenge, só Meta). POST: mensagens e status. Na Meta a chamada vem assinada
+// (X-Hub-Signature-256); na 360dialog vale o segredo nosso na URL (?s=, WHATSAPP_WEBHOOK_SEGREDO).
 // Conversa mínima da etapa 2: resposta ao convite, pergunta "o que você imagina fazer", "Sair", passagem ao humano.
 import { db } from "../_shared/db.ts";
 import { carregarConfig, cfgBool, cfgNum, cfgText, pendente } from "../_shared/config.ts";
 import { json } from "../_shared/http.ts";
-import { parseWebhook, verificarAssinaturaMeta, enviarTexto, enviarAudio, marcarLida } from "../_shared/whatsapp.ts";
+import { parseWebhook, verificarWebhook, enviarTexto, enviarAudio, marcarLida } from "../_shared/whatsapp.ts";
 import { classificarResposta, proximoPasso, situacaoHorario, textoPassagemHumano, primeiroNome, type Estado, type HorarioComercial } from "../_shared/conversa.ts";
 import { enviarEmail } from "../_shared/email.ts";
 
@@ -19,7 +20,7 @@ Deno.serve(async (req) => {
   }
   if (req.method !== "POST") return json({ erro: "método" }, 405);
   const corpo = await req.text();
-  if (!(await verificarAssinaturaMeta(req, corpo))) return json({ erro: "assinatura inválida" }, 401);
+  if (!(await verificarWebhook(req, corpo))) return json({ erro: "assinatura inválida" }, 401);
   let payload: unknown;
   try { payload = JSON.parse(corpo); } catch { return json({ erro: "json" }, 400); }
 
