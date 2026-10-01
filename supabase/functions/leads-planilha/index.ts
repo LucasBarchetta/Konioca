@@ -12,17 +12,15 @@ import { csvPlanilha, iguais, sha256Hex, type LeadPlanilha } from "../_shared/pl
 
 const PRIVADO = { "cache-control": "no-store", "x-robots-tag": "noindex, nofollow", "referrer-policy": "no-referrer" };
 
-/** Lê os cadastros pela página (a API devolve no máximo 1.000 linhas por consulta: pagina até acabar) e monta o CSV.
- *  Decisão de 1/10: a aba "Total" mostra só quem se cadastrou pela página. Contato da base antiga (lead criado pela
- *  promoção, utm_campaign = base_antiga) só entra quando se cadastra (base_antiga_convertido_em preenchido). */
+/** Lê a view v_leads_planilha (a API devolve no máximo 1.000 linhas por consulta: pagina até acabar) e monta o CSV.
+ *  A view já aplica a decisão de 1/10 (só cadastros pela página; base antiga entra quando se cadastra, sem quem saiu)
+ *  e calcula a temperatura na leitura (lead_temperatura). */
 async function montarCsv(): Promise<{ csv: string; linhas: number } | { erro: string }> {
   const sb = db();
   const leads: LeadPlanilha[] = [];
   for (let de = 0; de < 50_000; de += 1000) {
-    const { data, error } = await sb.from("leads")
-      .select("criado_em, nome, whatsapp, email, cidade, tem_negocio, origem, utm_source, utm_medium, bloqueado_em")
-      .is("optout_em", null).is("anonimizado_em", null)
-      .or("base_antiga.is.null,base_antiga.eq.false,base_antiga_convertido_em.not.is.null,utm_campaign.is.null,utm_campaign.neq.base_antiga")
+    const { data, error } = await sb.from("v_leads_planilha")
+      .select("criado_em, nome, whatsapp, email, cidade, tem_negocio, origem, utm_source, utm_medium, bloqueado_em, temperatura")
       .order("criado_em", { ascending: false }).order("id").range(de, de + 999);
     if (error) return { erro: "consulta: " + error.message };
     leads.push(...((data ?? []) as LeadPlanilha[]));

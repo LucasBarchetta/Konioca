@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { quantidadeValida, textoCobranca, assinaturaAprovador, filtrarLeads, ddmm, botaoReservar, rotuloCanal, detalheCanal, filtrarCanal, canaisPresentes } from "../supabase/functions/_shared/painel_regras.ts";
+import { quantidadeValida, textoCobranca, assinaturaAprovador, filtrarLeads, ddmm, botaoReservar, rotuloCanal, detalheCanal, filtrarCanal, canaisPresentes, rotuloTemperatura, filtrarTemperatura, ordenarPorTemperatura, temperaturasPresentes } from "../supabase/functions/_shared/painel_regras.ts";
 
 test("Quantidade do 'Reservou': inteiro de 1 a 10", () => {
   assert.equal(quantidadeValida(1), 1); assert.equal(quantidadeValida("3"), 3); assert.equal(quantidadeValida(10), 10);
@@ -55,4 +55,13 @@ test("Etiqueta de canal: mesma gaveta da aba Desempenho, com o link específico 
   const leads = [{ canal: "stories" }, { canal: "stories" }, { canal: "direto" }, { canal: null }, { canal: "base_p1" }];
   assert.equal(filtrarCanal(leads, "todos").length, 5); assert.equal(filtrarCanal(leads, "stories").length, 2); assert.equal(filtrarCanal(leads, "outros").length, 1);
   assert.deepEqual(canaisPresentes(leads).map((c) => c.canal + ":" + c.n), ["stories:2", "base_p1:1", "direto:1", "outros:1"]);
+});
+
+test("Temperatura: rótulo, filtro, contagem e ordem (quentes primeiro, depois o mais novo)", () => {
+  assert.equal(rotuloTemperatura("quente"), "Quente"); assert.equal(rotuloTemperatura(null), "Frio");
+  const leads = [{ id: 1, temperatura: "frio", criado_em: "2026-10-01T10:00:00Z" }, { id: 2, temperatura: "quente", criado_em: "2026-09-30T10:00:00Z", tem_negocio: true }, { id: 3, temperatura: "morno", criado_em: "2026-10-01T12:00:00Z" }, { id: 4, temperatura: "quente", criado_em: "2026-10-01T11:00:00Z", tem_negocio: false }];
+  // Tem negócio só ordena dentro do grupo: o 2 (mais antigo, com negócio) vem antes do 4.
+  assert.deepEqual(ordenarPorTemperatura(leads).map((l) => l.id), [2, 4, 3, 1]);
+  assert.equal(filtrarTemperatura(leads, "quente").length, 2); assert.equal(filtrarTemperatura(leads, "todas").length, 4);
+  assert.deepEqual(temperaturasPresentes(leads).map((t) => t.temp + ":" + t.n), ["quente:2", "morno:1", "frio:1"]);
 });

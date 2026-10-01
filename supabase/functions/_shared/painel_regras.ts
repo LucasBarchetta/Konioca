@@ -81,3 +81,30 @@ export function canaisPresentes(leads: { canal?: string | null }[]): { canal: st
   for (const l of leads) { const c = l.canal ?? "outros"; n[c] = (n[c] ?? 0) + 1; }
   return CANAIS.filter((c) => n[c.canal]).map((c) => ({ ...c, n: n[c.canal] }));
 }
+
+/** Temperatura (regra no banco: lead_temperatura). Aqui só rótulo, filtro e ordem (quentes primeiro, depois mais novo). */
+export const TEMPERATURAS: readonly { temp: string; rotulo: string }[] = [{ temp: "quente", rotulo: "Quente" }, { temp: "morno", rotulo: "Morno" }, { temp: "frio", rotulo: "Frio" }];
+const ORDEM_TEMP: Record<string, number> = { quente: 0, morno: 1, frio: 2 };
+
+export function rotuloTemperatura(t: string | null | undefined): string {
+  return TEMPERATURAS.find((x) => x.temp === t)?.rotulo ?? "Frio";
+}
+
+export function filtrarTemperatura<T extends { temperatura?: string | null }>(leads: T[], temp: string): T[] {
+  if (!temp || temp === "todas") return leads;
+  return leads.filter((l) => (l.temperatura ?? "frio") === temp);
+}
+
+/** Quentes primeiro; dentro de cada grupo, quem tem negócio; depois o mais novo. */
+export function ordenarPorTemperatura<T extends { temperatura?: string | null; criado_em?: string | null; tem_negocio?: boolean | null }>(leads: T[]): T[] {
+  return [...leads].sort((a, b) =>
+    (ORDEM_TEMP[a.temperatura ?? "frio"] ?? 2) - (ORDEM_TEMP[b.temperatura ?? "frio"] ?? 2) ||
+    Number(b.tem_negocio === true) - Number(a.tem_negocio === true) ||
+    String(b.criado_em ?? "").localeCompare(String(a.criado_em ?? "")));
+}
+
+export function temperaturasPresentes(leads: { temperatura?: string | null }[]): { temp: string; rotulo: string; n: number }[] {
+  const n: Record<string, number> = {};
+  for (const l of leads) { const t = l.temperatura ?? "frio"; n[t] = (n[t] ?? 0) + 1; }
+  return TEMPERATURAS.map((t) => ({ ...t, n: n[t.temp] ?? 0 }));
+}
