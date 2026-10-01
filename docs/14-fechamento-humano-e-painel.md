@@ -10,6 +10,8 @@ Construído em 1/10 (migração 700, functions `painel-api` e `painel-avisar`, p
 - Endereço: `/painel/` no site (noindex, fora do robots). Sem login: cada aprovador de `config.painel_aprovadores`
   tem um link assinado (`?t=` derivado da chave de serviço, do e-mail e de `config.painel_links_versao`). Trocar a
   versão invalida todos os links. O link é pessoal: toda ação grava "Nome (papel)" no evento do lead.
+- Um aprovador pode ter `emails_copia` (outros endereços da mesma pessoa): o token continua saindo só de `email`,
+  mas avisos e link de acesso vão para todos os endereços, e qualquer um deles serve em `link_para`.
 - Lista de leads reais (sem teste do Monitor), com busca e filtros: todos, pode cobrar, sem Circular, reservados,
   contatados à mão, saíram, base antiga. Em cada lead: contato, cidade, data do cadastro, estado da cobrança
   ("Circular não confirmada" em vermelho, "Faltam X dias" em cinza, "Pode cobrar desde dd/mm" em verde, regra na
