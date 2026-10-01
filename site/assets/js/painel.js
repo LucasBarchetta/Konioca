@@ -130,6 +130,7 @@
   function ocupado() {
     var f = Object.keys(estado.aberto).some(function (id) { return estado.aberto[id] !== "historico"; });
     var a = document.activeElement, dentro = a && a.closest && a.closest(".p-form");
+    if (!document.querySelector(".p-form")) estado.digitando = false; // sem formulário na tela, não há o que preservar
     return f || estado.digitando || !!dentro;
   }
   function recarregar(auto) {
@@ -174,7 +175,7 @@
     if (acao === "reservar-form") { estado.aberto[id] = "reservar"; render(); }
     else if (acao === "cancelar-form") { estado.aberto[id] = "cancelar"; render(); }
     else if (acao === "email-form") { estado.aberto[id] = "email"; render(); }
-    else if (acao === "fechar") { delete estado.aberto[id]; render(); }
+    else if (acao === "fechar") { delete estado.aberto[id]; estado.digitando = false; render(); }
     else if (acao === "historico") { if (estado.aberto[id] === "historico") delete estado.aberto[id]; else estado.aberto[id] = "historico"; render(); }
     else if (acao === "contato") {
       if (!confirm("Marcar como contatado à mão no WhatsApp? O convite automático por WhatsApp é cancelado e a pessoa entra no reaquecimento.")) return;
