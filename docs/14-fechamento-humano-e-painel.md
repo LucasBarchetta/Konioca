@@ -116,3 +116,7 @@ Cada lead mostra, ao lado do nome, o canal de origem pelo primeiro toque, com a 
 ## Temperatura do lead (1/10)
 
 Regra simples no banco (`lead_temperatura`, migração 760), calculada na leitura e por isso recalculada a cada atualização do painel e da planilha. Quente: clicou para falar no WhatsApp do time, foi marcado como "respondeu" pelo time, confirmou a Circular ou clicou num e-mail nosso depois do cadastro (sinal nos últimos 14 dias). Morno: cadastrou pela página há até 14 dias sem sinal quente (agenda salva não conta), ou contato da base antiga que clicou no e-mail. Frio: base antiga sem clique, cadastro sem nenhuma ação há mais de 14 dias, ou quem saiu. "Tem negócio" não muda a temperatura: só ordena dentro de cada grupo. No painel: etiqueta ao lado do canal, filtro Quente/Morno/Frio, quentes primeiro na lista, e o botão "Respondeu" (evento `respondeu`, só registro, nada é enviado). Na aba Total da planilha: coluna "Temperatura". O agente de funil refina depois.
+
+## Contagem regressiva da atualização (1/10)
+
+No lugar de "atualizado há X s", o painel mostra "próxima atualização em X s", descendo até zero e reiniciando a cada atualização (30 s). Com a página escondida o relógio para e a contagem congela; ao voltar, atualiza na hora e reinicia. Se a atualização estiver esperando um formulário aberto ou alguém digitando, aparece "atualiza quando você terminar". Sem conexão: "sem conexão, tentando de novo em 30 s".
