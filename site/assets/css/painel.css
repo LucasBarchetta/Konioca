@@ -6,6 +6,7 @@ body.painel{display:block;margin:0;background:#19422d;font-family:Carlito,Calibr
 .p-quem{flex:1;min-width:0}
 #p-nome{font-family:Caladea,Cambria,Georgia,serif;font-size:20px;line-height:1.1}
 .p-sub{font-size:13px;color:#c9c9b8}
+.p-main .p-sub{color:#5a6b3a}
 .p-placar{text-align:right}
 #p-placar-num{font-family:Caladea,Cambria,Georgia,serif;font-size:30px;line-height:1;color:#c9a227}
 .p-main{background:#f4ebdb;border-radius:14px 14px 0 0;padding:14px 14px 40px;min-height:80vh}
