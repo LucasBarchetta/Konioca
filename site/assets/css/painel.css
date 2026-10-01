@@ -1,5 +1,6 @@
 /* Painel da Fase A: mesma identidade da LP, feito para o celular primeiro. */
-body.painel{margin:0;background:#19422d;font-family:Carlito,Calibri,"Segoe UI",sans-serif;color:#1f4a36}
+body.painel{display:block;margin:0;background:#19422d;font-family:Carlito,Calibri,"Segoe UI",sans-serif;color:#1f4a36}
+.p-topo,.p-main,.p-rodape{max-width:760px;margin-left:auto;margin-right:auto;box-sizing:border-box}
 .p-topo{display:flex;align-items:center;gap:14px;padding:16px 16px 12px;color:#f7f0e2}
 .p-topo img{height:26px;width:auto}
 .p-quem{flex:1;min-width:0}
