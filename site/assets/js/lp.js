@@ -38,26 +38,41 @@
     else whats.value = "(" + d.slice(0, 2) + ") " + d.slice(2, 7) + "-" + d.slice(7);
   });
 
-  // ---- Cloudflare Turnstile: só quando ativo na configuração e com site key preenchida
-  var turnstile = { ativo: false, widget: null, token: "" };
+  // ---- Cloudflare Turnstile: só quando ativo na configuração e com site key preenchida.
+  // Estados: "desligado" | "aguardando" (script carregando ou selo sem token) | "pronto" (token) | "nao_carregou" | "erro" | "demorou".
+  // O botão fica desativado ("Verificando…") enquanto aguarda; se o selo não carregar, não travar ou demorar mais que
+  // turnstile_espera_ms, o botão volta e o cadastro sai sem token: o servidor aceita e marca "sem verificação".
+  var turnstile = { ativo: false, widget: null, token: "", estado: "desligado", timer: null };
+  var btn = document.getElementById("f-enviar"), btnTexto = btn ? btn.textContent : "";
+  function botao(ativo, texto) { if (!btn) return; btn.disabled = !ativo; btn.textContent = texto || btnTexto; }
+  function seloLiberar(estado) { if (turnstile.estado === "pronto") return; turnstile.estado = estado; if (turnstile.timer) { clearTimeout(turnstile.timer); turnstile.timer = null; } botao(true); }
   function iniciarTurnstile(cfg) {
-    var ok = (cfg.turnstile_ativo === true || cfg.turnstile_ativo === "true") && typeof cfg.turnstile_site_key === "string" && cfg.turnstile_site_key && !/\[[^\]]*\]/.test(cfg.turnstile_site_key);
+    var teste = /\.pages\.dev$/.test(location.hostname) && new URLSearchParams(location.search).get("selo") === "1"; // só na prévia
+    var chave = typeof cfg.turnstile_site_key === "string" && !/\[[^\]]*\]/.test(cfg.turnstile_site_key) ? cfg.turnstile_site_key : "";
+    var ok = chave && (teste || cfg.turnstile_ativo === true || cfg.turnstile_ativo === "true");
     if (!ok) return;
-    turnstile.ativo = true;
+    turnstile.ativo = true; turnstile.estado = "aguardando";
+    botao(false, "Verificando…");
+    turnstile.timer = setTimeout(function () { seloLiberar("demorou"); }, Number(cfg.turnstile_espera_ms) || 15000);
     var caixa = document.getElementById("f-turnstile"); if (caixa) caixa.classList.remove("oculto");
     var s = document.createElement("script"); s.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?onload=kTurnstilePronto"; s.async = true; s.defer = true;
+    s.onerror = function () { seloLiberar("nao_carregou"); };
     window.kTurnstilePronto = function () {
-      turnstile.widget = window.turnstile.render("#f-turnstile", {
-        sitekey: cfg.turnstile_site_key, theme: "light", language: "pt-BR",
-        callback: function (t) { turnstile.token = t; }, "expired-callback": function () { turnstile.token = ""; }, "error-callback": function () { turnstile.token = ""; }
-      });
+      try {
+        turnstile.widget = window.turnstile.render("#f-turnstile", {
+          sitekey: chave, theme: "light", language: "pt-BR",
+          callback: function (t) { turnstile.token = t; turnstile.estado = "pronto"; if (turnstile.timer) { clearTimeout(turnstile.timer); turnstile.timer = null; } botao(true); },
+          "expired-callback": function () { turnstile.token = ""; turnstile.estado = "aguardando"; },
+          "error-callback": function () { turnstile.token = ""; seloLiberar("erro"); }
+        });
+      } catch (e) { seloLiberar("erro"); }
     };
     document.head.appendChild(s);
   }
   function cookie(nome) { var m = document.cookie.match(new RegExp("(?:^|; )" + nome + "=([^;]*)")); return m ? decodeURIComponent(m[1]) : ""; }
 
   // ---- Formulário
-  var form = document.getElementById("cadastro"), erroBox = document.getElementById("f-erro"), btn = document.getElementById("f-enviar");
+  var form = document.getElementById("cadastro"), erroBox = document.getElementById("f-erro");
   function marcar(id, msg) {
     var el = document.getElementById(id); if (!el) return;
     el.classList.toggle("campo-erro", !!msg);
@@ -75,7 +90,7 @@
     marcar("f-nome", nome.ok ? "" : nome.motivo); marcar("f-whats", w.ok ? "" : w.motivo); marcar("f-email", em.ok ? "" : em.motivo);
     if (!consent) erroGeral("Marque o aceite para receber o link da live.");
     if (!nome.ok || !w.ok || !em.ok || !consent) { var primeiro = form.querySelector(".campo-erro"); if (primeiro) primeiro.focus(); return; }
-    if (turnstile.ativo && !turnstile.token) { erroGeral("Aguarde a verificação de segurança terminar e tente de novo."); return; }
+    if (turnstile.ativo && !turnstile.token && turnstile.estado === "aguardando") { erroGeral("Aguarde a verificação de segurança terminar e tente de novo."); return; }
 
     var r = K.rastreio(), consentTexto = form.querySelector("label span") ? form.querySelector("label span").textContent.replace(/\s+/g, " ").trim() : "";
     var corpo = {
@@ -83,21 +98,49 @@
       consentimento: true, consentimento_texto: consentTexto, site: form.site ? form.site.value : "",
       utm_source: r.utm_source, utm_medium: r.utm_medium, utm_campaign: r.utm_campaign, utm_content: r.utm_content, utm_term: r.utm_term,
       fbclid: r.fbclid, gclid: r.gclid, ttclid: r.ttclid, referrer: r.referrer, landing_url: r.landing_url,
-      fbp: cookie("_fbp"), fbc: cookie("_fbc"), turnstile_token: turnstile.token
+      fbp: cookie("_fbp"), fbc: cookie("_fbc"), turnstile_token: turnstile.token, turnstile_estado: turnstile.estado
     };
-    btn.disabled = true; var txt = btn.textContent; btn.textContent = "Enviando…";
-    K.post("lead-intake", corpo).then(function (j) {
+    botao(false, "Enviando…");
+    enviar(corpo, r);
+  });
+
+  // ---- Plano B: se a lead-intake falhar ou demorar mais que planob_espera_ms, guarda o que foi digitado,
+  // mostra o botão do WhatsApp com a mensagem pronta e reenvia sozinho na próxima visita (ou quando a API voltar).
+  var cfgAtual = null;
+  function enviar(corpo, r) {
+    var espera = Number(cfgAtual && cfgAtual.planob_espera_ms) || 8000;
+    K.post("lead-intake", corpo, espera).then(function (j) {
       if (j && j.ok && j.token) {
-        try { sessionStorage.setItem("k_lead", JSON.stringify({ token: j.token, novo: !!j.novo, event_id: j.event_id || "", grupo_controle: !!j.grupo_controle, origem: r.utm_source || "" })); } catch (e) { /* sem storage */ }
+        try { localStorage.removeItem("k_pendente"); } catch (e) { /* sem storage */ }
+        try { sessionStorage.setItem("k_lead", JSON.stringify({ token: j.token, novo: !!j.novo, event_id: j.event_id || "", grupo_controle: !!j.grupo_controle, origem: (r && r.utm_source) || "" })); } catch (e) { /* sem storage */ }
         location.href = "obrigado.html?t=" + encodeURIComponent(j.token) + "&n=" + (j.novo ? 1 : 0);
         return;
       }
       if (j && j.campos) { Object.keys(j.campos).forEach(function (k) { marcar({ nome: "f-nome", whatsapp: "f-whats", email: "f-email" }[k] || "", j.campos[k]); }); }
+      if (j && j._status >= 500) { planoB(corpo); return; }
       erroGeral((j && j.erro && j.erro !== "validação") ? j.erro : "Confira os campos marcados.");
-      if (turnstile.ativo && window.turnstile && turnstile.widget !== null) { turnstile.token = ""; window.turnstile.reset(turnstile.widget); }
-      btn.disabled = false; btn.textContent = txt;
-    }).catch(function () { erroGeral("Sem conexão agora. Tente de novo em instantes."); btn.disabled = false; btn.textContent = txt; });
-  });
+      if (turnstile.ativo && window.turnstile && turnstile.widget !== null) { turnstile.token = ""; turnstile.estado = "aguardando"; window.turnstile.reset(turnstile.widget); }
+      botao(true);
+    }).catch(function () { planoB(corpo); });
+  }
+  function planoB(corpo) {
+    try { localStorage.setItem("k_pendente", JSON.stringify({ corpo: corpo, em: Date.now() })); } catch (e) { /* sem storage */ }
+    var caixa = document.getElementById("f-planob"), link = document.getElementById("f-planob-link");
+    var base = (cfgAtual && cfgAtual.whatsapp_time_link) || "";
+    var msg = ((cfgAtual && cfgAtual.planob_mensagem) || "Oi, quero minha vaga na live da pré-venda. Meu nome é {nome}.").replace("{nome}", corpo.nome || "");
+    if (link && base) { link.href = base.split("?")[0] + "?text=" + encodeURIComponent(msg); link.textContent = (cfgAtual && cfgAtual.planob_botao) || "Garantir minha vaga pelo WhatsApp"; }
+    if (caixa) caixa.classList.remove("oculto");
+    erroGeral((cfgAtual && cfgAtual.planob_texto) || "Nosso cadastro demorou para responder. Seus dados ficaram guardados e serão enviados de novo sozinhos. Se preferir, garanta a vaga pelo WhatsApp agora.");
+    botao(true);
+  }
+  function reenviarPendente() {
+    var p = null;
+    try { p = JSON.parse(localStorage.getItem("k_pendente") || "null"); } catch (e) { p = null; }
+    if (!p || !p.corpo) return;
+    K.post("lead-intake", p.corpo, 8000).then(function (j) {
+      if (j && (j.ok || (j._status >= 400 && j._status < 500))) { try { localStorage.removeItem("k_pendente"); } catch (e) { /* sem storage */ } }
+    }).catch(function () { /* tenta na próxima visita */ });
+  }
 
   // ---- Configuração: preenche textos, links, contagem e contador; liga pixels; roda animação
   K.rastreio();
@@ -106,7 +149,9 @@
     K.preencher(K.tokens(cfg)); K.preencherLinks(cfg); K.pronto();
     K.iniciarContagem(cfg); K.mostrarContador(cfg);
     window.KPixels.init(cfg);
+    cfgAtual = cfg;
     iniciarTurnstile(cfg);
+    reenviarPendente();
     animar(Number(cfg.preco_atual), Number(cfg.preco_prevenda));
   });
 })();

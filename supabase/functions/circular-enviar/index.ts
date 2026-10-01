@@ -30,7 +30,7 @@ Deno.serve(async (req) => {
       if ((nFalhas.get(l.id) ?? 0) >= 3) { resultados[l.id] = "3 falhas no provedor, ver circular_envios"; continue; }
       const r = await enviarCircular(l.id);
       resultados[l.id] = r.ok ? "ok" : (r.motivo ?? "erro");
-      if (!r.ok && /PDF|RESEND_API_KEY|email_from/.test(r.motivo ?? "")) break; // bloqueio global, não adianta continuar
+      if (!r.ok && /PDF|RESEND_API_KEY|email_from|envios pausados/.test(r.motivo ?? "")) break; // bloqueio global, não adianta continuar
     }
     return json({ ok: true, total: Object.keys(resultados).length, resultados });
   }

@@ -2,7 +2,7 @@
 // limite semanal de mensagens iniciadas pela empresa, janela de 24h (template fora dela),
 // aquecimento do número (teto por minuto e por dia) e pausa automática se a taxa de falhas subir.
 import { db, exigirServico } from "../_shared/db.ts";
-import { carregarConfig, cfgNum, cfgText, type Config } from "../_shared/config.ts";
+import { carregarConfig, cfgBool, cfgNum, cfgText, type Config } from "../_shared/config.ts";
 import { json } from "../_shared/http.ts";
 import { montarEnvio, type LeadFila } from "../_shared/fila.ts";
 import { enviarTemplate, whatsappConfigurado } from "../_shared/whatsapp.ts";
@@ -32,6 +32,9 @@ Deno.serve(async (req) => {
   const sb = db();
   const { todos: cfg } = await carregarConfig();
   const apiUrl = (Deno.env.get("SUPABASE_URL") ?? "") + "/functions/v1";
+
+  // Chave mestra: com envios_ativos = false, a fila não é tocada (itens esperam sem gastar tentativa).
+  if (!cfgBool(cfg, "envios_ativos", false)) return json({ ok: true, pausado: "config.envios_ativos = false", processados: 0, enviados: 0 });
 
   // Pausa por qualidade do número
   const { total, falhas } = await taxaFalhasHora();

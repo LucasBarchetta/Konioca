@@ -1,13 +1,18 @@
 // POST /lead-intake — cadastro na lista da pré-venda.
 // Valida, bloqueia duplicado, registra consentimento e UTMs, sorteia grupo de controle,
 // envia a Circular por e-mail (em segundo plano) e devolve o token do lead para a página de obrigado.
-import { db } from "../_shared/db.ts";
+// Turnstile: token inválido recusa. Token ausente (selo não carregou, cache antigo, bloqueador) ou Cloudflare fora do ar:
+// aceita e marca "sem verificação", com limite por IP mais apertado. Nunca perder cadastro legítimo.
+// Planilha em tempo real, API de Conversões da Meta e Events API do TikTok rodam em segundo plano e nunca seguram o cadastro.
+import { db, exigirServico } from "../_shared/db.ts";
 import { carregarConfig, cfgBool, cfgText } from "../_shared/config.ts";
 import { verificarTurnstile } from "../_shared/turnstile.ts";
 import { enviarLeadCapi } from "../_shared/meta_capi.ts";
+import { enviarLeadTiktok } from "../_shared/tiktok_events.ts";
 import { corsHeaders, ipDe, json, lerJson } from "../_shared/http.ts";
 import { classificarOrigem, limparTexto, normalizarWhatsapp, validarEmail, validarNome } from "../_shared/validacao.ts";
 import { enviarCircular } from "../_shared/circular.ts";
+import { enviarLinhaPlanilha, linhaTempoReal, planilhaConfigurada } from "../_shared/planilha_tempo_real.ts";
 
 interface Entrada {
   nome?: string; whatsapp?: string; email?: string; cidade?: string; tem_negocio?: boolean | string | null;
@@ -15,11 +20,24 @@ interface Entrada {
   utm_source?: string; utm_medium?: string; utm_campaign?: string; utm_content?: string; utm_term?: string;
   fbclid?: string; gclid?: string; ttclid?: string; referrer?: string; landing_url?: string;
   site?: string; // honeypot: humano deixa vazio
-  turnstile_token?: string;
+  turnstile_token?: string; turnstile_estado?: string;
   fbp?: string; fbc?: string;
+  monitor?: boolean; // cadastro de teste do Monitor técnico: só com a chave de serviço; pula planilha, Circular e pixels
 }
 
 const TEXTO_CONSENTIMENTO_PADRAO = "Aceito receber mensagens da Konioca no WhatsApp e por e-mail sobre a pré-venda. Posso sair quando quiser.";
+
+/** Planilha em tempo real: registra a linha (durável) e tenta enviar na hora; o cron planilha-processar cobre as falhas. */
+async function planilhaTempoReal(leadId: string) {
+  const sb = db();
+  const { data: l } = await sb.from("leads").select("criado_em, nome, whatsapp, email, cidade, tem_negocio, origem, utm_source, utm_medium, bloqueado_em").eq("id", leadId).single();
+  if (!l) return;
+  const { data: envio } = await sb.from("planilha_envios").insert({ lead_id: leadId }).select("id").single();
+  if (!planilhaConfigurada()) return; // fica pendente até os segredos existirem
+  const r = await enviarLinhaPlanilha(linhaTempoReal(l));
+  if (r.ok) await sb.from("planilha_envios").update({ status: "enviado", tentativas: 1, enviado_em: new Date().toISOString() }).eq("id", envio!.id);
+  else await sb.from("planilha_envios").update({ tentativas: 1, motivo: r.motivo ?? null, proximo_em: new Date(Date.now() + 5 * 60_000).toISOString() }).eq("id", envio!.id);
+}
 
 Deno.serve(async (req) => {
   const cors = await corsHeaders(req);
@@ -46,19 +64,30 @@ Deno.serve(async (req) => {
   const ip = ipDe(req);
   const sb = db();
   const { todos } = await carregarConfig();
+  const monitorTeste = b.monitor === true && (await exigirServico(req));
 
-  // Turnstile: antes de gravar e antes de qualquer disparo. Sem verificação, nada acontece.
-  if (cfgBool(todos, "turnstile_ativo", false)) {
-    const t = await verificarTurnstile(b.turnstile_token, ip);
-    if (!t.ok) {
-      console.warn("turnstile", t.motivo);
-      return json({ erro: "Não deu para confirmar que você não é um robô. Recarregue a página e tente de novo." }, 403, cors);
+  // Turnstile: antes de gravar e antes de qualquer disparo.
+  // Com token: inválido recusa; Cloudflare indisponível aceita e marca. Sem token: aceita e marca (limite por IP apertado).
+  let semVerificacao: string | null = null;
+  if (cfgBool(todos, "turnstile_ativo", false) && !monitorTeste) {
+    const token = String(b.turnstile_token ?? "").trim();
+    if (!token) {
+      semVerificacao = "token ausente (" + limparTexto(b.turnstile_estado, 30).replace(/[^a-z_]/g, "") + ")";
+      console.warn("turnstile sem token, cadastro aceito sem verificação:", semVerificacao);
+    } else {
+      const t = await verificarTurnstile(token, ip);
+      if (t.status === "recusado") {
+        console.warn("turnstile recusado", t.motivo);
+        return json({ erro: "Não deu para confirmar que você não é um robô. Recarregue a página e tente de novo." }, 403, cors);
+      }
+      if (t.status === "indisponivel") { semVerificacao = t.motivo; console.error("turnstile indisponível, cadastro aceito sem verificação:", t.motivo); }
     }
   }
 
-  const lim = (todos["cadastro_limite_ip"] as { janela_min?: number; max?: number } | undefined) ?? {};
-  if (ip) {
-    const { data: dentro } = await sb.rpc("rate_limit_hit", { p_chave: "cadastro:" + ip, p_janela_min: lim.janela_min ?? 10, p_max: lim.max ?? 8 });
+  // Limite por IP: o normal, e um mais apertado para quem chega sem o selo verificado.
+  const lim = (todos[semVerificacao ? "cadastro_limite_ip_sem_selo" : "cadastro_limite_ip"] as { janela_min?: number; max?: number } | undefined) ?? {};
+  if (ip && !monitorTeste) {
+    const { data: dentro } = await sb.rpc("rate_limit_hit", { p_chave: (semVerificacao ? "cadastro-sem-selo:" : "cadastro:") + ip, p_janela_min: lim.janela_min ?? (semVerificacao ? 30 : 10), p_max: lim.max ?? (semVerificacao ? 3 : 8) });
     if (dentro === false) return json({ erro: "Muitas tentativas. Tente de novo em alguns minutos." }, 429, cors);
   }
 
@@ -102,17 +131,33 @@ Deno.serve(async (req) => {
   const r = Array.isArray(data) ? data[0] : data;
   if (!r) return json({ erro: "Não deu para salvar agora. Tente de novo." }, 500, cors);
 
-  if (r.novo) {
-    // Circular e API de Conversões vão em segundo plano: o cadastro não espera provedores.
-    const tarefas: Promise<unknown>[] = [enviarCircular(r.lead_id).catch((e) => console.error("enviarCircular", e))];
+  if (r.novo && monitorTeste) {
+    // Teste do Monitor: fica marcado no lead e não dispara nada (planilha, Circular, pixels, APIs de conversão).
+    await sb.from("leads").update({ monitor_teste: true }).eq("id", r.lead_id);
+    await sb.from("lead_eventos").insert({ lead_id: r.lead_id, tipo: "monitor_teste", origem: "sistema" });
+  } else if (r.novo) {
+    // Tudo abaixo roda em segundo plano: o cadastro não espera provedores. Cada tarefa engole o próprio erro.
+    const tarefas: Promise<unknown>[] = [
+      enviarCircular(r.lead_id).catch((e) => console.error("enviarCircular", e)),
+      planilhaTempoReal(r.lead_id).catch((e) => console.error("planilha", e)),
+    ];
+    if (semVerificacao) {
+      tarefas.push(Promise.resolve(sb.from("lead_eventos").insert({ lead_id: r.lead_id, tipo: "cadastro_sem_verificacao", origem: "sistema", dados: { motivo: semVerificacao } })).catch((e: unknown) => console.error("sem_verificacao", e)));
+    }
     if (cfgBool(todos, "meta_capi_ativo", false)) {
       tarefas.push(enviarLeadCapi(cfgText(todos, "meta_pixel_id"), {
         event_id: r.lead_id, email: email.email, whatsappE164: whats.e164, nome: nome.nome, cidade: payload.cidade,
         ip, userAgent: payload.user_agent ?? "", url: rastreio.landing_url, fbp: rastreio.fbp, fbc: rastreio.fbc, fbclid: rastreio.fbclid, quandoMs: Date.now(),
       }, cfgText(todos, "meta_test_event_code")).then(async (c) => {
         if (c.ok) await sb.from("leads").update({ capi_enviado_em: new Date().toISOString() }).eq("id", r.lead_id);
-        else console.warn("capi", c.motivo);
+        else console.warn("capi", c.motivo); // sem token, pula em silêncio
       }).catch((e) => console.error("capi", e)));
+    }
+    if (cfgBool(todos, "tiktok_eapi_ativo", false)) {
+      tarefas.push(enviarLeadTiktok(cfgText(todos, "tiktok_pixel_id"), {
+        event_id: r.lead_id, email: email.email, whatsappE164: whats.e164, ip, userAgent: payload.user_agent ?? "",
+        url: rastreio.landing_url, ttclid: rastreio.ttclid, quandoMs: Date.now(),
+      }).then((c) => { if (!c.ok) console.warn("tiktok", c.motivo); }).catch((e) => console.error("tiktok", e)));
     }
     const tarefa = Promise.all(tarefas);
     // deno-lint-ignore no-explicit-any
@@ -125,7 +170,7 @@ Deno.serve(async (req) => {
     ok: true,
     novo: r.novo,
     token: r.token,
-    event_id: r.lead_id, // mesmo id no pixel (eventID) e na API de Conversões: deduplicação
+    event_id: r.lead_id, // mesmo id no pixel (eventID) e nas APIs de conversão: deduplicação
     grupo_controle: r.grupo_controle,
     obrigado_url: `${lpUrl.replace(/\/$/, "")}/obrigado.html?t=${encodeURIComponent(r.token)}&n=${r.novo ? 1 : 0}`,
   }, r.novo ? 201 : 200, cors);

@@ -2,7 +2,7 @@
 // GET: verificação do endpoint (hub.challenge). POST: mensagens e status, com assinatura X-Hub-Signature-256.
 // Conversa mínima da etapa 2: resposta ao convite, pergunta "o que você imagina fazer", "Sair", passagem ao humano.
 import { db } from "../_shared/db.ts";
-import { carregarConfig, cfgNum, cfgText, pendente } from "../_shared/config.ts";
+import { carregarConfig, cfgBool, cfgNum, cfgText, pendente } from "../_shared/config.ts";
 import { json } from "../_shared/http.ts";
 import { parseWebhook, verificarAssinaturaMeta, enviarTexto, enviarAudio, marcarLida } from "../_shared/whatsapp.ts";
 import { classificarResposta, proximoPasso, situacaoHorario, textoPassagemHumano, primeiroNome, type Estado, type HorarioComercial } from "../_shared/conversa.ts";
@@ -95,7 +95,8 @@ Deno.serve(async (req) => {
     }
     await sb.from("leads").update(upd).eq("id", lead.id);
 
-    if (resposta) {
+    // Chave mestra: com envios_ativos = false, o estado é registrado mas nenhuma resposta sai.
+    if (resposta && cfgBool(todos, "envios_ativos", false)) {
       const r = await enviarTexto((await sb.from("leads").select("whatsapp").eq("id", lead.id).single()).data!.whatsapp, resposta);
       await sb.from("mensagens").insert({ lead_id: lead.id, canal: "whatsapp", direcao: "out", tipo: "texto", corpo: resposta, provedor_id: r.wamid ?? null, status: r.ok ? "enviado" : "falhou", erro: r.erro ?? null, iniciada_pela_empresa: false });
       if (r.ok) await sb.from("leads").update({ ultima_msg_empresa_em: new Date().toISOString() }).eq("id", lead.id);

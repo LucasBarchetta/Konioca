@@ -2,7 +2,7 @@
 
 Submeter até 4/10 em WhatsApp Manager > Modelos de mensagem. Idioma: Português (BR). Os nomes precisam ser exatamente estes, porque o sistema os lê da configuração (`wa_tpl_*`).
 
-Regras de voz aplicadas: uma pergunta por mensagem, sem saudação padrão, sem exclamação, assinatura do Time da Marcela, nenhuma exclusividade falsa. As exclusividades citadas são as reais: lista, live fechada, lote 1 de 250 e prazo.
+Regras de voz aplicadas: uma pergunta por mensagem, sem saudação padrão, sem exclamação, assinatura do Time da Marcela, nenhuma exclusividade falsa. As exclusividades citadas são as reais: lista, live fechada, 250 máquinas e prazo. Não existe lote extra.
 
 Categoria: a Meta decide a final. Convites são Marketing. Lembretes do evento e da Circular foram escritos como Utilidade, sem chamada de venda. Se a Meta reclassificar para Marketing, nada muda no código.
 
@@ -10,7 +10,7 @@ Categoria: a Meta decide a final. Convites são Marketing. Lembretes do evento e
 
 Corpo:
 ```
-{{1}}, seu nome está na lista da pré-venda da nova Konioca. A live é fechada para quem está na lista: {{2}}, {{3}}, às {{4}}. O primeiro lote tem {{5}} máquinas. Você consegue estar lá?
+{{1}}, seu nome está na lista da pré-venda da nova Konioca. A live é fechada para quem está na lista: {{2}}, {{3}}, às {{4}}. A pré-venda tem {{5}} máquinas. Você consegue estar lá?
 ```
 Exemplos: `Ana` · `quinta` · `15/10` · `19h` · `250`
 
@@ -42,7 +42,7 @@ Rodapé: `Time da Marcela`
 
 ## 4. `konioca_gravacao` · Marketing
 
-Dia seguinte, para quem não assistiu, com a mesma pergunta do fim da live.
+Dia seguinte, para todos os convidados (a gravação vai para quem se cadastrou), com a mesma pergunta do fim da live.
 ```
 {{1}}, a gravação da live da nova Konioca está aqui: {{2}}. Depois de assistir, como você quer seguir?
 ```

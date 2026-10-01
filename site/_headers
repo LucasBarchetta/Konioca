@@ -1,9 +1,8 @@
-/*
-  X-Content-Type-Options: nosniff
-  X-Frame-Options: DENY
-  Referrer-Policy: strict-origin-when-cross-origin
-  Permissions-Policy: camera=(), microphone=(), geolocation=()
-/assets/*
-  Cache-Control: public, max-age=3600
-/assets/js/env.js
-  Cache-Control: no-cache
+# Cloudflare Pages: HTML e scripts sempre revalidados (o Pages entrega scripts com 1 h de cache por padrão,
+# e um lp.js antigo no celular foi a causa provável do cadastro sem token em 30/09). Imagens podem ficar em cache.
+/assets/js/*
+  Cache-Control: public, max-age=0, must-revalidate
+/assets/css/*
+  Cache-Control: public, max-age=0, must-revalidate
+/assets/img/*
+  Cache-Control: public, max-age=86400

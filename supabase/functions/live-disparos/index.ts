@@ -1,6 +1,6 @@
 // Disparos ligados à live (cron a cada 5 min), idempotentes pela tabela disparos:
 // - lembrete 1h antes com o link (variante com a pergunta só se foi selecionada)
-// - gravação no dia seguinte, na hora configurada, para quem não assistiu, com a mesma pergunta
+// - gravação no dia seguinte, na hora configurada, para todos os convidados (FAQ v3: a gravação vai para quem se cadastrou)
 import { db, exigirServico } from "../_shared/db.ts";
 import { carregarConfig, cfgNum, cfgText } from "../_shared/config.ts";
 import { json } from "../_shared/http.ts";
@@ -39,7 +39,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Gravação: dia seguinte à live, na hora configurada (São Paulo), para quem não assistiu
+    // Gravação: dia seguinte à live, na hora configurada (São Paulo), para todos os convidados
     const [gh, gm] = cfgText(cfg, "gravacao_hora", "10:00").split(":").map(Number);
     const diaSeg = new Date(live + 24 * 3600_000);
     const alvo = new Date(diaSeg.toLocaleDateString("sv-SE", { timeZone: "America/Sao_Paulo" }) + `T${String(gh).padStart(2, "0")}:${String(gm || 0).padStart(2, "0")}:00-03:00`).getTime();
@@ -47,7 +47,7 @@ Deno.serve(async (req) => {
     if (agora >= alvo && agora < alvo + 30 * 60_000) {
       const { data: feito } = await sb.from("disparos").select("chave").eq("chave", chaveG).maybeSingle();
       if (!feito) {
-        const { data: leads } = await sb.from("leads").select("id").eq("turma", t.nome).is("optout_em", null).eq("grupo_controle", false).not("convidado_em", "is", null).is("assistiu_em", null);
+        const { data: leads } = await sb.from("leads").select("id").eq("turma", t.nome).is("optout_em", null).eq("grupo_controle", false).not("convidado_em", "is", null);
         let n = 0;
         for (const l of leads ?? []) { await sb.rpc("fila_enfileirar", { p_lead: l.id, p_tipo: "gravacao", p_quando: new Date().toISOString() }); n++; }
         await sb.from("disparos").insert({ chave: chaveG, total: n });

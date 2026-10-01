@@ -4,6 +4,8 @@ import Anthropic from "npm:@anthropic-ai/sdk@0.129.0";
 import { z } from "npm:zod@4.6.5";
 import { zodOutputFormat } from "npm:@anthropic-ai/sdk@0.129.0/helpers/zod";
 import { selecionarHeuristica, type PerguntaCandidata, type PerguntaSelecionada } from "./perguntas.ts";
+import { registrarChamadaIA } from "./ia_custo.ts";
+import type { Config } from "./cfg.ts";
 
 export { selecionarHeuristica, type PerguntaCandidata, type PerguntaSelecionada };
 
@@ -13,7 +15,7 @@ const Selecao = z.object({
 });
 
 /** Seleção com o modelo: variedade de casos de uso, perguntas que ajudam a plateia inteira, nome e cidade para a Marcela citar. */
-export async function selecionarPerguntas(c: PerguntaCandidata[], n: number, modelo: string): Promise<{ selecionadas: PerguntaSelecionada[]; fonte: "claude" | "heuristica"; observacao: string }> {
+export async function selecionarPerguntas(c: PerguntaCandidata[], n: number, modelo: string, cfg: Config = {}): Promise<{ selecionadas: PerguntaSelecionada[]; fonte: "claude" | "heuristica"; observacao: string }> {
   if (!Deno.env.get("ANTHROPIC_API_KEY") || c.length === 0) {
     return { selecionadas: selecionarHeuristica(c, n), fonte: "heuristica", observacao: c.length ? "ANTHROPIC_API_KEY ausente" : "sem candidatas" };
   }
@@ -31,6 +33,7 @@ export async function selecionarPerguntas(c: PerguntaCandidata[], n: number, mod
     ].join(" "),
     messages: [{ role: "user", content: `Candidatas:\n${lista}` }],
   });
+  await registrarChamadaIA(cfg, "perguntas-selecionar", modelo, resp.usage);
   const parsed = resp.parsed_output;
   if (!parsed) return { selecionadas: selecionarHeuristica(c, n), fonte: "heuristica", observacao: "resposta do modelo sem parse" };
   const ids = new Set(c.map((p) => p.lead_id));

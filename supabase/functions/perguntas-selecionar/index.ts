@@ -27,7 +27,7 @@ Deno.serve(async (req) => {
     candidatas.push({ lead_id: p.lead_id, nome: p.nome, cidade: p.cidade, texto: p.texto, tem_negocio: p.leads?.tem_negocio ?? null, nota: Number(p.leads?.nota ?? 0) });
   }
   const restantes = Math.max(0, qtd - fixas.length);
-  const r = await selecionarPerguntas(candidatas, restantes, cfgText(cfg, "claude_modelo", "claude-opus-5-5"));
+  const r = await selecionarPerguntas(candidatas, restantes, cfgText(cfg, "claude_modelo", "claude-opus-5-5"), cfg);
 
   // Reaplica a seleção do agente sem tocar nas do humano
   await sb.from("perguntas_live").update({ selecionada: false, ordem: null, motivo: null, selecionada_por: null }).eq("selecionada_por", "agente");
