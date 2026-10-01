@@ -4,6 +4,7 @@
 // Rastreio de abertura e clique fica desligado (nada de tracking no payload; o domínio no Resend também fica sem).
 import { carregarConfig, cfgBool, cfgText, pendente } from "./config.ts";
 import { excecaoInterna } from "./aprovadores.ts";
+import { emailBloqueado, motivoBloqueio } from "./bloqueio.ts";
 
 export async function enviarEmail(para: string, assunto: string, texto: string, html: string, tag: string): Promise<{ ok: boolean; id?: string; motivo?: string }> {
   const apiKey = Deno.env.get("RESEND_API_KEY");
@@ -15,6 +16,9 @@ export async function enviarEmail(para: string, assunto: string, texto: string, 
   }
   const from = cfgText(todos, "email_from");
   if (!from || pendente(from)) return { ok: false, motivo: "config.email_from pendente" };
+  // Endereço devolvido ou marcado como spam: nada sai, em nenhum tipo de envio.
+  const bloqueio = await emailBloqueado(para);
+  if (bloqueio.bloqueado) return { ok: false, motivo: motivoBloqueio(bloqueio) };
   const replyTo = cfgText(todos, "email_reply_to");
   const r = await fetch("https://api.resend.com/emails", {
     method: "POST", headers: { "authorization": `Bearer ${apiKey}`, "content-type": "application/json" },

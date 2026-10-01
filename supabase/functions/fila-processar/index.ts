@@ -56,10 +56,16 @@ Deno.serve(async (req) => {
   let enviados = 0, waEnviados = 0; const resultados: Record<string, string> = {};
 
   for (const item of (itens ?? []) as { id: number; lead_id: string; tipo: string; canal: string; payload: Record<string, unknown> | null; tentativas: number }[]) {
-    const { data: lead } = await sb.from("leads").select("id, nome, whatsapp, email, token, turma, pergunta_live, estado_conversa, optout_em, grupo_controle, wa_invalido_em, base_antiga_gancho, contato_manual_em").eq("id", item.lead_id).single();
+    const { data: lead } = await sb.from("leads").select("id, nome, whatsapp, email, token, turma, pergunta_live, estado_conversa, optout_em, grupo_controle, wa_invalido_em, base_antiga_gancho, contato_manual_em, email_bloqueado_em").eq("id", item.lead_id).single();
     if (!lead || lead.optout_em) { await fechar(item.id, "cancelado", "optout"); continue; }
     if (lead.grupo_controle && item.tipo !== "circular_lembrete") { await fechar(item.id, "pulado", "grupo_controle"); continue; }
     if (item.canal === "whatsapp" && (lead.wa_invalido_em || !lead.whatsapp)) { await fechar(item.id, "pulado", "numero_invalido"); continue; }
+    if (item.canal === "email" && (lead.email_bloqueado_em || !lead.email)) { await fechar(item.id, "pulado", "email_bloqueado"); resultados[item.id] = "pulado: e-mail bloqueado"; continue; }
+    if ((item.tipo === "base_antiga" || item.tipo === "base_antiga_email") && cfgBool(cfg, "base_antiga_pausada", false)) {
+      // Trilha pausada por devoluções (docs/16): o item espera sem gastar tentativa até o sim do Lucas.
+      await sb.from("fila_envios").update({ status: "pendente", tentativas: Math.max(0, item.tentativas - 1), agendado_para: new Date(Date.now() + 1800_000).toISOString(), motivo: "base antiga pausada (devoluções)" }).eq("id", item.id);
+      resultados[item.id] = "base antiga pausada"; continue;
+    }
     if (!isentos.has(item.tipo)) {
       const { data: n } = await sb.rpc("mensagens_empresa_semana", { p_lead: lead.id });
       if ((n ?? 0) >= maxSemana) { await sb.from("fila_envios").update({ status: "pendente", agendado_para: new Date(Date.now() + 86400_000).toISOString(), motivo: "limite semanal" }).eq("id", item.id); continue; }
@@ -85,6 +91,7 @@ Deno.serve(async (req) => {
 
     if (envio.canal === "email") {
       const r = await enviarEmail(lead.email, envio.assunto, envio.texto, envio.html, item.tipo);
+      if (!r.ok && /^email_bloqueado/.test(r.motivo ?? "")) { await fechar(item.id, "pulado", r.motivo); resultados[item.id] = r.motivo ?? "pulado"; continue; }
       await sb.from("mensagens").insert({ lead_id: lead.id, canal: "email", direcao: "out", tipo: "template", modelo: item.tipo, corpo: envio.texto, provedor_id: r.id ?? null, status: r.ok ? "enviado" : "falhou", erro: r.motivo ?? null, iniciada_pela_empresa: true, fila_id: item.id });
       await fechar(item.id, r.ok ? "enviado" : "falhou", r.motivo);
       if (r.ok) { enviados++; await sb.from("leads").update({ ultima_msg_empresa_em: new Date().toISOString(), ...(item.tipo === "convite" ? { convidado_em: new Date().toISOString(), estado_conversa: "convidado", status_funil: "convidado" } : {}) }).eq("id", lead.id); }

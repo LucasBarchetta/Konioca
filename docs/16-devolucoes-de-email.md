@@ -1,4 +1,4 @@
-# Devoluções e spam em qualquer e-mail · plano (1/10, para aprovar antes de publicar)
+# Devoluções e spam em qualquer e-mail (1/10, aprovado e publicado)
 
 Prazo: no ar antes de 5/10, primeiro envio para a base antiga.
 
@@ -18,9 +18,8 @@ Resultado prático de hoje: o convite para hotmail.co saiu e, se voltar, ningué
      qual e-mail era (convite, base antiga, Circular, lembrete).
    - `email.bounced` com tipo "soft" (caixa cheia, servidor fora do ar): só registra no lead (`email_devolucao_temporaria`).
      Na segunda temporária em 7 dias para o mesmo endereço, bloqueia como se fosse definitiva.
-   - `email.complained` (marcou como spam): status `spam`; endereço bloqueado; evento `email_spam` no lead.
-     Proposta: spam bloqueia só o e-mail, o WhatsApp segue a regra normal. Se preferir que spam encerre tudo (como o
-     opt-out), é uma linha de config.
+   - `email.complained` (marcou como spam): status `spam`; endereço bloqueado; evento `email_spam` no lead; e o lead
+     sai de tudo, igual ao opt-out (optout_em, motivo "spam", fila cancelada em e-mail e WhatsApp). Decisão do Lucas, 1/10.
    - Entrega, abertura e clique continuam como hoje.
 
 2. Bloqueio por endereço, não só por lead. Tabela nova `emails_bloqueados` (e-mail em minúsculas, motivo, data, id da
@@ -49,11 +48,12 @@ Resultado prático de hoje: o convite para hotmail.co saiu e, se voltar, ningué
 6. Teste de ponta a ponta antes de ligar: envio para um endereço inexistente em domínio real (ex.: `nao-existe-xyz@gmail.com`)
    a partir da `email-teste`, para ver a devolução chegar, bloquear e aparecer no lead. Sem lead real envolvido.
 
-## O que preciso confirmar no Resend (passo seu ou acesso de leitura para mim)
+## Resend
 
-No painel do Resend, em Webhooks, o endpoint `…/functions/v1/circular-webhook` precisa estar assinado para
-`email.delivered`, `email.bounced`, `email.complained`, `email.opened` e `email.clicked`, no domínio envio.konioca.com.
-Se hoje só a Circular estiver recebendo eventos, é porque o endpoint está filtrado. Sem isso, nada do plano funciona.
+Até 1/10 não havia webhook cadastrado no Resend: nenhuma devolução chegava, nem da Circular. Em 1/10 o Lucas
+cadastrou o endpoint `https://ytsildpxummevfkjcjhs.supabase.co/functions/v1/circular-webhook` com `email.delivered`,
+`email.bounced` e `email.complained`, e salvou `RESEND_WEBHOOK_SECRET` nos segredos das functions. Primeiro evento
+`delivered` recebido às 14h08 (mensagem de teste 14, status "entregue" 5 s depois do envio).
 
 ## Entregáveis
 
@@ -64,4 +64,5 @@ Se hoje só a Circular estiver recebendo eventos, é porque o endpoint está fil
   `base-antiga-processar` respeitando a pausa.
 - Docs 11 e 14 atualizados (regra de bloqueio e ação do painel).
 
-Nada disso é publicado antes do seu "sim". Depois do "sim": migração, functions, teste do item 6 e relatório.
+Publicado em 1/10 com o "sim" do Lucas: migração 690, `_shared/email_eventos.ts` e `_shared/bloqueio.ts`, webhook,
+`email.ts`, `circular.ts`, `fila-processar`, `base-antiga-processar`, testes em `tests/email_eventos.test.mjs`.

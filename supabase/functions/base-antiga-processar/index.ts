@@ -5,7 +5,7 @@
 // Nunca: sem celular válido, e-mail devolvido, quem saiu, grupo de controle, quem já se cadastrou pela LP.
 // Com a fila pausada por qualidade do número, não enfileira nada.
 import { db, exigirServico } from "../_shared/db.ts";
-import { carregarConfig, cfgNum, cfgText } from "../_shared/config.ts";
+import { carregarConfig, cfgBool, cfgNum, cfgText } from "../_shared/config.ts";
 import { json } from "../_shared/http.ts";
 
 Deno.serve(async (req) => {
@@ -16,6 +16,8 @@ Deno.serve(async (req) => {
 
   const { data: pausa } = await sb.from("alertas").select("id").eq("tipo", "fila_pausada").eq("status", "aberto").maybeSingle();
   if (pausa) return json({ ok: true, pausado: true });
+  // Trilha pausada por devoluções de e-mail (docs/16): nada entra na fila até o sim do Lucas.
+  if (cfgBool(cfg, "base_antiga_pausada", false)) return json({ ok: true, pausado: "base_antiga_pausada", motivo: cfgText(cfg, "base_antiga_pausada_motivo") });
 
   const lote = Math.max(1, Math.floor(cfgNum(cfg, "wa_base_antiga_por_hora", 30) / 2)); // roda 2x por hora
   const aposHoras = cfgNum(cfg, "base_antiga_whatsapp_apos_horas", 48);

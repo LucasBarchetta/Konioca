@@ -3,6 +3,7 @@ import { db } from "./db.ts";
 // Chave mestra config.envios_ativos: com false, nem a Circular nem o lembrete saem.
 import { carregarConfig, cfgBool, cfgNum, cfgText, pendente } from "./config.ts";
 import { limiteRecebimentoCircular, partesData, textoHaQuanto } from "./datas.ts";
+import { emailBloqueado, motivoBloqueio } from "./bloqueio.ts";
 
 interface LeadMin { id: string; nome: string; email: string; token: string; optout_em: string | null; circular_enviada_em: string | null }
 
@@ -80,6 +81,8 @@ export async function enviarCircular(leadId: string, opts: { forcar?: boolean } 
   if (error || !lead) return { ok: false, motivo: "lead não encontrado" };
   if (lead.optout_em) return { ok: false, motivo: "lead saiu" };
   if (lead.circular_enviada_em && !opts.forcar) return { ok: true, motivo: "já enviada" };
+  const bloqueio = await emailBloqueado(lead.email);
+  if (bloqueio.bloqueado) return { ok: false, motivo: motivoBloqueio(bloqueio) };
 
   const apiKey = Deno.env.get("RESEND_API_KEY");
   if (!apiKey) return { ok: false, motivo: "RESEND_API_KEY ausente" };
@@ -212,6 +215,8 @@ export function montarEmailLembrete(opts: { nome: string; token: string; apiUrl:
 export async function enviarLembreteCircular(lead: { id: string; nome: string; email: string; token: string }): Promise<{ ok: boolean; motivo?: string }> {
   const apiKey = Deno.env.get("RESEND_API_KEY");
   if (!apiKey) return { ok: false, motivo: "RESEND_API_KEY ausente" };
+  const bloqueio = await emailBloqueado(lead.email);
+  if (bloqueio.bloqueado) return { ok: false, motivo: motivoBloqueio(bloqueio) };
   const { todos } = await carregarConfig();
   if (!cfgBool(todos, "envios_ativos", false)) return { ok: false, motivo: "envios pausados (config.envios_ativos)" };
   const from = cfgText(todos, "email_from");
