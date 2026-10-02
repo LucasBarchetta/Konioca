@@ -20,7 +20,15 @@ update config set valor = '"email"' where chave = 'canal_aquecimento';
 ```
 Convites de cadastros novos passam a sair por e-mail. Quando a WABA liberar, voltar para `"whatsapp"`. Quem já recebeu por e-mail não recebe outro convite.
 
-## Comunidade e turmas
+## Formato de 2/10: encontros fechados no Google Meet
+
+A live de 15/10 às 19h foi substituída por encontros fechados pelo Google Meet (30 minutos, até 35 pessoas, durante o
+dia, só para quem está na lista). Turmas, escolha de horário, confirmação e lembretes estão em docs/14 (aba Turmas),
+docs/15 (textos) e docs/19 (roteiro). O P2 da base antiga foi suspenso em 2/10 e só sai com o "sim" do Lucas nos
+testes reescritos (A e B). As seções abaixo sobre Comunidade, perguntas para a live, lembrete e gravação ficam como
+histórico: `config.turmas` e o cron `live-disparos` não são mais usados (migração 800).
+
+## Comunidade e turmas (histórico, não usado desde 2/10)
 
 A Comunidade e os subgrupos são criados por uma pessoa no aplicativo (a API oficial não cria comunidades). Depois, registrar os links:
 ```sql

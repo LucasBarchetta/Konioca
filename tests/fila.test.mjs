@@ -167,7 +167,7 @@ test("Base antiga: três versões (texto do Lucas de 1/10), preços da config, a
   assert.equal(montarEnvio("base_antiga_email", "email", base, CFG, API).canal, "nenhum");
   const w = montarEnvio("base_antiga", "whatsapp", base, cfg, API);
   assert.equal(w.nome, "konioca_base_antiga");
-  assert.equal(w.params.length, 5);
+  assert.deepEqual(w.params.slice(2), ["30", "35"], "formato de 2/10: minutos e pessoas por grupo, sem data");
 });
 
 test("Convite por WhatsApp vence em convite_whatsapp_ate só se o WhatsApp oficial não estiver ativo", () => {

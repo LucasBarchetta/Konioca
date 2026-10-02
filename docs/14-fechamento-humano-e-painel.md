@@ -120,3 +120,23 @@ Regra simples no banco (`lead_temperatura`, migração 760), calculada na leitur
 ## Contagem regressiva da atualização (1/10)
 
 No lugar de "atualizado há X s", o painel mostra "próxima atualização em X s", descendo até zero e reiniciando a cada atualização (30 s). Com a página escondida o relógio para e a contagem congela; ao voltar, atualiza na hora e reinicia. Se a atualização estiver esperando um formulário aberto ou alguém digitando, aparece "atualiza quando você terminar". Sem conexão: "sem conexão, tentando de novo em 30 s".
+
+## Turmas (aba do painel, 2/10)
+
+Formato de 2/10: encontros fechados no Google Meet no lugar da live. Aba "Turmas" no painel, para os três aprovadores.
+
+- Cadastro e edição de turma: data e hora (horário de Brasília), minutos (padrão 30), vagas (padrão 35), link do
+  Meet, ativa ou não. Função `encontro_salvar`. Turma com inscritos não pode ser desativada nem ter vagas abaixo do
+  número de inscritos. Mudar a hora reagenda os lembretes de quem já escolheu.
+- Sem link do Meet, a confirmação por e-mail espera na fila e a etiqueta "Sem link do Meet" fica vermelha no cartão.
+- Lista da turma: nome, WhatsApp, cidade, situação da Circular (Pode cobrar, Circular ok com prazo correndo, Circular
+  não confirmada), reserva, e os botões Presente e Faltou (função `encontro_presenca`, grava quem marcou).
+- Filtros Próximas, Passadas e Todas. Resumo: turmas, inscritos e vagas.
+- Cartão do lead na aba Leads: etiqueta "Turma qui 15/10 10h" (dourada), "· presente" (verde) ou "· faltou"
+  (vermelha). Sem escolha: nada aparece. A view `v_painel_leads` traz `encontro_id`, `encontro_inicio`,
+  `encontro_presenca` e `encontro_escolhido_em`.
+- Agenda inicial (migração 800, só se a tabela estiver vazia): dias úteis de 15/10 a 30/10, 10h, 14h e 16h, 35 vagas,
+  sem link do Meet (o time preenche no painel). Quem está na lista escolhe em `/horario/?t={token}`; turma cheia some;
+  só turmas que começam daqui a mais de 30 minutos aparecem.
+- Function pública `encontro-escolher` (listar, escolher; limite de 60 chamadas por IP a cada 10 minutos) e
+  `encontro-ics` (arquivo da agenda do lead). Evento `clicou_horario` registra o clique no botão da página de obrigado.

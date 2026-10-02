@@ -144,8 +144,9 @@ export function montarEnvio(tipo: string, canal: string, lead: LeadFila, cfg: Co
     const prio = String(lead.base_antiga_prioridade ?? "").toUpperCase();
     const versao = prio === "P1" ? "p1" : prio === "P2" ? "p2" : (prio === "P3" || prio === "P4") ? "p34" : "p1";
     if (tipo === "base_antiga") {
-      // Template: {{1}} nome, {{2}} "em fevereiro" (ou "antes"), {{3}} dia, {{4}} dd/mm, {{5}} hora. Botão de URL fixa para a LP com UTMs.
-      return { canal: "whatsapp", modo: "template", nome: cfgText(cfg, "wa_tpl_base_antiga"), params: [nome, quando || "antes", live.diaSemana, live.ddmm, live.hora] };
+      // Template konioca_base_antiga (formato de 2/10): {{1}} nome, {{2}} "em fevereiro" (ou "antes"), {{3}} minutos, {{4}} pessoas por grupo.
+      // Botão de URL fixa para a LP com UTMs. Sem data: a pessoa escolhe o horário depois do cadastro.
+      return { canal: "whatsapp", modo: "template", nome: cfgText(cfg, "wa_tpl_base_antiga"), params: [nome, quando || "antes", encontroDuracao, encontroCapacidade] };
     }
     // Teste A/B do P2 (2/10): a variante vai no link (p2_a / p2_b) para o painel e a aba Desempenho separarem os resultados.
     const variante = versao === "p2" && (lead.base_antiga_variante === "a" || lead.base_antiga_variante === "b") ? lead.base_antiga_variante : null;

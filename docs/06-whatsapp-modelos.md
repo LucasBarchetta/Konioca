@@ -1,73 +1,88 @@
-# Modelos de mensagem do WhatsApp para submeter à Meta
+# Modelos de mensagem do WhatsApp para submeter à Meta (formato de 2/10: encontros no Google Meet)
 
-Submeter até 4/10 em WhatsApp Manager > Modelos de mensagem. Idioma: Português (BR). Os nomes precisam ser exatamente estes, porque o sistema os lê da configuração (`wa_tpl_*`).
+Submeter em WhatsApp Manager > Modelos de mensagem, idioma Português (BR), assim que o número oficial estiver ativo
+(docs/18). Os nomes precisam ser exatamente estes, porque o sistema os lê da configuração (`wa_tpl_*`). Nenhum
+modelo fala de Instagram nem de live: a apresentação da Marcela acontece em encontros fechados pelo Google Meet,
+de 30 minutos, com no máximo 35 pessoas por grupo, em horários que a pessoa escolhe depois do cadastro. A duração e a
+capacidade vêm da config (`encontro_duracao_min`, `encontro_capacidade`) e entram como variáveis, nunca fixas no texto.
 
-Regras de voz aplicadas: uma pergunta por mensagem, sem saudação padrão, sem exclamação, assinatura do Time da Marcela, nenhuma exclusividade falsa. As exclusividades citadas são as reais: lista, live fechada, 250 máquinas e prazo. Não existe lote extra.
+Regras de voz: todo modelo abre com "Oi, {{1}}," e termina com texto fixo (nada de variável no início ou no fim, para
+a Meta não recusar); uma pergunta por mensagem; sem exclamação; assinatura do Time da Marcela; nenhuma exclusividade
+falsa. As exclusividades citadas são as reais: lista, encontros fechados, 250 máquinas e prazo. Não existe lote extra.
+Nenhum modelo fala em reservar ou pagar no encontro: a reserva no fim do encontro é só para quem já pode (Circular
+confirmada há 10 dias, `circular_prazo_dias`).
 
-Categoria: a Meta decide a final. Convites são Marketing. Lembretes do evento e da Circular foram escritos como Utilidade, sem chamada de venda. Se a Meta reclassificar para Marketing, nada muda no código.
+Categoria: a Meta decide a final. Convites são Marketing. Confirmação e lembretes do encontro e lembrete da Circular
+foram escritos como Utilidade, sem chamada de venda. Se a Meta reclassificar para Marketing, nada muda no código.
 
-## 1. `konioca_convite_live` · Marketing
+A ordem das variáveis é a que o código manda (`_shared/fila.ts`). Status: nada publicado; nenhum item de WhatsApp sai
+enquanto o número oficial não estiver ativo e os modelos aprovados.
 
-Corpo:
+## 1. `konioca_convite_encontro` · Marketing (config `wa_tpl_convite`)
+
+Sai para quem se cadastrou na página (um item por canal, docs/14). Variáveis: {{1}} nome, {{2}} minutos,
+{{3}} pessoas por grupo, {{4}} máquinas.
 ```
-{{1}}, seu nome está na lista da pré-venda da nova Konioca. A live é fechada para quem está na lista: {{2}}, {{3}}, às {{4}}. A pré-venda tem {{5}} máquinas. Você consegue estar lá?
+Oi, {{1}}, seu nome está na lista da pré-venda da nova Konioca.
+A Marcela vai apresentar a nova geração em encontros fechados pelo Google Meet: {{2}} minutos, no máximo {{3}} pessoas por grupo. Só quem está na lista participa e pode reservar uma das {{4}} máquinas da pré-venda.
+Escolha o seu horário pelo botão. A gente confirma por aqui e por e-mail, com o link do Meet.
 ```
-Exemplos: `Ana` · `quinta` · `15/10` · `19h` · `250`
+Exemplos: `Ana` · `30` · `35` · `250`
 
 Rodapé: `Time da Marcela · responda Sair para não receber mais`
 
-Botões, nesta ordem:
-1. URL dinâmica, texto `Entrar no grupo`, URL `https://chat.whatsapp.com/{{1}}`, exemplo `AbCdEf123`
-2. Resposta rápida `Vou estar lá`
-3. Resposta rápida `Sair`
+Botões:
+1. URL dinâmica, texto `Escolher meu horário`, URL `https://prevenda.konioca.com/horario/?t={{1}}` (o código manda o
+   token do lead como sufixo; exemplo para a Meta: `exemplo`)
+2. Resposta rápida `Sair`
 
-## 2. `konioca_lembrete_live` · Utilidade
+## 2. `konioca_encontro_confirmacao` · Utilidade (config `wa_tpl_encontro_confirmacao`)
 
+Sai na hora em que a pessoa escolhe (ou troca) o horário. Variáveis: {{1}} nome, {{2}} dia e hora por extenso.
 ```
-{{1}}, a live da nova Konioca começa às {{2}}. O link para entrar: {{3}}
+Oi, {{1}}, seu encontro com a Marcela está confirmado: {{2}}, pelo Google Meet. O link está no botão e no seu e-mail, junto com o arquivo da agenda.
+Entre uns minutos antes. Se precisar trocar de horário, use o link do e-mail.
 ```
-Exemplos: `Ana` · `19h` · `https://meet.google.com/abc-defg-hij`
+Exemplos: `Ana` · `quinta, 15/10, às 10h`
 
 Rodapé: `Time da Marcela`
 
-## 3. `konioca_lembrete_live_pergunta` · Utilidade
+Botão: URL dinâmica, texto `Entrar no Meet`, URL `https://meet.google.com/{{1}}` (o código manda o código da sala,
+exemplo `abc-defg-hij`).
 
-Só vai para quem teve a pergunta selecionada.
+## 3. `konioca_encontro_lembrete` · Utilidade (config `wa_tpl_encontro_lembrete`)
+
+Mesmo modelo para a véspera (às 18h, `encontro_lembrete_vespera_hora`) e para uma hora antes. Variáveis: {{1}} nome,
+{{2}} hora.
 ```
-{{1}}, a live começa às {{2}} e a Marcela separou a sua pergunta para responder ao vivo: "{{3}}". O link: {{4}}
+Oi, {{1}}, lembrete do seu encontro com a Marcela, pelo Google Meet, às {{2}}. O link está no botão.
+Entre uns minutos antes. No fim, quem já pode reservar garante uma das máquinas da pré-venda.
 ```
-Exemplos: `Ana` · `19h` · `Cabe numa academia pequena?` · `https://meet.google.com/abc-defg-hij`
+Exemplos: `Ana` · `10h`
 
 Rodapé: `Time da Marcela`
 
-## 4. `konioca_gravacao` · Marketing
+Botão: URL dinâmica, texto `Entrar no Meet`, URL `https://meet.google.com/{{1}}`.
 
-Dia seguinte, para todos os convidados (a gravação vai para quem se cadastrou), com a mesma pergunta do fim da live.
+## 4. `konioca_circular_lembrete` · Utilidade (config `wa_tpl_circular_lembrete`)
+
+Sem mudança.
 ```
-{{1}}, a gravação da live da nova Konioca está aqui: {{2}}. Depois de assistir, como você quer seguir?
-```
-Exemplos: `Ana` · `https://youtu.be/exemplo`
-
-Rodapé: `Time da Marcela`
-
-Botões (respostas rápidas): `Quero uma` · `Tenho uma dúvida` · `Agora não`
-
-## 5. `konioca_circular_lembrete` · Utilidade
-
-```
-{{1}}, falta um clique para confirmar que você recebeu a Circular de Oferta de Franquia. O prazo da lei só começa a contar depois disso. Quem confirma até {{2}} ainda garante a pré-reserva: {{3}}
+Oi, {{1}}, falta um clique para confirmar que você recebeu a Circular de Oferta de Franquia. O prazo da lei só começa a contar depois disso. Quem confirma até {{2}} ainda garante a pré-reserva: {{3}}
 ```
 Exemplos: `Ana` · `20/10` · `https://ytsildpxummevfkjcjhs.supabase.co/functions/v1/circular-confirmar?t=exemplo`
 
 Rodapé: `Time da Marcela`
 
-## 6. `konioca_base_antiga` · Marketing
+## 5. `konioca_base_antiga` · Marketing (config `wa_tpl_base_antiga`)
 
-Base antiga ainda não está na lista, então o botão leva à LP (cadastro, aceite e Circular).
+Base antiga ainda não está na lista, então o botão leva à LP (cadastro, aceite e Circular). Variáveis: {{1}} nome,
+{{2}} "em fevereiro" (ou "antes"), {{3}} minutos, {{4}} pessoas por grupo. Sem data: a pessoa escolhe o horário
+depois do cadastro. Trilha pausada (cron `base-antiga-processar` parado) até o número oficial existir.
 ```
-{{1}}, você procurou a Konioca {{2}}. A gente refez a máquina, e a Marcela mostra a nova geração numa live fechada para quem está na lista: {{3}}, {{4}}, às {{5}}. Quer entrar na lista?
+Oi, {{1}}, você procurou a Konioca {{2}}. A gente refez a máquina, e a Marcela mostra a nova geração em encontros fechados pelo Google Meet: {{3}} minutos, no máximo {{4}} pessoas por grupo, só para quem está na lista. Quer entrar na lista?
 ```
-Exemplos: `Ana` · `em fevereiro` · `quinta` · `15/10` · `19h`
+Exemplos: `Ana` · `em fevereiro` · `30` · `35`
 
 Rodapé: `Time da Marcela · responda Sair para não receber mais`
 
@@ -75,10 +90,22 @@ Botões:
 1. URL fixa, texto `Quero entrar na lista`, URL `https://prevenda.konioca.com/?utm_source=base&utm_medium=whatsapp&utm_campaign=base_antiga`
 2. Resposta rápida `Sair`
 
-## Etapa 3 (submeter junto, para não perder a janela de aprovação)
+## 6. `konioca_reaquecimento_manual` · Marketing (config `wa_tpl_reaquecimento_manual`)
 
-`konioca_pos_live` · Marketing. Enviado no fim da live a quem assistiu.
+Para quem o time já chamou à mão no WhatsApp (botão "contatado à mão" no painel). Uma vez, só com o nome. Só sai com
+`wa_tpl_reaquecimento_manual_aprovado = true`.
 ```
-{{1}}, obrigado por estar na live. Como você quer seguir?
+Oi, {{1}}, aqui é do time da Marcela, da Konioca. A gente ficou muito feliz com o seu interesse na nova máquina. Você foi uma das primeiras pessoas a entrar na lista. A Marcela vai mostrar a nova geração em encontros fechados pelo Google Meet, com as condições da pré-venda das 250 unidades. Quer escolher o seu horário?
 ```
-Botões (respostas rápidas): `Quero uma` · `Tenho uma dúvida` · `Agora não`
+Exemplo: `Ana`
+
+Rodapé: `Time da Marcela`
+
+Botão: URL dinâmica, texto `Escolher meu horário`, URL `https://prevenda.konioca.com/horario/?t={{1}}`.
+
+## Fora de uso desde 2/10
+
+`konioca_convite_live_ig`, `konioca_lembrete_live`, `konioca_lembrete_live_pergunta`, `konioca_gravacao` e
+`konioca_pos_live` não devem ser submetidos. Os tipos `lembrete_live`, `lembrete_live_pergunta` e `gravacao` continuam
+no código por compatibilidade com itens antigos da fila, mas o cron `live-disparos` foi removido (migração 800) e nada
+mais os enfileira. Se um dia houver gravação dos encontros, escrever um modelo novo e aprovar o texto antes.
