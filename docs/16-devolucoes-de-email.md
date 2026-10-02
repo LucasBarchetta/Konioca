@@ -88,5 +88,13 @@ Publicado em 1/10 com o "sim" do Lucas: migração 690, `_shared/email_eventos.t
   segunda onda das 15h terminar de sair (o lembrete das 15h cuida disso).
 - P3/P4 de segunda 5/10: teto de devolução 5% (o lembrete de segunda 7h30 faz o upsert, já que o de sábado devolve a 3%)
   e spam em tolerância zero. O disparo em si depende do SIM dele no dia.
+- 16h00 (o lembrete das 15h chegou com 1h de atraso): relatório A/B da primeira onda (A: 161 entregues, 5 devoluções
+  definitivas, 2 cadastros pela página; B: 163 entregues, 1 definitiva, 1 cadastro; cliques não chegam como evento do
+  provedor, 0 opt-out, 0 spam). Vencedora A pela regra (mais cadastros). Segunda onda: 351 P2 na fila com a A; os 20
+  primeiros saíram antes da marcação da variante (bug de relógio) e levaram `utm_content=p2` em vez de `p2_a`. Função
+  auxiliar `p2_variante_unica(text)` marcou os 331 restantes.
+- 16h30: segunda onda concluída (333 entregues, 7 devolvidas, 11 ainda "enviado"); devolução do dia 3,00% (21 em 699),
+  trilha ativa. Migração 810 aplicada em produção com o SIM do Lucas (marca do sorteio passa a `now()`) e registrada em
+  `schema_migrations`.
 - Ferramenta: `execute_sql` também trava em `DROP FUNCTION` (como em UPDATE puro); para mudar o tipo de retorno de uma
   função, criar com outro nome (`_v2`).
