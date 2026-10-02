@@ -175,7 +175,7 @@
       if (!j.ok) { h.textContent = j.erro || "erro"; return; }
       if (!j.leads.length) { h.textContent = "Ninguém escolheu esta turma ainda."; return; }
       h.innerHTML = j.leads.map(function (l) {
-        return '<div class="p-pessoa"><span class="p-nome">' + esc(l.nome) + "</span><span>" + esc(fmtWhats(l.whatsapp)) + " · " + esc(l.cidade || "") + "</span>" + (l.pode_cobrar ? tag("Pode cobrar", "verde") : l.circular_confirmada_em ? tag("Circular ok, prazo correndo", "cinza") : tag("Circular não confirmada", "vermelho")) + (l.reservou_em ? tag("Reservou", "ouro") : "") +
+        return '<div class="p-pessoa"><span class="p-nome">' + esc(l.nome) + "</span><span>" + esc([fmtWhats(l.whatsapp), l.cidade].filter(Boolean).join(" · ")) + "</span>" + (l.pode_cobrar ? tag("Pode cobrar", "verde") : l.circular_confirmada_em ? tag("Circular ok, prazo correndo", "cinza") : tag("Circular não confirmada", "vermelho")) + (l.reservou_em ? tag("Reservou", "ouro") : "") +
           '<button type="button" data-acao="presenca" data-id="' + l.id + '" data-turma="' + id + '" data-presente="true" class="' + (l.encontro_presenca === true ? "ativa" : "") + '">Presente</button><button type="button" data-acao="presenca" data-id="' + l.id + '" data-turma="' + id + '" data-presente="false" class="faltou ' + (l.encontro_presenca === false ? "ativa" : "") + '">Faltou</button></div>';
       }).join("");
     });

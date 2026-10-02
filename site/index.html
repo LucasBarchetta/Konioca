@@ -13,7 +13,7 @@
 <link rel="icon" type="image/png" sizes="64x64" href="assets/img/favicon.png"><link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caladea:ital,wght@0,400;0,700;1,400&amp;family=Carlito:wght@400;700&amp;display=swap">
-<link rel="stylesheet" href="assets/css/site.css?v=0210a">
+<link rel="stylesheet" href="assets/css/site.css?v=0210b">
 <style>
 a{color:#1f4a36}a:hover{color:#19422d}
 input::placeholder{color:#7a7f66}
@@ -91,7 +91,7 @@ input::placeholder{color:#7a7f66}
 </div>
 <div style="display: flex; flex-direction: column; gap: 6px">
 <label for="f-email" style="font-size: 14px; font-weight: 700; color: #1f4a36">E-mail</label>
-<input id="f-email" name="email" type="email" autocomplete="email" required maxlength="254" placeholder="para receber o link e a gravação" style="height: 50px; padding: 0 14px; font-size: 17px; font-family: Carlito, Calibri, sans-serif; color: #1f4a36; background: #f4ebdb; border: 1px solid #c4a77d; border-radius: 7px; box-sizing: border-box">
+<input id="f-email" name="email" type="email" autocomplete="email" required maxlength="254" placeholder="para receber a confirmação e o link do Meet" style="height: 50px; padding: 0 14px; font-size: 17px; font-family: Carlito, Calibri, sans-serif; color: #1f4a36; background: #f4ebdb; border: 1px solid #c4a77d; border-radius: 7px; box-sizing: border-box">
 <div id="f-email-sugestao" class="msg-sugestao oculto" aria-live="polite"></div>
 </div>
 <div style="display: flex; flex-direction: column; gap: 6px">
@@ -205,7 +205,7 @@ input::placeholder{color:#7a7f66}
 <rect x="222" y="84" width="74" height="22" rx="8" fill="#dce4d6" stroke="#1f4a36" stroke-width="1.5"></rect>
 <rect x="204" y="116" width="58" height="22" rx="8" stroke="#1f4a36" stroke-width="1.5"></rect>
 </svg>
-<figcaption style="padding: 12px 14px; border-top: 2px solid #1f4a36; background: #f4ebdb; font-size: 16px; line-height: 1.4; color: #1f4a36"><strong>Você deixa seu nome na lista.</strong> No WhatsApp chegam o link, o lembrete e a gravação.</figcaption>
+<figcaption style="padding: 12px 14px; border-top: 2px solid #1f4a36; background: #f4ebdb; font-size: 16px; line-height: 1.4; color: #1f4a36"><strong>Você deixa seu nome na lista.</strong> Escolhe o horário e recebe o link do Meet por e-mail, com lembrete na véspera e uma hora antes.</figcaption>
 </figure>
 
 <!-- Q3 -->
@@ -215,7 +215,7 @@ input::placeholder{color:#7a7f66}
 <rect x="30" y="22" width="178" height="112" rx="6" stroke="#1f4a36" stroke-width="2"></rect>
 <path d="M14 150 H224 L212 134 H26 Z" stroke="#1f4a36" stroke-width="2" stroke-linejoin="round"></path>
 <rect x="40" y="32" width="52" height="16" rx="3" fill="#b04d0c"></rect>
-<text x="66" y="44" text-anchor="middle" font-family="Carlito, Calibri, sans-serif" font-size="10" font-weight="700" fill="#f7f0e2" letter-spacing="1">AO VIVO</text>
+<text x="66" y="44" text-anchor="middle" font-family="Carlito, Calibri, sans-serif" font-size="10" font-weight="700" fill="#f7f0e2" letter-spacing="1">MEET</text>
 <circle cx="102" cy="76" r="15" stroke="#1f4a36" stroke-width="1.5"></circle>
 <path d="M78 124 C80 100 124 100 126 124" stroke="#1f4a36" stroke-width="1.5"></path>
 <rect x="146" y="44" width="52" height="10" rx="4" stroke="#c9a227" stroke-width="1.5"></rect>
@@ -328,7 +328,7 @@ input::placeholder{color:#7a7f66}
 <details style="border-bottom: 1px solid #c4a77d"><summary style="min-height: 56px; padding: 16px 0; list-style: none; cursor: pointer; font-family: Caladea, Cambria, Georgia, serif; font-size: 19px; color: #1f4a36">É uma franquia?</summary><div style="padding: 0 0 16px 0; font-size: 16px; line-height: 1.55; color: #1f4a36">Sim. A nova geração faz parte da Franquia Inteligente Konioca: você compra a máquina e opera com a marca e o método da Konioca. Antes de qualquer pagamento, você recebe a Circular de Oferta de Franquia.</div></details>
 
 </div>
-<a href="#cadastro" style="display: flex; align-items: center; justify-content: center; height: 56px; margin-top: 8px; background: #b04d0c; color: #f7f0e2; font-size: 19px; font-weight: 700; text-decoration: none; border-radius: 7px">Tirar minhas dúvidas ao vivo</a>
+<a href="#cadastro" style="display: flex; align-items: center; justify-content: center; height: 56px; margin-top: 8px; background: #b04d0c; color: #f7f0e2; font-size: 19px; font-weight: 700; text-decoration: none; border-radius: 7px">Tirar minhas dúvidas com a Marcela</a>
 </section>
 
 <!-- TENSÃO / HISTÓRIA -->
@@ -370,9 +370,9 @@ input::placeholder{color:#7a7f66}
 </section>
 
 </div>
-<script src="assets/js/env.js?v=0210a"></script>
-<script src="assets/js/validacao.js?v=0210a"></script>
-<script src="assets/js/comum.js?v=0210a"></script>
-<script src="assets/js/pixels.js?v=0210a"></script>
-<script src="assets/js/lp.js?v=0210a"></script>
+<script src="assets/js/env.js?v=0210b"></script>
+<script src="assets/js/validacao.js?v=0210b"></script>
+<script src="assets/js/comum.js?v=0210b"></script>
+<script src="assets/js/pixels.js?v=0210b"></script>
+<script src="assets/js/lp.js?v=0210b"></script>
 </body></html>
