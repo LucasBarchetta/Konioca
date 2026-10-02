@@ -57,7 +57,7 @@ Deno.serve(async (req) => {
   if (!whats.ok) erros.whatsapp = whats.motivo;
   const email = validarEmail(String(b.email ?? ""));
   if (!email.ok) erros.email = email.motivo;
-  if (b.consentimento !== true) erros.consentimento = "Precisamos do seu aceite para enviar o link da live.";
+  if (b.consentimento !== true) erros.consentimento = "Precisamos do seu aceite para enviar o link do encontro.";
   if (Object.keys(erros).length) return json({ erro: "validação", campos: erros }, 422, cors);
   if (!nome.ok || !whats.ok || !email.ok) return json({ erro: "validação" }, 422, cors);
 

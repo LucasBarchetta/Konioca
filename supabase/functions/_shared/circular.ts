@@ -26,12 +26,11 @@ function bytesToBase64(buf: ArrayBuffer): string {
 /** Monta assunto, texto e HTML do e-mail. Exportado para teste e para pré-visualização. */
 export function montarEmailCircular(opts: {
   nome: string; token: string; lpUrl: string; apiUrl: string; prevendaFimIso: string; prazoDias: number;
-  liveIso: string; livePlataforma: string; grupoLink: string; assinatura: string; anexoNome: string | null;
+  escolherUrl: string; encontroDuracao: number; encontroCapacidade: number; assinatura: string; anexoNome: string | null;
 }) {
   const limite = limiteRecebimentoCircular(opts.prevendaFimIso, opts.prazoDias);
   const lim = partesData(limite.toISOString());
   const fim = partesData(opts.prevendaFimIso);
-  const live = partesData(opts.liveIso);
   const confirmar = `${opts.apiUrl}/circular-confirmar?t=${encodeURIComponent(opts.token)}`;
   const sair = `${opts.apiUrl}/optout?t=${encodeURIComponent(opts.token)}`;
   const nome = primeiroNome(opts.nome);
@@ -50,7 +49,7 @@ export function montarEmailCircular(opts: {
     ``,
     `Confirmo que recebi a Circular: ${confirmar}`,
     ``,
-    `A live é ${live.diaSemana}, ${live.ddmm}, às ${live.hora}, no ${opts.livePlataforma} da Konioca: ${opts.grupoLink}. Siga o perfil e ative o lembrete; o aviso chega por aqui e no seu WhatsApp.`,
+    `A Marcela apresenta a nova geração em encontros fechados pelo Google Meet: ${opts.encontroDuracao} minutos, no máximo ${opts.encontroCapacidade} pessoas por grupo. Escolha o seu horário: ${opts.escolherUrl}`,
     ``,
     opts.assinatura,
     ``,
@@ -65,7 +64,7 @@ export function montarEmailCircular(opts: {
 <p style="margin:0 0 14px;font-size:17px;line-height:1.6">${esc(anexoLinha)} É o documento que a lei pede que você tenha em mãos antes de qualquer pagamento. Leia com calma.</p>
 <p style="margin:0 0 20px;font-size:17px;line-height:1.6">Um detalhe de calendário: a lei dá ${opts.prazoDias} dias entre o recebimento da Circular e qualquer pagamento, e o prazo começa a contar quando você confirma o recebimento no botão abaixo. A pré-venda fecha em ${fim.ddmm}, às ${fim.hora}. Quem confirma até <strong>${lim.ddmm}</strong> consegue fazer a pré-reserva dentro do prazo.</p>
 <a href="${esc(confirmar)}" style="display:block;text-align:center;padding:16px;background:#b04d0c;color:#f7f0e2;font-size:18px;font-weight:700;text-decoration:none;border-radius:7px">Confirmo que recebi a Circular</a>
-<p style="margin:24px 0 0;font-size:16px;line-height:1.6">A live é ${live.diaSemana}, ${live.ddmm}, às ${live.hora}, no <a href="${esc(opts.grupoLink)}" style="color:#1f4a36">${esc(opts.livePlataforma)} da Konioca</a>. Siga o perfil e ative o lembrete; o aviso chega por aqui e no seu WhatsApp.</p>
+<p style="margin:24px 0 0;font-size:16px;line-height:1.6">A Marcela apresenta a nova geração em encontros fechados pelo Google Meet: ${opts.encontroDuracao} minutos, no máximo ${opts.encontroCapacidade} pessoas por grupo. <a href="${esc(opts.escolherUrl)}" style="color:#1f4a36">Escolha o seu horário</a>.</p>
 <p style="margin:24px 0 0;font-family:Caladea,Cambria,Georgia,serif;font-style:italic;font-size:18px;color:#5a6b3a">${esc(opts.assinatura)}</p>
 <p style="margin:32px 0 0;font-size:12px;line-height:1.5;color:#5a6b3a">Você recebe este e-mail porque se cadastrou na pré-venda da Konioca em <a href="${esc(opts.lpUrl)}" style="color:#5a6b3a">${esc(opts.lpUrl)}</a>. <a href="${esc(sair)}" style="color:#5a6b3a">Não quero mais receber mensagens da pré-venda</a>.</p>
 </div></body></html>`;
@@ -113,9 +112,9 @@ export async function enviarCircular(leadId: string, opts: { forcar?: boolean } 
     apiUrl,
     prevendaFimIso: cfgText(todos, "prevenda_fim"),
     prazoDias: cfgNum(todos, "circular_prazo_dias", 10),
-    liveIso: cfgText(todos, "live_data"),
-    livePlataforma: cfgText(todos, "live_plataforma", "Instagram"),
-    grupoLink: cfgText(todos, "instagram_url"),
+    escolherUrl: `${cfgText(todos, "lp_url", "https://prevenda.konioca.com").replace(/\/$/, "")}/horario/?t=${encodeURIComponent(lead.token)}`,
+    encontroDuracao: cfgNum(todos, "encontro_duracao_min", 30),
+    encontroCapacidade: cfgNum(todos, "encontro_capacidade", 35),
     assinatura: cfgText(todos, "assinatura_time", "Time da Marcela"),
     anexoNome: anexo.filename,
   });
