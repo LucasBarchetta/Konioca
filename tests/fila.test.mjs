@@ -16,25 +16,28 @@ const CFG = {
 const LEAD = { id: "l1", nome: "Ana Paula", whatsapp: "+5511990000000", email: "ana@exemplo.com", token: "tok", turma: "Turma de quinta · 15/10", pergunta_live: "Cabe numa academia pequena?", estado_conversa: "inicio" };
 const API = "https://x.supabase.co/functions/v1";
 
-test("Convite por WhatsApp: template com nome, data, hora e lote; botão de URL fixa (Instagram); sem 'escolhido'", () => {
+test("Convite por WhatsApp (formato de 2/10): template do encontro, com minutos, pessoas por grupo e lote; botão de URL dinâmica com o token", () => {
   const e = montarEnvio("convite", "whatsapp", LEAD, CFG, API);
   assert.equal(e.canal, "whatsapp");
   assert.equal(e.nome, "konioca_convite_live");
-  assert.deepEqual(e.params, ["Ana", "quinta", "15/10", "19h", "250"]);
-  assert.equal(e.botaoUrlSufixo, undefined, "botão de URL fixa: nada de sufixo dinâmico");
+  assert.deepEqual(e.params, ["Ana", "30", "35", "250"]);
+  assert.equal(e.botaoUrlSufixo, "tok", "botão 'Escolher meu horário' leva o token do lead");
+  const c = montarEnvio("convite", "whatsapp", LEAD, { ...CFG, encontro_duracao_min: 25, encontro_capacidade: 20 }, API);
+  assert.deepEqual(c.params, ["Ana", "25", "20", "250"], "duração e capacidade vêm da config");
 });
 
-test("Convite por e-mail: Instagram da Konioca, termina em 'Você consegue estar lá?' e tem saída", () => {
+test("Convite por e-mail (formato de 2/10): encontros fechados no Google Meet, botão 'Escolher meu horário', sem Instagram e sem live", () => {
   const e = montarEnvio("convite", "email", LEAD, CFG, API);
   assert.equal(e.canal, "email");
-  assert.match(e.texto, /instagram\.com\/konioca/);
-  assert.match(e.texto, /Você consegue estar lá\?/);
-  assert.match(e.texto, /optout\?t=tok/);
-  assert.ok(!/escolhid/i.test(e.texto + e.html), "nada de exclusividade falsa");
-  assert.equal(e.assunto, "Ana, seu acesso à pré-venda está garantido!");
+  assert.equal(e.assunto, "Ana, seu acesso à pré-venda está garantido!", "assunto mantido");
   assert.match(e.texto, /^Ana, você está na lista da nova Konioca\./);
-  assert.match(e.texto, /No dia 15\/10, às 19h, a Marcela/);
-  assert.match(e.texto, /só quem está na lista pode reservar uma das 250 máquinas/);
+  assert.match(e.texto, /A Marcela vai apresentar a nova geração em encontros fechados pelo Google Meet: 30 minutos, no máximo 35 pessoas por grupo\. Só quem está na lista participa e pode reservar uma das 250 máquinas da pré-venda\./);
+  assert.match(e.texto, /Até o seu encontro, é por aqui que você vê primeiro os bastidores/);
+  assert.match(e.texto, /Escolher meu horário: https:\/\/prevenda\.konioca\.com\/horario\/\?t=tok/);
+  assert.match(e.html, /href="https:\/\/prevenda\.konioca\.com\/horario\/\?t=tok"[^>]*>Escolher meu horário<\/a>/);
+  assert.match(e.texto, /optout\?t=tok/);
+  assert.ok(!/instagram|live|15\/10|19h/i.test(e.texto + e.html.replace(/<[^>]+>/g, " ")), "sem Instagram, live, 15/10 ou 19h");
+  assert.ok(!/escolhid/i.test(e.texto + e.html), "nada de exclusividade falsa");
   assert.match(e.html, /A pré-venda das 250 máquinas é só para quem está na lista\./, "texto de pré-visualização");
   assert.ok(!/pague|pagamento|pix|boleto/i.test(e.texto), "convite não fala em pagar");
 });
@@ -59,9 +62,9 @@ test("Reaquecimento de quem foi contatado à mão: só WhatsApp, só com o nome,
   assert.deepEqual(e.params, ["Ana"]);
 });
 
-test("Convite e lembrete param com o Instagram entre colchetes", () => {
+test("Convite não depende mais do Instagram; o lembrete da live (a trocar pelo lembrete do encontro) ainda para com o Instagram entre colchetes", () => {
   const cfg = { ...CFG, instagram_url: "[INSTAGRAM DA KONIOCA]" };
-  assert.equal(montarEnvio("convite", "email", LEAD, cfg, API).canal, "nenhum");
+  assert.equal(montarEnvio("convite", "email", LEAD, cfg, API).canal, "email");
   assert.equal(montarEnvio("lembrete_live", "whatsapp", LEAD, cfg, API).canal, "nenhum");
 });
 
@@ -78,8 +81,10 @@ test("Lembrete da live: cita a pergunta só na variante de pergunta selecionada"
 test("Colchete na config bloqueia o envio, nunca manda placeholder", () => {
   const e = montarEnvio("gravacao", "whatsapp", LEAD, CFG, API);
   assert.equal(e.canal, "nenhum");
+  assert.equal(montarEnvio("lembrete_live", "whatsapp", LEAD, { ...CFG, instagram_url: "[X]" }, API).canal, "nenhum");
+  // Convite do encontro (2/10) não usa mais o Instagram: um perfil entre colchetes não bloqueia o convite.
   const sem = montarEnvio("convite", "whatsapp", LEAD, { ...CFG, instagram_url: "https://www.instagram.com/[PERFIL]" }, API);
-  assert.equal(sem.canal, "nenhum");
+  assert.equal(sem.canal, "whatsapp");
 });
 
 test("Lembrete da Circular pelo WhatsApp usa a data-limite calculada", () => {
@@ -122,7 +127,9 @@ test("Base antiga: três versões (texto do Lucas de 1/10), preços da config, a
   assert.match(e.texto, /^Ana, você procurou a Konioca mais de uma vez, e a gente guardou o seu contato\./);
   assert.match(e.texto, /A nova geração custa R\$ 9\.900\. A atual custa R\$ 25\.900\./);
   assert.match(e.texto, /São R\$ 16 mil a menos, com financiamento pelo Bradesco\./);
-  assert.match(e.texto, /No dia 15\/10, às 19h, ela apresenta tudo ao vivo no Instagram\. A live é aberta, mas só quem está na lista pode reservar uma das 250 máquinas/);
+  // Formato de 2/10: parágrafo do encontro no lugar da live, nas três versões.
+  assert.match(e.texto, /A Marcela vai apresentar a nova geração em encontros fechados pelo Google Meet: 30 minutos, no máximo 35 pessoas por grupo\. Só quem está na lista participa e pode reservar uma das 250 máquinas da pré-venda\./);
+  assert.ok(!/instagram|live|15\/10|19h/i.test(e.texto), "sem Instagram, live, 15/10 ou 19h");
   assert.match(e.texto, /utm_campaign=base_antiga&utm_content=p1/);
   assert.ok(!/não existe mais|entra primeiro/.test(e.texto), "frases retiradas em 1/10");
   assert.match(e.html, /A máquina mudou\. E você está entre as primeiras pessoas que estamos chamando\./);
@@ -147,6 +154,10 @@ test("Base antiga: três versões (texto do Lucas de 1/10), preços da config, a
   assert.match(p2b.texto, /A nova geração custa R\$ 9\.900, com financiamento pelo Bradesco\. A atual continua custando R\$ 25\.900: são máquinas diferentes\./);
   assert.match(p2b.texto, /utm_content=p2_b/); assert.doesNotMatch(p2b.texto, /de R\$|por R\$|últimas|restam/i);
   assert.match(p2b.html, /Entrar na lista agora/); assert.match(p2b.html, /cones-600x240\.jpg/);
+  assert.match(p2b.texto, /Eu vou apresentar a nova geração em encontros fechados pelo Google Meet: 30 minutos, no máximo 35 pessoas por grupo\. Só quem está na lista participa e pode reservar uma das 250 máquinas da pré-venda\./);
+  assert.ok(!/instagram|live|15\/10|19h/i.test(p2b.texto + p2.texto), "A e B sem Instagram, live, 15/10 ou 19h");
+  assert.match(p2.html, /A Marcela mostra a nova geração em encontros fechados no Google Meet\./, "prévia da A");
+  assert.match(p2b.html, /Eu mostro o que mudou em encontros fechados no Google Meet\./, "prévia da B");
   // P1 e P3/P4 não têm variante: o link continua p1 / p34 mesmo se a coluna vier preenchida.
   assert.match(montarEnvio("base_antiga_email", "email", { ...base, base_antiga_prioridade: "P1", base_antiga_variante: "b" }, cfg, API).texto, /utm_content=p1\b/);
   const p3 = montarEnvio("base_antiga_email", "email", { ...base, base_antiga_prioridade: "P3", base_antiga_gancho: "set/25" }, cfg, API);
