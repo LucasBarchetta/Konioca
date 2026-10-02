@@ -56,7 +56,7 @@ export const CANAIS: readonly { canal: string; rotulo: string }[] = [
   { canal: "stories", rotulo: "Stories" }, { canal: "bio_instagram", rotulo: "Bio do Instagram" }, { canal: "bio_tiktok", rotulo: "Bio do TikTok" },
   { canal: "whatsapp", rotulo: "WhatsApp" }, { canal: "base_p1", rotulo: "E-mail base antiga P1" }, { canal: "base_p2", rotulo: "E-mail base antiga P2" },
   { canal: "base_p2_a", rotulo: "E-mail base antiga P2 (A)" }, { canal: "base_p2_b", rotulo: "E-mail base antiga P2 (B)" },
-  { canal: "base_p34", rotulo: "E-mail base antiga P3-P4" }, { canal: "base_email", rotulo: "E-mail base antiga" }, { canal: "convite", rotulo: "Convite" },
+  { canal: "base_p34", rotulo: "E-mail base antiga P3-P4" }, { canal: "base_p34_cones", rotulo: "E-mail base antiga P3-P4 (cones)" }, { canal: "base_p34_arte6", rotulo: "E-mail base antiga P3-P4 (arte 6)" }, { canal: "base_email", rotulo: "E-mail base antiga" }, { canal: "convite", rotulo: "Convite" },
   { canal: "direto", rotulo: "Direto" }, { canal: "outros", rotulo: "Outros" },
 ];
 
@@ -112,10 +112,10 @@ export function temperaturasPresentes(leads: { temperatura?: string | null }[]):
 
 // Papéis do painel (2/10): o que cada um pode fazer. A painel-api recusa fora disso; a tela só esconde o botão.
 // principal: tudo. conteudo e operacional: como antes (tudo, menos gerar link). growth (LG): vê tudo, marca
-// "Contatado à mão" e "Respondeu", decide só itens endereçados ao papel growth (roteiros de vídeo), propõe
-// variações de teste A/B (viram item para o principal) e comenta em qualquer item da aba Aprovações.
-// Fora do growth: reserva, correção de e-mail (mexe na Circular e no convite), turmas, presença e a decisão final
-// de e-mails e mensagens para a base (continua com o principal).
+// "Contatado à mão" e "Respondeu", decide qualquer item da aba Aprovações sem passar pelo principal (ordem do Lucas
+// de 2/10 à noite: "LG pode aprovar sem minha permissão também"), propõe variações de teste A/B e comenta.
+// Fora do growth: reserva, correção de e-mail (mexe na Circular e no convite), turmas e presença. Ligar ou desligar
+// envios, preço, datas e turmas nunca passam pelo painel: ficam na config, com SIM do Lucas.
 export type Papel = "principal" | "conteudo" | "operacional" | "growth";
 export const PAPEIS: readonly Papel[] = ["principal", "conteudo", "operacional", "growth"];
 
@@ -133,7 +133,7 @@ export interface Permissoes {
 }
 
 const TUDO: Permissoes = { ver: true, contato: true, respondeu: true, reservar: true, corrigir_email: true, turmas_editar: true, presenca: true, decidir: "todos", comentar: true, propor_ab: true };
-const GROWTH: Permissoes = { ver: true, contato: true, respondeu: true, reservar: false, corrigir_email: false, turmas_editar: false, presenca: false, decidir: ["growth"], comentar: true, propor_ab: true };
+const GROWTH: Permissoes = { ver: true, contato: true, respondeu: true, reservar: false, corrigir_email: false, turmas_editar: false, presenca: false, decidir: "todos", comentar: true, propor_ab: true };
 const SO_VER: Permissoes = { ver: true, contato: false, respondeu: false, reservar: false, corrigir_email: false, turmas_editar: false, presenca: false, decidir: [], comentar: false, propor_ab: false };
 
 export function permissoesDe(papel: string | undefined | null): Permissoes {

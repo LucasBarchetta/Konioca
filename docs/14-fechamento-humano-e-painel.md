@@ -36,11 +36,13 @@ faz e a tela esconde o botão. Quem é quem está só em `config.painel_aprovado
 | principal (Lucas) | tudo | tudo; aprovação final de e-mails e mensagens para a base; decide qualquer item | |
 | conteudo (Marcela) | tudo | como o principal, menos gerar link; itens em que ela aparece ou fala | |
 | operacional (Matheus, cópia marketing) | tudo | como o principal, menos gerar link; turmas e links do Meet | |
-| growth (LG) | tudo: leads, turmas, Desempenho, aprovações | "Contatado à mão", "Respondeu"; aprova roteiros de vídeo (itens endereçados a `growth`); propõe variações de teste A/B (viram item `proposta_ab` para o principal); comenta em qualquer item | reserva, correção de e-mail (mexe na Circular e no convite), ligar ou desligar envios, preço, datas, turmas, presença, aprovação final de e-mails e mensagens para a base |
+| growth (LG) | tudo: leads, turmas, Desempenho, aprovações | "Contatado à mão", "Respondeu"; decide qualquer item da aba Aprovações sem passar pelo principal (roteiros de vídeo, e-mails, propostas); propõe variações de teste A/B (itens `proposta_ab`); comenta em qualquer item | reserva, correção de e-mail (mexe na Circular e no convite), turmas, presença. Ligar ou desligar envios, preço, datas e turmas não passam pelo painel (config, com SIM do Lucas) |
 
 Roteiro de vídeo com rosto ou voz da Marcela: um item para `growth` e um para `conteudo` (os dois precisam aprovar); sem
 ela, só `growth`. Comentários ficam em `aprovacoes_comentarios` (migração 820), com "Nome (papel)" e hora; nada é enviado.
-A proposta de A/B entra pendente para o principal e o `painel-avisar` manda o aviso a ele como qualquer item.
+A proposta de A/B entra pendente endereçada ao principal (que recebe o aviso do `painel-avisar`), mas qualquer papel com
+decisão pode aprová-la, inclusive o growth. Aprovar um item no painel não dispara nada: o envio em si continua
+dependendo do SIM do Lucas no chat, como toda publicação.
 
 ## O que sai da fila (etapa 3)
 

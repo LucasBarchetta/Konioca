@@ -101,5 +101,13 @@ Publicado em 1/10 com o "sim" do Lucas: migração 690, `_shared/email_eventos.t
   de encontro, 0 opt-out, 0 spam, 0 pendentes, 0 falhas; 14 visitas à LP vindas da base; devolução do dia 3,00%.
   Cliques não chegam como evento (o provedor não manda `email.clicked` para a base antiga). P1 (1/10): 47 enviados,
   0 devolvidos, 1 clique, 0 cadastros. Taxa de cadastro do P2: 0,6% dos entregues.
+- P3/P4 de segunda 5/10 (pedido do Lucas em 2/10 à noite): teste de imagem, metade com a faixa de cones (atual) e
+  metade com a arte 6 do LG ("não deveria começar com uma fortuna") depois do primeiro parágrafo, sem a faixa; sorteio
+  por `base_antiga_promover_ab(..., array['P3','P4'], ..., array['a','b'])` (a = cones, b = arte 6), links
+  `p34_cones` / `p34_arte6` (migração 830 separa as gavetas no painel e na Desempenho). Regras de uso das artes: nunca
+  no topo, 600 px, até 150 KB, texto alternativo descritivo, sem "de/por", sem promessa de faturamento, sem máquina
+  desenhada por IA; a arte 2 só depois que o LG trocar o texto para "A Konioca de R$ 25.900 ganhou uma nova geração".
+  Arquivo da arte: `site/assets/img/email/arte6-600.jpg` (entra em main antes do disparo). Teste das duas versões para o
+  Lucas antes do disparo (`email-teste`, prioridade P3, variante a e b).
 - Ferramenta: `execute_sql` também trava em `DROP FUNCTION` (como em UPDATE puro); para mudar o tipo de retorno de uma
   função, criar com outro nome (`_v2`).

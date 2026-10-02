@@ -161,6 +161,16 @@ test("Base antiga: três versões (texto do Lucas de 1/10), preços da config, a
   assert.match(p2b.html, /Eu mostro o que mudou em encontros fechados no Google Meet\./, "prévia da B");
   // P1 e P3/P4 não têm variante: o link continua p1 / p34 mesmo se a coluna vier preenchida.
   assert.match(montarEnvio("base_antiga_email", "email", { ...base, base_antiga_prioridade: "P1", base_antiga_variante: "b" }, cfg, API).texto, /utm_content=p1\b/);
+  // Teste do P3/P4 (5/10): a = faixa de cones e p34_cones; b = arte 6 depois do primeiro parágrafo, sem faixa, p34_arte6. Texto igual.
+  const p34a = montarEnvio("base_antiga_email", "email", { ...base, base_antiga_prioridade: "P4", base_antiga_gancho: "set/25", base_antiga_variante: "a" }, cfg, API);
+  const p34b = montarEnvio("base_antiga_email", "email", { ...base, base_antiga_prioridade: "P4", base_antiga_gancho: "set/25", base_antiga_variante: "b" }, cfg, API);
+  assert.match(p34a.html, /utm_content=p34_cones/); assert.match(p34a.html, /cones-600x240\.jpg/); assert.doesNotMatch(p34a.html, /arte6-600\.jpg/);
+  assert.match(p34b.html, /utm_content=p34_arte6/); assert.match(p34b.html, /arte6-600\.jpg/); assert.doesNotMatch(p34b.html, /cones-600x240\.jpg/);
+  assert.equal(p34a.texto.replace(/p34_cones/g, "X"), p34b.texto.replace(/p34_arte6/g, "X"));
+  assert.ok(p34b.html.indexOf("guardou o seu contato") < p34b.html.indexOf("arte6-600.jpg"), "a arte vem depois do primeiro parágrafo");
+  assert.ok(p34b.html.indexOf("arte6-600.jpg") < p34b.html.indexOf("redesenhou a máquina"), "e antes do segundo");
+  assert.match(p34b.html, /alt="Arte da Konioca: /);
+  assert.match(montarEnvio("base_antiga_email", "email", { ...base, base_antiga_prioridade: "P3", base_antiga_gancho: "set/25" }, cfg, API).html, /utm_content=p34"/);
   const p3 = montarEnvio("base_antiga_email", "email", { ...base, base_antiga_prioridade: "P3", base_antiga_gancho: "set/25" }, cfg, API);
   assert.match(p3.texto, /^Ana, faz mais de um ano que você procurou a Konioca, em setembro de 2025, e a gente guardou o seu contato\./);
   assert.match(p3.texto, /utm_content=p34/);

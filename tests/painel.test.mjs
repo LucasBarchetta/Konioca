@@ -76,13 +76,14 @@ test("Papel growth: vê tudo, marca contato e resposta, comenta e propõe A/B; n
   for (const a of ["reservar", "reserva_cancelar", "corrigir_email", "encontro_salvar", "presenca", "link", "inventada"]) assert.equal(podeAcao("growth", a), false, a);
 });
 
-test("Decisão por item: growth só decide item endereçado a growth; principal, conteudo e operacional decidem qualquer um", () => {
+test("Decisão por item: growth decide qualquer item sem passar pelo principal (ordem de 2/10 à noite); os outros papéis também", () => {
   assert.equal(podeDecidir("growth", "growth"), true);
-  assert.equal(podeDecidir("growth", "principal"), false);
-  assert.equal(podeDecidir("growth", "conteudo"), false);
-  assert.equal(podeDecidir("growth", null), false); // sem papel no item = principal
+  assert.equal(podeDecidir("growth", "principal"), true);
+  assert.equal(podeDecidir("growth", "conteudo"), true);
+  assert.equal(podeDecidir("growth", null), true); // sem papel no item = principal
   assert.equal(podeAcao("growth", "decidir", { aprovador: "growth" }), true);
-  assert.equal(podeAcao("growth", "decidir", { aprovador: "principal" }), false);
+  assert.equal(podeAcao("growth", "decidir", { aprovador: "principal" }), true);
+  assert.equal(permissoesDe("growth").decidir, "todos");
   for (const p of ["principal", "conteudo", "operacional"]) { assert.equal(podeDecidir(p, "growth"), true, p); assert.equal(podeAcao(p, "reservar"), true, p); assert.equal(permissoesDe(p).decidir, "todos", p); }
 });
 
