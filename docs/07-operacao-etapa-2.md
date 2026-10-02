@@ -93,4 +93,11 @@ Linhas já promovidas não são sobrescritas.
 
 ## P2 em teste A/B (decisão do Lucas, 1/10 à noite)
 
+SIM do Lucas (1/10, noite) para 2/10 com o texto novo dos encontros no Meet (A aprovada; B aprovada pela Marcela, em
+primeira pessoa e assinada por ela). Para isso a `fila-processar` v19 foi publicada com o texto aprovado da base antiga
+e a chave `encontros_ativos` desligada: o convite de cadastro novo continua o legado até as turmas serem publicadas.
+Ritmo da fila: 20 e-mails por minuto (`wa_envios_por_minuto` vale para a leitura do lote), ou seja, 350 saem em uns 18
+minutos. Lembretes armados na sessão: 8h48 (promover 350), 9h30 (conferir), 15h (relatório e resto com a vencedora),
+18h30 (fechamento do dia).
+
 Substitui o disparo único de 2/10. Versão A: texto aprovado (abertura do P2, link `utm_content=p2_a`). Versão B: assunto e abertura pelo preço, na voz da Marcela (`p2_b`), só sai com o SIM do Lucas; sem o SIM até 8h, o dia vira 350 com a A às 9h e o resto com a A às 15h. Com o SIM: 9h, 350 pessoas sorteadas, 175 A e 175 B (`base_antiga_promover_ab(350, array['P2'], '2026-10-02T09:00-03:00')`); 15h, as outras 353 recebem a versão com mais cadastros pela página (empate: mais cliques; zero a zero: espera segunda), com `base_antiga_promover_ab(400, array['P2'], '2026-10-02T15:00-03:00', array['a'])` ou `array['b']`. A variante fica em `leads.base_antiga_variante` e o painel e a aba Desempenho separam pelo link. Migração 770.
