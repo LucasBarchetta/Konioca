@@ -93,8 +93,8 @@ Linhas já promovidas não são sobrescritas.
 
 ## P2 em teste A/B (decisão do Lucas, 1/10 à noite)
 
-SIM do Lucas (1/10, noite) para 2/10 com o texto novo dos encontros no Meet (A aprovada; B aprovada pela Marcela, em
-primeira pessoa e assinada por ela). Para isso a `fila-processar` v19 foi publicada com o texto aprovado da base antiga
+SIM do Lucas (1/10, noite) para 2/10 com o texto novo dos encontros no Meet. Revisão posterior do Lucas: a versão B só
+entra se ele confirmar até 8h30 que a Marcela aprovou; sem essa confirmação, sai só a A, metade às 9h e metade às 15h. Para isso a `fila-processar` v19 foi publicada com o texto aprovado da base antiga
 e a chave `encontros_ativos` desligada: o convite de cadastro novo continua o legado até as turmas serem publicadas.
 Ritmo da fila: 20 e-mails por minuto (`wa_envios_por_minuto` vale para a leitura do lote), ou seja, 350 saem em uns 18
 minutos. Lembretes armados na sessão: 8h48 (promover 350), 9h30 (conferir), 15h (relatório e resto com a vencedora),

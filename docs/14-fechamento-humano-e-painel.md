@@ -135,8 +135,10 @@ Formato de 2/10: encontros fechados no Google Meet no lugar da live. Aba "Turmas
 - Cartão do lead na aba Leads: etiqueta "Turma qui 15/10 10h" (dourada), "· presente" (verde) ou "· faltou"
   (vermelha). Sem escolha: nada aparece. A view `v_painel_leads` traz `encontro_id`, `encontro_inicio`,
   `encontro_presenca` e `encontro_escolhido_em`.
-- Agenda inicial (migração 800, só se a tabela estiver vazia): dias úteis de 15/10 a 30/10, 10h, 14h e 16h, 35 vagas,
-  sem link do Meet (o time preenche no painel). Quem está na lista escolhe em `/horario/?t={token}`; turma cheia some;
+- Agenda inicial (migração 800, só se a tabela estiver vazia): dias úteis de 15/10 a 30/10, 18h30 e 19h30, 35 vagas,
+  sem link do Meet (o Matheus preenche no painel). Abertas no início só 15/10, 16/10, 20/10 e 21/10 às 18h30; as
+  demais ficam cadastradas e fechadas. Acima de 25 inscritos (`encontro_aviso_inscritos`), o aprovador principal
+  recebe e-mail e a turma ganha a etiqueta "Acima de 25: abrir a próxima"; abrir a das 19h30 é manual, no painel. Quem está na lista escolhe em `/horario/?t={token}`; turma cheia some;
   só turmas que começam daqui a mais de 30 minutos aparecem.
 - Function pública `encontro-escolher` (listar, escolher; limite de 60 chamadas por IP a cada 10 minutos) e
   `encontro-ics` (arquivo da agenda do lead). Evento `clicou_horario` registra o clique no botão da página de obrigado.

@@ -1,6 +1,6 @@
 -- Mudança de formato (Lucas, 2/10): a live no Instagram de 15/10 sai; entram encontros fechados no Google Meet com a Marcela,
--- até 35 pessoas por turma, até 30 minutos, durante o dia. Só quem está na lista participa. A reserva das 250 máquinas
--- acontece no fim de cada encontro, só para quem já pode (Circular confirmada há 10 dias).
+-- até 35 pessoas por turma, até 30 minutos, a partir das 18h30 (grade 18h30 e 19h30, dias úteis). Só quem está na lista participa. A reserva das 250 máquinas
+-- Nos textos: "no fim do encontro, a Marcela explica como garantir uma das 250 máquinas"; a regra dos 10 dias da Circular fica no roteiro (docs/19).
 -- Aplicar só com o SIM do Lucas (muda config e cron ao vivo).
 
 -- 1) Turmas (encontros): data e hora, link do Meet, capacidade. Editáveis no painel.
@@ -30,7 +30,8 @@ create index if not exists leads_encontro_idx on public.leads (encontro_id);
 insert into public.config (chave, valor, publico, descricao) values
   ('encontro_duracao_min', '30', true, 'Duração de cada encontro no Google Meet (minutos)'),
   ('encontro_capacidade',  '35', true, 'Capacidade padrão de cada turma do encontro (pessoas)'),
-  ('encontro_lembrete_vespera_hora', '18', false, 'Hora (SP) do lembrete da véspera do encontro')
+  ('encontro_lembrete_vespera_hora', '18', false, 'Hora (SP) do lembrete da véspera do encontro'),
+  ('encontro_aviso_inscritos', '25', false, 'Acima deste número de inscritos numa turma, o aprovador principal recebe e-mail para abrir a próxima (decisão do Lucas, 2/10)')
   ,('encontros_ativos', 'true', false, 'Formato de 2/10 ligado: convite com escolha de horário (/horario/), join de encontros na fila. Sem esta chave, a fila usa o convite legado da live.')
 on conflict (chave) do update set descricao = excluded.descricao;
 update public.config set valor = '"Google Meet"', descricao = 'Encontros fechados no Google Meet (formato de 2/10; a live no Instagram foi substituída)' where chave = 'live_plataforma';
@@ -44,10 +45,13 @@ select cron.unschedule('live-disparos') where exists (select 1 from cron.job whe
 
 -- 3) Turmas iniciais (sugestão do Lucas, até confirmar com a agenda da Marcela): a partir de 15/10, dias úteis, 10h, 14h e 16h,
 --    até o fim da pré-venda (30/10). Link do Meet em branco: o time preenche no painel; a confirmação só sai com o link.
-insert into public.encontros (inicio, duracao_min, capacidade)
-select (d::date + h) at time zone 'America/Sao_Paulo', 30, 35
+-- Grade do Lucas (2/10): 18h30 e 19h30, dias úteis de 15/10 a 30/10. Abertas no início só 15/10, 16/10, 20/10 e 21/10 às 18h30;
+-- as demais ficam cadastradas e fechadas (ativo = false). A das 19h30 abre no painel quando a das 18h30 passar de 25 inscritos.
+insert into public.encontros (inicio, duracao_min, capacidade, ativo)
+select (d::date + h) at time zone 'America/Sao_Paulo', 30, 35,
+       (h = time '18:30' and d::date in (date '2026-10-15', date '2026-10-16', date '2026-10-20', date '2026-10-21'))
   from generate_series(date '2026-10-15', date '2026-10-30', interval '1 day') as d
-  cross join (values (time '10:00'), (time '14:00'), (time '16:00')) as hs(h)
+  cross join (values (time '18:30'), (time '19:30')) as hs(h)
  where extract(isodow from d) between 1 and 5
    and not exists (select 1 from public.encontros);
 
@@ -56,7 +60,8 @@ create or replace view public.v_encontros as
 select e.id, e.inicio, e.duracao_min, e.capacidade, e.meet_link, e.ativo, e.observacao, e.criado_em, e.atualizado_em,
        (select count(*) from public.leads l where l.encontro_id = e.id and l.optout_em is null)::integer as inscritos,
        greatest(0, e.capacidade - (select count(*) from public.leads l where l.encontro_id = e.id and l.optout_em is null))::integer as vagas,
-       (select count(*) from public.leads l where l.encontro_id = e.id and l.encontro_presenca is true)::integer as presentes
+       (select count(*) from public.leads l where l.encontro_id = e.id and l.encontro_presenca is true)::integer as presentes,
+       coalesce(public.config_num('encontro_aviso_inscritos'), 25)::integer as aviso_inscritos
   from public.encontros e;
 
 -- Opções para quem está na lista: turma ativa, com vaga, que começa daqui a mais de 30 minutos.
@@ -93,6 +98,7 @@ declare
   v_lead public.leads%rowtype;
   v_enc public.encontros%rowtype;
   v_ins integer;
+  v_para text;
 begin
   select * into v_lead from public.leads l where l.token = p_token;
   if v_lead.id is null then return query select false, 'link inválido', null::bigint, null::timestamptz, null::integer, null::text; return; end if;
@@ -111,6 +117,15 @@ begin
       where lead_id = v_lead.id and status = 'pendente' and tipo in ('encontro_confirmacao', 'encontro_lembrete_vespera', 'encontro_lembrete_1h');
     perform public.fila_enfileirar(v_lead.id, 'encontro_confirmacao', now(), 'email');
     perform public.encontro_agendar_lembretes(v_lead.id, v_enc.id);
+    -- Passou do limite de aviso (25): e-mail ao aprovador principal para abrir a próxima turma (só na passagem, uma vez).
+    if v_ins + 1 = coalesce(public.config_num('encontro_aviso_inscritos'), 25)::integer + 1 then
+      insert into public.alertas (tipo, resumo) values ('turma_acima_do_aviso', 'Turma ' || to_char(v_enc.inicio at time zone 'America/Sao_Paulo', 'DD/MM HH24:MI') || ' passou de ' || (v_ins) || ' inscritos: abrir a próxima no painel.');
+      for v_para in select a->>'email' from public.config c, jsonb_array_elements(c.valor) a where c.chave = 'painel_aprovadores' and a->>'papel' = 'principal' loop
+        perform public.chamar_function('email-teste', jsonb_build_object('tipo', 'texto', 'para', v_para,
+          'assunto', 'Turma ' || to_char(v_enc.inicio at time zone 'America/Sao_Paulo', 'DD/MM "às" HH24"h"MI') || ' passou de ' || v_ins || ' inscritos',
+          'texto', 'A turma de ' || to_char(v_enc.inicio at time zone 'America/Sao_Paulo', 'DD/MM "às" HH24"h"MI') || ' chegou a ' || (v_ins + 1) || ' inscritos (capacidade ' || v_enc.capacidade || '). Regra combinada: abrir a próxima turma do dia (19h30) no painel, aba Turmas, marcando "ativa".'));
+      end loop;
+    end if;
   end if;
   return query select true, null::text, v_enc.id, v_enc.inicio, v_enc.duracao_min, v_enc.meet_link;
 end $$;

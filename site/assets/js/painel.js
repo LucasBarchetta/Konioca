@@ -153,6 +153,7 @@
     var cheia = t.vagas <= 0, aberta = estado.turmaAberta[t.id];
     var tags = [tag(t.inscritos + (t.inscritos === 1 ? " inscrito" : " inscritos") + " · " + t.vagas + (t.vagas === 1 ? " vaga" : " vagas"), cheia ? "vermelho" : "verde")];
     if (t.presentes) tags.push(tag(t.presentes + (t.presentes === 1 ? " presente" : " presentes"), "verde"));
+    if (t.aviso_inscritos && t.inscritos > t.aviso_inscritos && !cheia) tags.push(tag("Acima de " + t.aviso_inscritos + ": abrir a próxima", "ouro"));
     tags.push(tag(t.meet_link ? "Link do Meet ok" : "Sem link do Meet", t.meet_link ? "" : "vermelho"));
     if (!t.ativo) tags.push(tag("Desativada", "cinza"));
     var acoes = '<button type="button" data-acao="turma-pessoas" data-id="' + t.id + '">' + (aberta === "pessoas" ? "Fechar lista" : "Lista (" + t.inscritos + ")") + '</button><button type="button" class="discreto" data-acao="turma-editar" data-id="' + t.id + '">Editar</button>' + (t.meet_link ? '<a class="p-tag" href="' + esc(t.meet_link) + '" target="_blank" rel="noopener" style="align-self:center">Abrir o Meet</a>' : "");

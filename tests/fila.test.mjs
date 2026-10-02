@@ -186,7 +186,8 @@ test("Encontro no Google Meet (2/10): confirmação com .ics anexado, lembretes 
   assert.equal(c.canal, "email");
   assert.equal(c.assunto, "Ana, seu horário com a Marcela: quinta, 15/10, às 10h");
   assert.match(c.texto, /^Ana, seu encontro está confirmado: quinta, 15\/10, às 10h \(horário de Brasília\), pelo Google Meet, 30 minutos\./);
-  assert.match(c.texto, /Circular confirmada há 10 dias\) reserva uma das 250 máquinas/);
+  assert.match(c.texto, /No fim do encontro, a Marcela explica como garantir uma das 250 máquinas da pré-venda\./);
+  assert.doesNotMatch(c.texto, /Circular/, "a regra dos 10 dias fica só no roteiro (decisão de 2/10)");
   assert.match(c.texto, /Entrar no Meet: https:\/\/meet\.google\.com\/abc-defg-hij/);
   assert.match(c.texto, /Trocar de horário|trocar de horário/);
   assert.equal(c.anexos.length, 1); assert.equal(c.anexos[0].filename, "encontro-konioca.ics");

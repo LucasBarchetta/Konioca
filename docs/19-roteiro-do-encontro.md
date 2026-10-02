@@ -2,7 +2,8 @@
 
 Quem conduz: Marcela. Apoio: uma pessoa do time com o painel aberto (aba Turmas, lista da turma, presença). Até 35
 pessoas por turma. Câmera ligada, máquina atual ao lado, nova geração em vídeo ou ao vivo quando houver unidade.
-Horários sugeridos: dias úteis, 10h, 14h e 16h, de 15/10 a 30/10 (editáveis no painel).
+Grade (decisão do Lucas, 2/10): dias úteis, 18h30 e 19h30, de 15/10 a 30/10. Abertas no início: 15/10, 16/10, 20/10 e
+21/10 às 18h30; a das 19h30 de cada dia abre quando a das 18h30 passar de 25 inscritos (o painel avisa por e-mail).
 
 ## Antes (5 minutos antes do início)
 
@@ -22,11 +23,14 @@ pode reservar, reserva."
 - Nova geração: mostrar os pontos de uso (abastecer, assar, limpar). Uma pessoa sozinha opera.
 - Sem promessa de prazo de entrega fora do que está na Circular.
 
-## 12 a 18 min · A conta da operação
+## 12 a 18 min · A conta da operação (custos e o que vem na máquina)
 
-- Custo por cone, preço de venda típico, cones por hora. Números da config e da planilha de referência, nunca de
-  cabeça.
+- O que vem na máquina: itens inclusos, o que a pessoa precisa ter no ponto (energia, bancada, insumos).
+- Custos: custo por cone (massa, recheio, embalagem), consumo de energia, manutenção. Números da config e da planilha
+  de referência, nunca de cabeça.
 - Onde ela se encaixa: ponto próprio, academia, escola, evento, negócio que já existe.
+- Nenhuma projeção de faturamento, lucro ou retorno. Se perguntarem, a resposta é "depende do ponto; a gente mostra o
+  custo e você faz a sua conta".
 
 ## 18 a 24 min · Condições da pré-venda
 

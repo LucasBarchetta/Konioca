@@ -281,7 +281,8 @@ ${paragrafos.map(P).join("\n")}
       if (!nomeTpl || pendente(nomeTpl)) return { canal: "nenhum", motivo: "modelo do encontro pendente" };
       return { canal: "whatsapp", modo: "template", nome: nomeTpl, params: tipo === "encontro_confirmacao" ? [nome, quando] : [nome, hora], botaoUrlSufixo: codigoMeet(en.meet_link) };
     }
-    const circular = `No fim do encontro, quem já pode reservar (Circular confirmada há ${cfgNum(cfg, "circular_prazo_dias", 10)} dias) reserva uma das ${lote1} máquinas da pré-venda.`;
+    // Decisão do Lucas (2/10): a regra dos 10 dias da Circular fica só no roteiro do encontro (docs/19), não nos e-mails.
+    const circular = `No fim do encontro, a Marcela explica como garantir uma das ${lote1} máquinas da pré-venda.`;
     let assunto: string, p1: string, p2: string, botao: string, rodape: string;
     if (tipo === "encontro_confirmacao") {
       assunto = `${nome}, seu horário com a Marcela: ${quando}`;

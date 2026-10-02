@@ -9,8 +9,8 @@ capacidade vêm da config (`encontro_duracao_min`, `encontro_capacidade`) e entr
 Regras de voz: todo modelo abre com "Oi, {{1}}," e termina com texto fixo (nada de variável no início ou no fim, para
 a Meta não recusar); uma pergunta por mensagem; sem exclamação; assinatura do Time da Marcela; nenhuma exclusividade
 falsa. As exclusividades citadas são as reais: lista, encontros fechados, 250 máquinas e prazo. Não existe lote extra.
-Nenhum modelo fala em reservar ou pagar no encontro: a reserva no fim do encontro é só para quem já pode (Circular
-confirmada há 10 dias, `circular_prazo_dias`).
+Nenhum modelo fala em reservar ou pagar no encontro. A regra dos 10 dias da Circular fica só no roteiro do encontro
+(docs/19), por decisão do Lucas em 2/10: nos textos, "no fim do encontro, a Marcela explica como garantir uma das máquinas".
 
 Categoria: a Meta decide a final. Convites são Marketing. Confirmação e lembretes do encontro e lembrete da Circular
 foram escritos como Utilidade, sem chamada de venda. Se a Meta reclassificar para Marketing, nada muda no código.
@@ -52,11 +52,11 @@ exemplo `abc-defg-hij`).
 
 ## 3. `konioca_encontro_lembrete` · Utilidade (config `wa_tpl_encontro_lembrete`)
 
-Mesmo modelo para a véspera (às 18h, `encontro_lembrete_vespera_hora`) e para uma hora antes. Variáveis: {{1}} nome,
+Mesmo modelo para a véspera (às 18h, `encontro_lembrete_vespera_hora`) e para uma hora antes (17h30 ou 18h30, conforme a turma). Variáveis: {{1}} nome,
 {{2}} hora.
 ```
 Oi, {{1}}, lembrete do seu encontro com a Marcela, pelo Google Meet, às {{2}}. O link está no botão.
-Entre uns minutos antes. No fim, quem já pode reservar garante uma das máquinas da pré-venda.
+Entre uns minutos antes. No fim, a Marcela explica como garantir uma das máquinas da pré-venda.
 ```
 Exemplos: `Ana` · `10h`
 
