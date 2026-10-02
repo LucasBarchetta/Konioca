@@ -6,7 +6,9 @@ import { carregarConfig, cfgBool, cfgText, pendente } from "./config.ts";
 import { excecaoInterna } from "./aprovadores.ts";
 import { emailBloqueado, motivoBloqueio } from "./bloqueio.ts";
 
-export async function enviarEmail(para: string, assunto: string, texto: string, html: string, tag: string): Promise<{ ok: boolean; id?: string; motivo?: string }> {
+export interface Anexo { filename: string; content: string } // content em base64
+
+export async function enviarEmail(para: string, assunto: string, texto: string, html: string, tag: string, anexos?: Anexo[]): Promise<{ ok: boolean; id?: string; motivo?: string }> {
   const apiKey = Deno.env.get("RESEND_API_KEY");
   if (!apiKey) return { ok: false, motivo: "RESEND_API_KEY ausente" };
   const { todos } = await carregarConfig();
@@ -22,7 +24,7 @@ export async function enviarEmail(para: string, assunto: string, texto: string, 
   const replyTo = cfgText(todos, "email_reply_to");
   const r = await fetch("https://api.resend.com/emails", {
     method: "POST", headers: { "authorization": `Bearer ${apiKey}`, "content-type": "application/json" },
-    body: JSON.stringify({ from, to: [para], reply_to: replyTo && !pendente(replyTo) ? replyTo : undefined, subject: assunto, text: texto, html, tags: [{ name: "tipo", value: tag }] }),
+    body: JSON.stringify({ from, to: [para], reply_to: replyTo && !pendente(replyTo) ? replyTo : undefined, subject: assunto, text: texto, html, attachments: anexos?.length ? anexos : undefined, tags: [{ name: "tipo", value: tag }] }),
   });
   const j = await r.json().catch(() => ({})) as { id?: string };
   if (!r.ok) return { ok: false, motivo: "resend " + r.status };

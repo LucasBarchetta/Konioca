@@ -51,12 +51,17 @@ Deno.serve(async (req) => {
   const { data: itens, error } = await sb.rpc("fila_proximos", { p_limite: Math.max(limite, 5) }); // e-mails passam mesmo com o teto do WhatsApp batido
   if (error) return json({ erro: error.message }, 500);
 
+  const encontrosAtivos = cfgBool(cfg, "encontros_ativos", false);
   const isentos = new Set(((cfg["msgs_tipos_isentos"] as string[] | undefined) ?? []));
   const maxSemana = cfgNum(cfg, "msgs_max_semana", 2);
   let enviados = 0, waEnviados = 0; const resultados: Record<string, string> = {};
 
   for (const item of (itens ?? []) as { id: number; lead_id: string; tipo: string; canal: string; payload: Record<string, unknown> | null; tentativas: number }[]) {
-    const { data: lead } = await sb.from("leads").select("id, nome, whatsapp, email, token, turma, pergunta_live, estado_conversa, optout_em, grupo_controle, wa_invalido_em, base_antiga_gancho, base_antiga_prioridade, base_antiga_variante, contato_manual_em, email_bloqueado_em").eq("id", item.lead_id).single();
+    // O join com encontros só existe depois da migração 800 (config.encontros_ativos); antes dela a tabela não existe.
+    const colunas = "id, nome, whatsapp, email, token, turma, pergunta_live, estado_conversa, optout_em, grupo_controle, wa_invalido_em, base_antiga_gancho, base_antiga_prioridade, base_antiga_variante, contato_manual_em, email_bloqueado_em" + (encontrosAtivos ? ", encontro:encontros(id, inicio, duracao_min, meet_link)" : "");
+    type LeadLinha = LeadFila & { optout_em: string | null; grupo_controle: boolean; wa_invalido_em: string | null; email_bloqueado_em: string | null; contato_manual_em: string | null; encontro?: unknown };
+    const { data: leadBruto } = await sb.from("leads").select(colunas).eq("id", item.lead_id).single();
+    const lead = leadBruto as unknown as LeadLinha | null;
     if (!lead || lead.optout_em) { await fechar(item.id, "cancelado", "optout"); continue; }
     if (lead.grupo_controle && item.tipo !== "circular_lembrete") { await fechar(item.id, "pulado", "grupo_controle"); continue; }
     if (item.canal === "whatsapp" && (lead.wa_invalido_em || !lead.whatsapp)) { await fechar(item.id, "pulado", "numero_invalido"); continue; }
@@ -81,7 +86,9 @@ Deno.serve(async (req) => {
     if (item.canal === "whatsapp" && !whatsappConfigurado()) { await sb.from("fila_envios").update({ status: "pendente", tentativas: Math.max(0, item.tentativas - 1), agendado_para: new Date(Date.now() + 600_000).toISOString(), motivo: "WhatsApp ainda não configurado (WABA)" }).eq("id", item.id); continue; }
     if (item.canal === "whatsapp" && waEnviados >= limite) { await sb.from("fila_envios").update({ status: "pendente", motivo: "teto por minuto/dia" }).eq("id", item.id); continue; }
 
-    const envio = montarEnvio(item.tipo, item.canal, lead as LeadFila, cfg as Config, apiUrl);
+    // O join leads->encontros chega como objeto (FK única), mas o tipo inferido é lista; normaliza antes de montar.
+    const enc = (Array.isArray(lead.encontro) ? (lead.encontro[0] ?? null) : lead.encontro ?? null) as LeadFila["encontro"];
+    const envio = montarEnvio(item.tipo, item.canal, { ...lead, encontro: enc }, cfg as Config, apiUrl);
     if (envio.canal === "nenhum") {
       // Config pendente é bloqueio geral, não falha do item: volta à fila em 10 min sem gastar tentativa.
       // Nada se perde enquanto um humano não preenche a configuração.
@@ -90,7 +97,7 @@ Deno.serve(async (req) => {
     }
 
     if (envio.canal === "email") {
-      const r = await enviarEmail(lead.email, envio.assunto, envio.texto, envio.html, item.tipo);
+      const r = await enviarEmail(lead.email, envio.assunto, envio.texto, envio.html, item.tipo, envio.anexos);
       if (!r.ok && /^email_bloqueado/.test(r.motivo ?? "")) { await fechar(item.id, "pulado", r.motivo); resultados[item.id] = r.motivo ?? "pulado"; continue; }
       await sb.from("mensagens").insert({ lead_id: lead.id, canal: "email", direcao: "out", tipo: "template", modelo: item.tipo, corpo: envio.texto, provedor_id: r.id ?? null, status: r.ok ? "enviado" : "falhou", erro: r.motivo ?? null, iniciada_pela_empresa: true, fila_id: item.id });
       await fechar(item.id, r.ok ? "enviado" : "falhou", r.motivo);

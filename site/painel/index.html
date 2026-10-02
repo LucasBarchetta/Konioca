@@ -4,8 +4,8 @@
 <link rel="icon" type="image/png" sizes="64x64" href="../assets/img/favicon.png"><link rel="apple-touch-icon" href="../assets/img/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caladea:ital,wght@0,400;0,700;1,400&amp;family=Carlito:wght@400;700&amp;display=swap">
-<link rel="stylesheet" href="../assets/css/site.css?v=0110i">
-<link rel="stylesheet" href="../assets/css/painel.css?v=0110i">
+<link rel="stylesheet" href="../assets/css/site.css?v=0210c">
+<link rel="stylesheet" href="../assets/css/painel.css?v=0210c">
 </head><body class="painel">
 <div id="p-restrito" class="p-restrito">Acesso restrito</div>
 <div id="p-app" class="oculto">
@@ -19,6 +19,7 @@
   <nav class="p-abas" id="p-abas">
     <button type="button" data-aba="leads" class="ativa">Leads</button>
     <button type="button" data-aba="aprovacoes">Aprovações <span id="p-aprov-n" class="p-badge oculto">0</span></button>
+    <button type="button" data-aba="turmas">Turmas</button>
   </nav>
 
   <section id="aba-leads">
@@ -41,9 +42,20 @@
   <section id="aba-aprovacoes" class="oculto">
     <div id="p-aprovacoes" class="p-lista"></div>
   </section>
+
+  <section id="aba-turmas" class="oculto">
+    <div class="p-filtros" id="p-turmas-filtros">
+      <button type="button" data-tfiltro="futuras" class="ativa">Próximas</button>
+      <button type="button" data-tfiltro="passadas">Passadas</button>
+      <button type="button" data-tfiltro="todas">Todas</button>
+      <button type="button" data-acao="turma-nova" class="ativa" style="margin-left:auto;background:#b04d0c;border-color:#b04d0c">Nova turma</button>
+    </div>
+    <div id="p-turmas-resumo" class="p-sub"></div>
+    <div id="p-turmas" class="p-lista"></div>
+  </section>
 </main>
 <p class="p-rodape">Painel da pré-venda · Fase A. Toda ação fica registrada com o seu nome. Não repasse o seu link.</p>
 </div>
-<script src="../assets/js/env.js?v=0110i"></script>
-<script src="../assets/js/painel.js?v=0110i"></script>
+<script src="../assets/js/env.js?v=0210c"></script>
+<script src="../assets/js/painel.js?v=0210c"></script>
 </body></html>

@@ -56,3 +56,11 @@ body.painel{display:block;margin:0;background:#19422d;font-family:Carlito,Calibr
 .p-card.p-novo{animation:p-novo 6s ease-out forwards}
 @keyframes p-novo{0%,60%{background:#f5e9c2;border-color:#c9a227}100%{background:#fff;border-color:#e4d7bf}}
 .oculto{display:none !important}
+.p-turma{border-left:4px solid #c9a227}
+.p-turma.cheia{border-left-color:#8a3a08}.p-turma.inativa{opacity:.6;border-left-color:#999}
+.p-turma .p-vagas{font-family:Caladea,Cambria,Georgia,serif;font-size:22px;color:#1f4a36}
+.p-pessoa{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:8px 0;border-top:1px solid #eee6d2;font-size:14px}
+.p-pessoa .p-nome{flex:1;min-width:160px;font-weight:700}
+.p-pessoa button{font:inherit;font-size:13px;padding:6px 10px;border-radius:7px;border:1px solid #c4a77d;background:#fff;color:#1f4a36;cursor:pointer}
+.p-pessoa button.ativa{background:#1f4a36;color:#f7f0e2;border-color:#1f4a36}
+.p-pessoa button.faltou.ativa{background:#8a3a08;border-color:#8a3a08}

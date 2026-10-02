@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Konioca · Escolha o seu horário</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" type="image/png" sizes="64x64" href="../assets/img/favicon.png"><link rel="apple-touch-icon" href="../assets/img/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caladea:ital,wght@0,400;0,700;1,400&amp;family=Carlito:wght@400;700&amp;display=swap">
+<link rel="stylesheet" href="../assets/css/site.css?v=0210c">
+<style>
+a{color:#f7f0e2}a:hover{color:#dce4d6}
+.h-dia{font-size:12px;font-weight:700;letter-spacing:.2em;color:#c9a227;margin-top:6px}
+.h-opcoes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.h-opcao{min-height:56px;padding:8px 6px;font:inherit;font-size:17px;font-weight:700;color:#f7f0e2;background:transparent;border:1px solid #c9a227;border-radius:7px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+.h-opcao small{font-size:12px;font-weight:400;color:#c9c9b8}
+.h-opcao.escolhida{background:#b04d0c;border-color:#b04d0c}
+.h-opcao[disabled]{opacity:.5;cursor:progress}
+.h-cartao{display:flex;flex-direction:column;gap:10px;padding:16px;border:1px solid #c9a227;border-radius:10px;background:#0f2c1e}
+.h-erro{font-size:15px;line-height:1.5;color:#f7f0e2;padding:10px 12px;border:1px solid #b04d0c;border-radius:7px;background:#3a1f12}
+</style>
+</head><body>
+<div class="pagina" style="min-height: 100vh; display: flex; flex-direction: column; background: #19422d; font-family: Carlito, Calibri, 'Segoe UI', sans-serif; overflow: hidden">
+<section style="display: flex; flex-direction: column; gap: 18px; padding: 28px 24px 40px 24px">
+<img src="../assets/img/logo_konioca_branco.png" alt="Konioca" style="height: 34px; width: auto; align-self: flex-start">
+<div style="font-size: 12px; font-weight: 700; letter-spacing: 0.25em; color: #c9a227">ENCONTRO FECHADO · GOOGLE MEET</div>
+<h1 id="h-titulo" style="margin: 0; font-family: Caladea, Cambria, Georgia, serif; font-weight: 400; font-size: 36px; line-height: 1.1; color: #f7f0e2">Escolha o seu horário com a Marcela.</h1>
+<div style="width: 120px; height: 1px; background: #c9a227; margin-left: 6px"></div>
+<p style="margin: 0; font-size: 17px; line-height: 1.6; color: #dce4d6" data-tpl="{encontro_duracao} minutos, no máximo {encontro_capacidade} pessoas por grupo, pelo Google Meet. A confirmação com o link chega no seu e-mail, e a gente lembra na véspera e uma hora antes."></p>
+<div id="h-erro" class="h-erro oculto" role="alert"></div>
+
+<div id="h-atual" class="h-cartao oculto">
+  <div style="font-size: 12px; font-weight: 700; letter-spacing: 0.2em; color: #c9a227">SEU HORÁRIO</div>
+  <div id="h-atual-quando" style="font-family: Caladea, Cambria, Georgia, serif; font-size: 24px; line-height: 1.2; color: #f7f0e2"></div>
+  <div id="h-atual-link" style="font-size: 15px; line-height: 1.5; color: #dce4d6"></div>
+  <a id="h-agenda" href="#" style="display: flex; align-items: center; justify-content: center; height: 52px; background: transparent; color: #f7f0e2; font-size: 17px; font-weight: 700; text-decoration: none; border: 1px solid #c9a227; border-radius: 7px">Salvar na minha agenda</a>
+  <button type="button" id="h-trocar" style="min-height: 44px; font: inherit; font-size: 15px; color: #c9c9b8; background: none; border: 0; text-decoration: underline; cursor: pointer">Trocar de horário</button>
+</div>
+
+<div id="h-lista" class="oculto" style="display: flex; flex-direction: column; gap: 10px"></div>
+<div id="h-vazio" class="oculto" style="font-size: 16px; line-height: 1.6; color: #dce4d6">Todas as turmas estão cheias no momento. Novos horários aparecem aqui assim que a Marcela abrir a agenda. Você recebe aviso por e-mail.</div>
+<p id="h-rodape" style="margin: 0; font-size: 13px; line-height: 1.5; color: #c9c9b8" data-tpl="Horários no fuso de Brasília. Só quem está na lista participa. No fim do encontro, a Marcela explica como garantir uma das {lote1} máquinas da pré-venda."></p>
+</section>
+</div>
+<script src="../assets/js/env.js?v=0210c"></script>
+<script src="../assets/js/comum.js?v=0210c"></script>
+<script src="../assets/js/horario.js?v=0210c"></script>
+</body></html>

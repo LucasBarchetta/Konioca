@@ -1,11 +1,11 @@
 <!doctype html>
 <html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Konioca · Pré-venda da nova geração</title>
-<meta name="description" content="Nova geração da máquina de cones de tapioca Konioca. Live de pré-lançamento com a Marcela. Garanta a sua pré-reserva.">
+<meta name="description" content="Nova geração da máquina de cones de tapioca Konioca. Encontros fechados com a Marcela pelo Google Meet. Garanta a sua pré-reserva.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://prevenda.konioca.com/">
 <meta property="og:title" content="Konioca · Pré-venda da nova geração">
-<meta property="og:description" content="Live fechada com a Marcela e pré-reserva da nova máquina de cones de tapioca. Garanta a sua pré-reserva.">
+<meta property="og:description" content="Encontro fechado com a Marcela pelo Google Meet e pré-reserva da nova máquina de cones de tapioca. Garanta a sua pré-reserva.">
 <meta property="og:image" content="https://prevenda.konioca.com/assets/img/previa-lp.jpg?v=2">
 <meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
 <meta property="og:locale" content="pt_BR">
@@ -13,7 +13,7 @@
 <link rel="icon" type="image/png" sizes="64x64" href="assets/img/favicon.png"><link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caladea:ital,wght@0,400;0,700;1,400&amp;family=Carlito:wght@400;700&amp;display=swap">
-<link rel="stylesheet" href="assets/css/site.css?v=0110e">
+<link rel="stylesheet" href="assets/css/site.css?v=0210c">
 <style>
 a{color:#1f4a36}a:hover{color:#19422d}
 input::placeholder{color:#7a7f66}
@@ -31,7 +31,7 @@ input::placeholder{color:#7a7f66}
 <div style="font-size: 12px; font-weight: 700; letter-spacing: 0.25em; color: #c9a227">PRÉ-LANÇAMENTO · NOVA GERAÇÃO</div>
 <h1 style="margin: 0; font-family: Caladea, Cambria, Georgia, serif; font-weight: 400; font-size: 40px; line-height: 1.08; color: #f7f0e2">Você pediu uma Konioca mais acessível. A gente refez a máquina.</h1>
 <div style="width: 120px; height: 1px; background: #c9a227; margin-left: 6px"></div>
-<p style="margin: 0; font-family: Caladea, Cambria, Georgia, serif; font-style: italic; font-size: 20px; line-height: 1.35; color: #c4a77d">Nova geração da máquina de cones de tapioca, mais compacta e simples de operar. Na live de pré-lançamento, a Marcela mostra tudo.</p>
+<p style="margin: 0; font-family: Caladea, Cambria, Georgia, serif; font-style: italic; font-size: 20px; line-height: 1.35; color: #c4a77d">Nova geração da máquina de cones de tapioca, mais compacta e simples de operar. Em encontros fechados pelo Google Meet, a Marcela mostra tudo.</p>
 </div>
 <div style="position: relative; width: 100%; aspect-ratio: 342 / 428; box-sizing: border-box; padding: 28px 24px; background: #0f2c1e; border: 1px solid #c9a227; border-radius: 10px; display: flex; flex-direction: column; justify-content: center; gap: 18px; overflow: hidden" aria-label="Animação: preço da geração atual riscado e preço da nova geração">
 <div style="font-size: 11px; font-weight: 700; letter-spacing: 0.22em; color: #c9a227">A EVOLUÇÃO DA MÁQUINA KONIOCA</div>
@@ -78,8 +78,8 @@ input::placeholder{color:#7a7f66}
 <!-- FORM -->
 <form id="cadastro" novalidate style="display: flex; flex-direction: column; gap: 16px; padding: 24px 20px; background: #fdfdfd; border: 1px solid #c9a227; border-radius: 7px">
 <div style="display: flex; flex-direction: column; gap: 6px">
-<div style="font-family: Caladea, Cambria, Georgia, serif; font-size: 26px; line-height: 1.15; color: #1f4a36">Garanta sua vaga na live</div>
-<div style="font-size: 15px; line-height: 1.45; color: #5a6b3a" data-tpl="Aberta e online, no Instagram da Konioca. {live_dia}, {live_ddmm}, às {live_hora}."></div>
+<div style="font-family: Caladea, Cambria, Georgia, serif; font-size: 26px; line-height: 1.15; color: #1f4a36">Garanta sua vaga nos encontros</div>
+<div style="font-size: 15px; line-height: 1.45; color: #5a6b3a" data-tpl="Encontros fechados pelo Google Meet: {encontro_duracao} minutos, no máximo {encontro_capacidade} pessoas por grupo. Você escolhe o horário depois do cadastro."></div>
 </div>
 <div style="display: flex; flex-direction: column; gap: 6px">
 <label for="f-nome" style="font-size: 14px; font-weight: 700; color: #1f4a36">Seu nome</label>
@@ -91,7 +91,7 @@ input::placeholder{color:#7a7f66}
 </div>
 <div style="display: flex; flex-direction: column; gap: 6px">
 <label for="f-email" style="font-size: 14px; font-weight: 700; color: #1f4a36">E-mail</label>
-<input id="f-email" name="email" type="email" autocomplete="email" required maxlength="254" placeholder="para receber o link e a gravação" style="height: 50px; padding: 0 14px; font-size: 17px; font-family: Carlito, Calibri, sans-serif; color: #1f4a36; background: #f4ebdb; border: 1px solid #c4a77d; border-radius: 7px; box-sizing: border-box">
+<input id="f-email" name="email" type="email" autocomplete="email" required maxlength="254" placeholder="para receber o link do Meet" style="height: 50px; padding: 0 14px; font-size: 17px; font-family: Carlito, Calibri, sans-serif; color: #1f4a36; background: #f4ebdb; border: 1px solid #c4a77d; border-radius: 7px; box-sizing: border-box">
 <div id="f-email-sugestao" class="msg-sugestao oculto" aria-live="polite"></div>
 </div>
 <div style="display: flex; flex-direction: column; gap: 6px">
@@ -114,8 +114,8 @@ input::placeholder{color:#7a7f66}
 <div id="f-turnstile" class="oculto" style="min-height: 65px"></div>
 <div id="f-erro" class="form-erro oculto" role="alert"></div>
 <div id="f-planob" class="oculto"><a id="f-planob-link" href="#" rel="noopener" target="_blank" style="display: flex; align-items: center; justify-content: center; height: 52px; background: #1f4a36; color: #f7f0e2; font-size: 17px; font-weight: 700; text-decoration: none; border-radius: 7px">Garantir minha vaga pelo WhatsApp</a></div>
-<button type="submit" id="f-enviar" class="cta" style="display: flex; align-items: center; justify-content: center; height: 56px; background: #b04d0c; color: #f7f0e2; font-size: 19px; font-weight: 700; text-decoration: none; border-radius: 7px">Quero minha vaga na live</button>
-<div style="font-size: 13px; line-height: 1.45; color: #5a6b3a; text-align: center">Depois do cadastro, o link da live chega no seu WhatsApp. Sem spam.</div>
+<button type="submit" id="f-enviar" class="cta" style="display: flex; align-items: center; justify-content: center; height: 56px; background: #b04d0c; color: #f7f0e2; font-size: 19px; font-weight: 700; text-decoration: none; border-radius: 7px">Quero minha vaga no encontro</button>
+<div style="font-size: 13px; line-height: 1.45; color: #5a6b3a; text-align: center">Depois do cadastro, você escolhe o horário e recebe o link do Meet por e-mail. Sem spam.</div>
 </form>
 </section>
 
@@ -184,7 +184,7 @@ input::placeholder{color:#7a7f66}
 <circle cx="110" cy="132" r="4" stroke="#c9a227" stroke-width="1.5"></circle>
 <path d="M52 140 H96" stroke="#1f4a36" stroke-width="1.5"></path>
 </svg>
-<div style="position: absolute; top: 34px; left: 150px; width: 168px; padding: 10px 12px; background: #fdfdfd; border: 2px solid #1f4a36; border-radius: 16px; font-family: Caladea, Cambria, Georgia, serif; font-style: italic; font-size: 16px; line-height: 1.3; color: #1f4a36">“Refizemos a máquina. Vem pra live que eu te mostro.”</div>
+<div style="position: absolute; top: 34px; left: 150px; width: 168px; padding: 10px 12px; background: #fdfdfd; border: 2px solid #1f4a36; border-radius: 16px; font-family: Caladea, Cambria, Georgia, serif; font-style: italic; font-size: 16px; line-height: 1.3; color: #1f4a36">A Marcela refez a máquina e mostra a nova geração no encontro.</div>
 <div style="position: absolute; top: 96px; left: 142px; width: 14px; height: 14px; background: #fdfdfd; border-left: 2px solid #1f4a36; border-bottom: 2px solid #1f4a36; transform: rotate(45deg)"></div>
 <figcaption style="padding: 12px 14px; border-top: 2px solid #1f4a36; background: #f4ebdb; font-size: 16px; line-height: 1.4; color: #1f4a36"><strong>Você vê a Marcela no Reels.</strong> Um clique e você está na página da pré-venda.</figcaption>
 </figure>
@@ -205,7 +205,7 @@ input::placeholder{color:#7a7f66}
 <rect x="222" y="84" width="74" height="22" rx="8" fill="#dce4d6" stroke="#1f4a36" stroke-width="1.5"></rect>
 <rect x="204" y="116" width="58" height="22" rx="8" stroke="#1f4a36" stroke-width="1.5"></rect>
 </svg>
-<figcaption style="padding: 12px 14px; border-top: 2px solid #1f4a36; background: #f4ebdb; font-size: 16px; line-height: 1.4; color: #1f4a36"><strong>Você deixa seu nome na lista.</strong> No WhatsApp chegam o link, o lembrete e a gravação.</figcaption>
+<figcaption style="padding: 12px 14px; border-top: 2px solid #1f4a36; background: #f4ebdb; font-size: 16px; line-height: 1.4; color: #1f4a36"><strong>Você deixa seu nome na lista.</strong> Escolhe o horário e recebe o link do Meet por e-mail, com lembrete na véspera e uma hora antes.</figcaption>
 </figure>
 
 <!-- Q3 -->
@@ -215,7 +215,7 @@ input::placeholder{color:#7a7f66}
 <rect x="30" y="22" width="178" height="112" rx="6" stroke="#1f4a36" stroke-width="2"></rect>
 <path d="M14 150 H224 L212 134 H26 Z" stroke="#1f4a36" stroke-width="2" stroke-linejoin="round"></path>
 <rect x="40" y="32" width="52" height="16" rx="3" fill="#b04d0c"></rect>
-<text x="66" y="44" text-anchor="middle" font-family="Carlito, Calibri, sans-serif" font-size="10" font-weight="700" fill="#f7f0e2" letter-spacing="1">AO VIVO</text>
+<text x="66" y="44" text-anchor="middle" font-family="Carlito, Calibri, sans-serif" font-size="10" font-weight="700" fill="#f7f0e2" letter-spacing="1">MEET</text>
 <circle cx="102" cy="76" r="15" stroke="#1f4a36" stroke-width="1.5"></circle>
 <path d="M78 124 C80 100 124 100 126 124" stroke="#1f4a36" stroke-width="1.5"></path>
 <rect x="146" y="44" width="52" height="10" rx="4" stroke="#c9a227" stroke-width="1.5"></rect>
@@ -224,7 +224,7 @@ input::placeholder{color:#7a7f66}
 </svg>
 <div style="position: absolute; top: 26px; left: 196px; width: 124px; padding: 10px 12px; background: #fdfdfd; border: 2px solid #1f4a36; border-radius: 16px; font-family: Caladea, Cambria, Georgia, serif; font-style: italic; font-size: 15px; line-height: 1.3; color: #1f4a36">“E o saldo, dá pra parcelar?”</div>
 <div style="position: absolute; top: 72px; left: 190px; width: 14px; height: 14px; background: #fdfdfd; border-left: 2px solid #1f4a36; border-bottom: 2px solid #1f4a36; transform: rotate(45deg)"></div>
-<figcaption style="padding: 12px 14px; border-top: 2px solid #1f4a36; background: #f4ebdb; font-size: 16px; line-height: 1.4; color: #1f4a36"><strong>Você assiste à live.</strong> Em 40 minutos: a máquina, a conta da operação e as condições. Pergunta ao vivo.</figcaption>
+<figcaption style="padding: 12px 14px; border-top: 2px solid #1f4a36; background: #f4ebdb; font-size: 16px; line-height: 1.4; color: #1f4a36"><strong>Você entra no encontro.</strong> Em 30 minutos, pelo Google Meet: a máquina, a conta da operação e as condições. Pergunta direto para a Marcela.</figcaption>
 </figure>
 
 <!-- Q4 -->
@@ -319,16 +319,16 @@ input::placeholder{color:#7a7f66}
 <section style="display: flex; flex-direction: column; gap: 16px; padding: 48px 24px 56px 24px; background: #f4ebdb; border-top: 1px solid #c4a77d">
 <div style="font-size: 12px; font-weight: 700; letter-spacing: 0.25em; color: #1f4a36">PERGUNTAS QUE CHEGAM TODO DIA</div>
 <div style="display: flex; flex-direction: column">
-<details style="border-bottom: 1px solid #c4a77d"><summary style="min-height: 56px; padding: 16px 0; list-style: none; cursor: pointer; font-family: Caladea, Cambria, Georgia, serif; font-size: 19px; color: #1f4a36">Preciso ter um negócio para participar?</summary><div style="padding: 0 0 16px 0; font-size: 16px; line-height: 1.55; color: #1f4a36">Não. Muita gente começa num ponto pequeno ou dentro do negócio de um parceiro. Na live a Marcela mostra os formatos que funcionam.</div></details>
-<details style="border-bottom: 1px solid #c4a77d" open><summary style="min-height: 56px; padding: 16px 0; list-style: none; cursor: pointer; font-family: Caladea, Cambria, Georgia, serif; font-size: 19px; color: #1f4a36">Quanto preciso investir no total?</summary><div style="padding: 0 0 16px 0; font-size: 16px; line-height: 1.55; color: #1f4a36" data-tpl="{preco_prevenda} pela máquina na pré-venda. Você garante o acesso à pré-reserva com {reserva}, que já contam no valor da máquina. Na assinatura do contrato, paga mais {entrada} ({pago_assinatura} pagos até ali). O restante, {parcelado}, é quitado no PIX ou financiado antes da entrega. Ou, depois da pré-reserva, financia todo o valor restante, {financiado}, pelo {parceiro}. Frete por conta do cliente. Insumos e custo de operação são abertos na live."></div></details>
-<details style="border-bottom: 1px solid #c4a77d"><summary style="min-height: 56px; padding: 16px 0; list-style: none; cursor: pointer; font-family: Caladea, Cambria, Georgia, serif; font-size: 19px; color: #1f4a36">Dá para financiar?</summary><div style="padding: 0 0 16px 0; font-size: 16px; line-height: 1.55; color: #1f4a36" data-tpl="Sim. A Konioca tem parceria com o {parceiro}. Depois da pré-reserva de {reserva}, todo o valor restante pode ser financiado. Sujeito a análise de crédito. A Marcela detalha as condições na live."></div></details>
+<details style="border-bottom: 1px solid #c4a77d"><summary style="min-height: 56px; padding: 16px 0; list-style: none; cursor: pointer; font-family: Caladea, Cambria, Georgia, serif; font-size: 19px; color: #1f4a36">Preciso ter um negócio para participar?</summary><div style="padding: 0 0 16px 0; font-size: 16px; line-height: 1.55; color: #1f4a36">Não. Muita gente começa num ponto pequeno ou dentro do negócio de um parceiro. No encontro a Marcela mostra os formatos que funcionam.</div></details>
+<details style="border-bottom: 1px solid #c4a77d" open><summary style="min-height: 56px; padding: 16px 0; list-style: none; cursor: pointer; font-family: Caladea, Cambria, Georgia, serif; font-size: 19px; color: #1f4a36">Quanto preciso investir no total?</summary><div style="padding: 0 0 16px 0; font-size: 16px; line-height: 1.55; color: #1f4a36" data-tpl="{preco_prevenda} pela máquina na pré-venda. Você garante o acesso à pré-reserva com {reserva}, que já contam no valor da máquina. Na assinatura do contrato, paga mais {entrada} ({pago_assinatura} pagos até ali). O restante, {parcelado}, é quitado no PIX ou financiado antes da entrega. Ou, depois da pré-reserva, financia todo o valor restante, {financiado}, pelo {parceiro}. Frete por conta do cliente. Insumos e custo de operação são abertos no encontro."></div></details>
+<details style="border-bottom: 1px solid #c4a77d"><summary style="min-height: 56px; padding: 16px 0; list-style: none; cursor: pointer; font-family: Caladea, Cambria, Georgia, serif; font-size: 19px; color: #1f4a36">Dá para financiar?</summary><div style="padding: 0 0 16px 0; font-size: 16px; line-height: 1.55; color: #1f4a36" data-tpl="Sim. A Konioca tem parceria com o {parceiro}. Depois da pré-reserva de {reserva}, todo o valor restante pode ser financiado. Sujeito a análise de crédito. A Marcela detalha as condições no encontro."></div></details>
 <details style="border-bottom: 1px solid #c4a77d"><summary style="min-height: 56px; padding: 16px 0; list-style: none; cursor: pointer; font-family: Caladea, Cambria, Georgia, serif; font-size: 19px; color: #1f4a36">Até quando vai a pré-venda?</summary><div style="padding: 0 0 16px 0; font-size: 16px; line-height: 1.55; color: #1f4a36" data-tpl="Até {fim_ddmm}, às {fim_hora}, ou antes, se as {lote1} máquinas esgotarem. Depois disso a nova geração passa ao preço de lançamento."></div></details>
 <details style="border-bottom: 1px solid #c4a77d"><summary style="min-height: 56px; padding: 16px 0; list-style: none; cursor: pointer; font-family: Caladea, Cambria, Georgia, serif; font-size: 19px; color: #1f4a36">Entregam na minha cidade? E o frete?</summary><div style="padding: 0 0 16px 0; font-size: 16px; line-height: 1.55; color: #1f4a36" data-tpl="Entregamos. O frete não está incluso: depende da região e é pago direto à transportadora."></div></details>
 <details style="border-bottom: 1px solid #c4a77d"><summary style="min-height: 56px; padding: 16px 0; list-style: none; cursor: pointer; font-family: Caladea, Cambria, Georgia, serif; font-size: 19px; color: #1f4a36">Quando recebo a máquina?</summary><div style="padding: 0 0 16px 0; font-size: 16px; line-height: 1.55; color: #1f4a36" data-tpl="Em até {entrega_dias} dias depois da assinatura do contrato. Você acompanha a produção pelo grupo."></div></details>
 <details style="border-bottom: 1px solid #c4a77d"><summary style="min-height: 56px; padding: 16px 0; list-style: none; cursor: pointer; font-family: Caladea, Cambria, Georgia, serif; font-size: 19px; color: #1f4a36">É uma franquia?</summary><div style="padding: 0 0 16px 0; font-size: 16px; line-height: 1.55; color: #1f4a36">Sim. A nova geração faz parte da Franquia Inteligente Konioca: você compra a máquina e opera com a marca e o método da Konioca. Antes de qualquer pagamento, você recebe a Circular de Oferta de Franquia.</div></details>
 
 </div>
-<a href="#cadastro" style="display: flex; align-items: center; justify-content: center; height: 56px; margin-top: 8px; background: #b04d0c; color: #f7f0e2; font-size: 19px; font-weight: 700; text-decoration: none; border-radius: 7px">Tirar minhas dúvidas ao vivo</a>
+<a href="#cadastro" style="display: flex; align-items: center; justify-content: center; height: 56px; margin-top: 8px; background: #b04d0c; color: #f7f0e2; font-size: 19px; font-weight: 700; text-decoration: none; border-radius: 7px">Tirar minhas dúvidas com a Marcela</a>
 </section>
 
 <!-- TENSÃO / HISTÓRIA -->
@@ -350,8 +350,8 @@ input::placeholder{color:#7a7f66}
 <div style="height: 1px; background: #2f5a44; margin-top: 20px"></div>
 <h2 style="margin: 0; font-family: Caladea, Cambria, Georgia, serif; font-weight: 400; font-size: 34px; line-height: 1.1; color: #f7f0e2" data-tpl="A pré-venda tem {lote1} máquinas."></h2>
 <div style="width: 120px; height: 1px; background: #c9a227; margin-left: 6px"></div>
-<p style="margin: 0; font-family: Caladea, Cambria, Georgia, serif; font-style: italic; font-size: 20px; line-height: 1.4; color: #c4a77d" data-tpl="A live é na {live_dia_min}, {live_ddmm}, às {live_hora}. A pré-venda fecha em {fim_ddmm}."></p>
-<a href="#cadastro" style="display: flex; align-items: center; justify-content: center; height: 56px; background: #b04d0c; color: #f7f0e2; font-size: 19px; font-weight: 700; text-decoration: none; border-radius: 7px">Quero ver a nova Konioca ao vivo</a>
+<p style="margin: 0; font-family: Caladea, Cambria, Georgia, serif; font-style: italic; font-size: 20px; line-height: 1.4; color: #c4a77d" data-tpl="Encontros fechados com a Marcela, pelo Google Meet, em horários que você escolhe. A pré-venda fecha em {fim_ddmm}."></p>
+<a href="#cadastro" style="display: flex; align-items: center; justify-content: center; height: 56px; background: #b04d0c; color: #f7f0e2; font-size: 19px; font-weight: 700; text-decoration: none; border-radius: 7px">Quero ver a nova Konioca no encontro</a>
 <div style="display: flex; flex-direction: column; gap: 6px; padding: 16px; border: 1px solid #c9a227; border-radius: 7px">
 <div style="font-size: 12px; font-weight: 700; letter-spacing: 0.2em; color: #c9a227" data-tpl="FINANCIAMENTO EM PARCERIA COM O {parceiro_maiusc}"></div>
 <div style="font-size: 16px; line-height: 1.5; color: #f7f0e2" data-tpl="Depois da pré-reserva de {reserva}, todo o valor restante pode ser financiado pelo {parceiro}."></div>
@@ -370,9 +370,9 @@ input::placeholder{color:#7a7f66}
 </section>
 
 </div>
-<script src="assets/js/env.js?v=0110e"></script>
-<script src="assets/js/validacao.js?v=0110e"></script>
-<script src="assets/js/comum.js?v=0110e"></script>
-<script src="assets/js/pixels.js?v=0110e"></script>
-<script src="assets/js/lp.js?v=0110e"></script>
+<script src="assets/js/env.js?v=0210c"></script>
+<script src="assets/js/validacao.js?v=0210c"></script>
+<script src="assets/js/comum.js?v=0210c"></script>
+<script src="assets/js/pixels.js?v=0210c"></script>
+<script src="assets/js/lp.js?v=0210c"></script>
 </body></html>

@@ -20,7 +20,15 @@ update config set valor = '"email"' where chave = 'canal_aquecimento';
 ```
 Convites de cadastros novos passam a sair por e-mail. Quando a WABA liberar, voltar para `"whatsapp"`. Quem já recebeu por e-mail não recebe outro convite.
 
-## Comunidade e turmas
+## Formato de 2/10: encontros fechados no Google Meet
+
+A live de 15/10 às 19h foi substituída por encontros fechados pelo Google Meet (30 minutos, até 35 pessoas, durante o
+dia, só para quem está na lista). Turmas, escolha de horário, confirmação e lembretes estão em docs/14 (aba Turmas),
+docs/15 (textos) e docs/19 (roteiro). O P2 da base antiga foi suspenso em 2/10 e só sai com o "sim" do Lucas nos
+testes reescritos (A e B). As seções abaixo sobre Comunidade, perguntas para a live, lembrete e gravação ficam como
+histórico: `config.turmas` e o cron `live-disparos` não são mais usados (migração 800).
+
+## Comunidade e turmas (histórico, não usado desde 2/10)
 
 A Comunidade e os subgrupos são criados por uma pessoa no aplicativo (a API oficial não cria comunidades). Depois, registrar os links:
 ```sql
@@ -84,5 +92,12 @@ SUPABASE_URL=https://ytsildpxummevfkjcjhs.supabase.co SUPABASE_SERVICE_ROLE_KEY=
 Linhas já promovidas não são sobrescritas.
 
 ## P2 em teste A/B (decisão do Lucas, 1/10 à noite)
+
+SIM do Lucas (1/10, noite) para 2/10 com o texto novo dos encontros no Meet. Revisão posterior do Lucas: a versão B só
+entra se ele confirmar até 8h30 que a Marcela aprovou; sem essa confirmação, sai só a A, metade às 9h e metade às 15h. Para isso a `fila-processar` v19 foi publicada com o texto aprovado da base antiga
+e a chave `encontros_ativos` desligada: o convite de cadastro novo continua o legado até as turmas serem publicadas.
+Ritmo da fila: 20 e-mails por minuto (`wa_envios_por_minuto` vale para a leitura do lote), ou seja, 350 saem em uns 18
+minutos. Lembretes armados na sessão: 8h48 (promover 350), 9h30 (conferir), 15h (relatório e resto com a vencedora),
+18h30 (fechamento do dia).
 
 Substitui o disparo único de 2/10. Versão A: texto aprovado (abertura do P2, link `utm_content=p2_a`). Versão B: assunto e abertura pelo preço, na voz da Marcela (`p2_b`), só sai com o SIM do Lucas; sem o SIM até 8h, o dia vira 350 com a A às 9h e o resto com a A às 15h. Com o SIM: 9h, 350 pessoas sorteadas, 175 A e 175 B (`base_antiga_promover_ab(350, array['P2'], '2026-10-02T09:00-03:00')`); 15h, as outras 353 recebem a versão com mais cadastros pela página (empate: mais cliques; zero a zero: espera segunda), com `base_antiga_promover_ab(400, array['P2'], '2026-10-02T15:00-03:00', array['a'])` ou `array['b']`. A variante fica em `leads.base_antiga_variante` e o painel e a aba Desempenho separam pelo link. Migração 770.

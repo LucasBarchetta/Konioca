@@ -125,6 +125,41 @@ Deno.serve(async (req) => {
     return json({ ok: true, reenviado }, 200, cors);
   }
 
+  // Turmas dos encontros no Google Meet (formato de 2/10): lista, criar/editar, pessoas de uma turma, presença.
+  if (acao === "encontros") {
+    const { data, error } = await sb.from("v_encontros").select("*").order("inicio");
+    if (error) return json({ erro: error.message }, 500, cors);
+    return json({ ok: true, encontros: data ?? [] }, 200, cors);
+  }
+  if (acao === "encontro_salvar") {
+    const inicio = b.inicio ? new Date(String(b.inicio)) : null;
+    if (inicio && Number.isNaN(inicio.getTime())) return json({ erro: "data e hora inválidas" }, 400, cors);
+    const link = b.meet_link === undefined ? null : String(b.meet_link ?? "").trim();
+    if (link && !/^https:\/\/meet\.google\.com\/[a-z0-9-]+/i.test(link)) return json({ erro: "o link precisa ser https://meet.google.com/..." }, 400, cors);
+    const { data, error } = await sb.rpc("encontro_salvar", {
+      p_id: b.id ? Number(b.id) : null, p_inicio: inicio ? inicio.toISOString() : null,
+      p_duracao: b.duracao_min != null ? Number(b.duracao_min) : null, p_capacidade: b.capacidade != null ? Number(b.capacidade) : null,
+      p_meet_link: link, p_ativo: typeof b.ativo === "boolean" ? b.ativo : null, p_por: por,
+    });
+    if (error) return json({ erro: error.message }, 400, cors);
+    const r = Array.isArray(data) ? data[0] : data;
+    if (!r?.ok) return json({ erro: r?.motivo ?? "não salvou" }, 400, cors);
+    return json({ ok: true, id: r.id }, 200, cors);
+  }
+  if (acao === "encontro_leads") {
+    const id = Number(b.encontro_id);
+    const { data, error } = await sb.from("v_painel_leads").select("id, nome, whatsapp, email, cidade, tem_negocio, temperatura, circular_confirmada_em, pode_cobrar, reservou_em, encontro_presenca, encontro_escolhido_em").eq("encontro_id", id).is("optout_em", null).order("nome");
+    if (error) return json({ erro: error.message }, 500, cors);
+    return json({ ok: true, leads: data ?? [] }, 200, cors);
+  }
+  if (acao === "presenca") {
+    const presente = b.presente === true ? true : b.presente === false ? false : null;
+    if (presente === null) return json({ erro: "presente: true ou false" }, 400, cors);
+    const { error } = await sb.rpc("encontro_presenca", { p_lead: String(b.lead_id ?? ""), p_presente: presente, p_por: por });
+    if (error) return json({ erro: error.message }, 400, cors);
+    return json({ ok: true }, 200, cors);
+  }
+
   if (acao === "aprovacoes") {
     const { data } = await sb.from("aprovacoes").select("*").order("criado_em", { ascending: false }).limit(100);
     return json({ ok: true, itens: data ?? [] }, 200, cors);

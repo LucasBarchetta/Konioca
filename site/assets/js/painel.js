@@ -7,7 +7,7 @@
   try { if (token) sessionStorage.setItem("k_painel_t", token); else token = sessionStorage.getItem("k_painel_t") || ""; } catch (e) { /* sem storage */ }
   if (q.get("t")) { try { history.replaceState(null, "", location.pathname); } catch (e) { /* ok */ } }
 
-  var estado = { quem: null, leads: [], filtro: "todos", canal: "todos", temp: "todas", busca: "", aba: "leads", aberto: {}, canalAberto: {}, aprovacoes: [], novos: {}, atualizadoEm: 0, digitando: false, carregando: false, adiada: false };
+  var estado = { quem: null, leads: [], filtro: "todos", canal: "todos", temp: "todas", busca: "", aba: "leads", aberto: {}, canalAberto: {}, aprovacoes: [], turmas: [], turmasFiltro: "futuras", turmaAberta: {}, turmaPessoas: {}, novos: {}, atualizadoEm: 0, digitando: false, carregando: false, adiada: false };
   // Etiqueta de canal (primeiro toque, mesma gaveta da aba Desempenho: v_painel_leads.canal). Espelho de painel_regras.ts.
   var CANAIS = [["stories", "Stories"], ["bio_instagram", "Bio do Instagram"], ["bio_tiktok", "Bio do TikTok"], ["whatsapp", "WhatsApp"], ["base_p1", "E-mail base antiga P1"], ["base_p2", "E-mail base antiga P2"], ["base_p2_a", "E-mail base antiga P2 (A)"], ["base_p2_b", "E-mail base antiga P2 (B)"], ["base_p34", "E-mail base antiga P3-P4"], ["base_email", "E-mail base antiga"], ["convite", "Convite"], ["direto", "Direto"], ["outros", "Outros"]];
   function rotuloCanal(c) { for (var i = 0; i < CANAIS.length; i++) if (CANAIS[i][0] === (c || "outros")) return CANAIS[i][1]; return "Outros"; }
@@ -74,6 +74,8 @@
   function cartao(l) {
     var c = cobranca(l), tags = [];
     tags.push(tag(c.texto, c.tom));
+    if (l.encontro_inicio) tags.push(tag("Turma " + quandoTurma(l.encontro_inicio) + (l.encontro_presenca === true ? " · presente" : l.encontro_presenca === false ? " · faltou" : ""), l.encontro_presenca === true ? "verde" : l.encontro_presenca === false ? "vermelho" : "ouro"));
+    else if (!l.base_antiga && !l.optout_em) tags.push(tag("Sem horário escolhido", "cinza"));
     if (l.respondeu_em) tags.push(tag("Respondeu " + ddmm(l.respondeu_em), "verde"));
     if (l.reservou_em) tags.push(tag("Reservou " + l.reservas_qtd + (l.reservas_qtd === 1 ? " máquina" : " máquinas") + " em " + ddmm(l.reservou_em), "ouro"));
     if (l.optout_em) tags.push(tag("Saiu" + (l.optout_motivo ? " (" + l.optout_motivo + ")" : ""), "vermelho"));
@@ -128,6 +130,57 @@
       return '<button type="button" data-temp="' + t[0] + '" class="t-' + t[0] + (estado.temp === t[0] ? " ativa" : "") + '">' + t[1] + ' <span class="p-n">' + n[t[0]] + "</span></button>";
     }).join("");
   }
+  // Turmas dos encontros no Google Meet (formato de 2/10).
+  var DIAS = ["dom", "seg", "ter", "qua", "qui", "sex", "sáb"];
+  function quandoTurma(iso) {
+    var d = new Date(iso); if (isNaN(d.getTime())) return "";
+    var p = {}; new Intl.DateTimeFormat("en-US", { timeZone: TZ, weekday: "short", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false }).formatToParts(d).forEach(function (x) { p[x.type] = x.value; });
+    var wd = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].indexOf(p.weekday), hh = p.hour === "24" ? "00" : p.hour;
+    return DIAS[wd] + " " + p.day + "/" + p.month + " " + Number(hh) + "h" + (p.minute === "00" ? "" : p.minute);
+  }
+  function isoLocalSP(iso) { // valor para <input type="datetime-local"> no fuso de SP
+    var d = new Date(iso); var p = {}; new Intl.DateTimeFormat("en-CA", { timeZone: TZ, year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false }).formatToParts(d).forEach(function (x) { p[x.type] = x.value; });
+    return p.year + "-" + p.month + "-" + p.day + "T" + (p.hour === "24" ? "00" : p.hour) + ":" + p.minute;
+  }
+  function spParaIso(local) { // "2026-10-15T10:00" em SP -> ISO (UTC). Brasília sem horário de verão: -03:00.
+    return local ? new Date(local + ":00-03:00").toISOString() : null;
+  }
+  function formTurma(t) {
+    var v = t || {};
+    return '<form class="p-form" data-form="turma" data-id="' + (v.id || "") + '"><label>Data e hora <input name="inicio" type="datetime-local" required value="' + (v.inicio ? isoLocalSP(v.inicio) : "") + '"></label><label>Minutos <input name="duracao_min" type="number" min="10" max="120" value="' + (v.duracao_min || 30) + '" style="width:70px"></label><label>Vagas <input name="capacidade" type="number" min="1" max="500" value="' + (v.capacidade || 35) + '" style="width:70px"></label><input name="meet_link" type="url" placeholder="https://meet.google.com/xxx-yyyy-zzz" value="' + esc(v.meet_link || "") + '" style="flex:1;min-width:240px"><label><input type="checkbox" name="ativo" ' + (v.ativo === false ? "" : "checked") + '> ativa</label><button type="submit" class="primario">' + (v.id ? "Salvar" : "Criar turma") + '</button><button type="button" data-acao="turma-fechar" data-id="' + (v.id || "nova") + '">Cancelar</button><div class="p-ajuda">Horário de Brasília. Mudar a hora reagenda os lembretes de quem já escolheu. Sem link do Meet, a confirmação por e-mail fica esperando. Turma com inscritos não pode ser desativada.</div></form>';
+  }
+  function cartaoTurma(t) {
+    var cheia = t.vagas <= 0, aberta = estado.turmaAberta[t.id];
+    var tags = [tag(t.inscritos + (t.inscritos === 1 ? " inscrito" : " inscritos") + " · " + t.vagas + (t.vagas === 1 ? " vaga" : " vagas"), cheia ? "vermelho" : "verde")];
+    if (t.presentes) tags.push(tag(t.presentes + (t.presentes === 1 ? " presente" : " presentes"), "verde"));
+    if (t.aviso_inscritos && t.inscritos > t.aviso_inscritos && !cheia) tags.push(tag("Acima de " + t.aviso_inscritos + ": abrir a próxima", "ouro"));
+    tags.push(tag(t.meet_link ? "Link do Meet ok" : "Sem link do Meet", t.meet_link ? "" : "vermelho"));
+    if (!t.ativo) tags.push(tag("Desativada", "cinza"));
+    var acoes = '<button type="button" data-acao="turma-pessoas" data-id="' + t.id + '">' + (aberta === "pessoas" ? "Fechar lista" : "Lista (" + t.inscritos + ")") + '</button><button type="button" class="discreto" data-acao="turma-editar" data-id="' + t.id + '">Editar</button>' + (t.meet_link ? '<a class="p-tag" href="' + esc(t.meet_link) + '" target="_blank" rel="noopener" style="align-self:center">Abrir o Meet</a>' : "");
+    var extra = aberta === "editar" ? formTurma(t) : aberta === "pessoas" ? '<div class="p-hist" id="turma-pessoas-' + t.id + '">carregando…</div>' : "";
+    return '<article class="p-card p-turma' + (cheia ? " cheia" : "") + (!t.ativo ? " inativa" : "") + '" data-turma="' + t.id + '"><h3>' + esc(quandoTurma(t.inicio)) + ' <span class="p-canal" style="cursor:default">' + t.duracao_min + " min</span></h3><div class=\"p-meta\">" + esc(dataHora(t.inicio)) + ' · capacidade ' + t.capacidade + '</div><div class="p-tags">' + tags.join("") + '</div><div class="p-acoes">' + acoes + "</div>" + extra + "</article>";
+  }
+  function renderTurmas() {
+    var agora = Date.now(), lista = estado.turmas.filter(function (t) {
+      var fim = new Date(t.inicio).getTime() + (t.duracao_min || 30) * 60000;
+      return estado.turmasFiltro === "todas" || (estado.turmasFiltro === "futuras" ? fim >= agora : fim < agora);
+    });
+    var insc = lista.reduce(function (n, t) { return n + t.inscritos; }, 0), vagas = lista.reduce(function (n, t) { return n + (t.ativo ? t.vagas : 0); }, 0);
+    el("p-turmas-resumo").textContent = lista.length + (lista.length === 1 ? " turma" : " turmas") + " · " + insc + " inscritos · " + vagas + " vagas";
+    el("p-turmas").innerHTML = (estado.turmaAberta.nova ? '<article class="p-card">' + formTurma(null) + "</article>" : "") + (lista.length ? lista.map(cartaoTurma).join("") : '<div class="p-vazio">Nenhuma turma aqui.</div>');
+    Object.keys(estado.turmaAberta).forEach(function (id) { if (estado.turmaAberta[id] === "pessoas") carregarPessoas(id); });
+  }
+  function carregarPessoas(id) {
+    api("encontro_leads", { encontro_id: Number(id) }).then(function (j) {
+      var h = el("turma-pessoas-" + id); if (!h) return;
+      if (!j.ok) { h.textContent = j.erro || "erro"; return; }
+      if (!j.leads.length) { h.textContent = "Ninguém escolheu esta turma ainda."; return; }
+      h.innerHTML = j.leads.map(function (l) {
+        return '<div class="p-pessoa"><span class="p-nome">' + esc(l.nome) + "</span><span>" + esc([fmtWhats(l.whatsapp), l.cidade].filter(Boolean).join(" · ")) + "</span>" + (l.pode_cobrar ? tag("Pode cobrar", "verde") : l.circular_confirmada_em ? tag("Circular ok, prazo correndo", "cinza") : tag("Circular não confirmada", "vermelho")) + (l.reservou_em ? tag("Reservou", "ouro") : "") +
+          '<button type="button" data-acao="presenca" data-id="' + l.id + '" data-turma="' + id + '" data-presente="true" class="' + (l.encontro_presenca === true ? "ativa" : "") + '">Presente</button><button type="button" data-acao="presenca" data-id="' + l.id + '" data-turma="' + id + '" data-presente="false" class="faltou ' + (l.encontro_presenca === false ? "ativa" : "") + '">Faltou</button></div>';
+      }).join("");
+    });
+  }
   function render() {
     var base = buscar(filtrar(estado.leads, estado.filtro), estado.busca);
     renderCanais(base);
@@ -179,8 +232,9 @@
     if (estado.carregando) { if (!auto) estado.pendente = true; return Promise.resolve(); }
     if (auto && ocupado()) { estado.adiada = true; mostrarAtualizado(); return Promise.resolve(); }
     estado.carregando = true; estado.adiada = false;
-    return Promise.all([api("quem"), api("leads"), api("aprovacoes")]).then(function (r) {
-      var quem = r[0], leads = r[1], ap = r[2];
+    return Promise.all([api("quem"), api("leads"), api("aprovacoes"), api("encontros")]).then(function (r) {
+      var quem = r[0], leads = r[1], ap = r[2], enc = r[3];
+      estado.turmas = (enc && enc.encontros) || [];
       if (!quem.ok) { if (quem._status === 401) restrito(); else if (!auto) erro(quem.erro || "Não foi possível abrir o painel."); return; }
       var antes = {}; estado.leads.forEach(function (l) { antes[l.id] = true; });
       var lista = leads.leads || [];
@@ -189,7 +243,7 @@
       el("p-nome").textContent = quem.nome; el("p-papel").textContent = quem.papel + " · " + (quem.escopo || "");
       el("p-placar-num").textContent = String(quem.placar.reservas_lote1 || 0); el("p-placar-lote").textContent = String(quem.placar.lote1_tamanho || 250);
       estado.atualizadoEm = Date.now(); estado.digitando = false;
-      liberar(); erro(""); render(); renderAprovacoes(); mostrarAtualizado();
+      liberar(); erro(""); render(); renderAprovacoes(); renderTurmas(); mostrarAtualizado();
       if (Object.keys(estado.novos).length) setTimeout(function () { estado.novos = {}; document.querySelectorAll(".p-card.p-novo").forEach(function (c) { c.classList.remove("p-novo"); }); }, 6500);
     }).catch(function () { if (!auto) erro("Sem conexão com o painel. Tente de novo."); else { estado.atualizadoEm = Date.now(); mostrarAtualizado("sem conexão, tentando de novo em " + Math.round(INTERVALO / 1000) + " s"); } })
       .then(function () { estado.carregando = false; if (estado.pendente) { estado.pendente = false; return recarregar(); } });
@@ -223,6 +277,14 @@
     else if (acao === "cancelar-form") { estado.aberto[id] = "cancelar"; render(); }
     else if (acao === "email-form") { estado.aberto[id] = "email"; render(); }
     else if (acao === "fechar") { delete estado.aberto[id]; estado.digitando = false; render(); }
+    else if (acao === "turma-nova") { estado.turmaAberta.nova = true; renderTurmas(); }
+    else if (acao === "turma-editar") { estado.turmaAberta[id] = "editar"; renderTurmas(); }
+    else if (acao === "turma-pessoas") { if (estado.turmaAberta[id] === "pessoas") delete estado.turmaAberta[id]; else estado.turmaAberta[id] = "pessoas"; renderTurmas(); }
+    else if (acao === "turma-fechar") { delete estado.turmaAberta[id]; estado.digitando = false; renderTurmas(); }
+    else if (acao === "presenca") {
+      b.disabled = true;
+      api("presenca", { lead_id: id, presente: b.getAttribute("data-presente") === "true" }).then(function (j) { if (!j.ok) erro(j.erro || "erro"); return recarregar(); });
+    }
     else if (acao === "canal") { if (estado.canalAberto[id]) delete estado.canalAberto[id]; else estado.canalAberto[id] = true; render(); }
     else if (acao === "historico") { if (estado.aberto[id] === "historico") delete estado.aberto[id]; else estado.aberto[id] = "historico"; render(); }
     else if (acao === "respondeu") {
@@ -245,13 +307,17 @@
     if (tipo === "reservar") p = api("reservar", { lead_id: id, quantidade: Number(f.quantidade.value), observacao: f.observacao.value });
     else if (tipo === "cancelar") p = api("reserva_cancelar", { lead_id: id, motivo: f.motivo.value });
     else if (tipo === "email") p = api("corrigir_email", { lead_id: id, email: f.email.value, reenviar_convite: !!f.reenviar.checked });
+    else if (tipo === "turma") {
+      p = api("encontro_salvar", { id: id ? Number(id) : null, inicio: spParaIso(f.inicio.value), duracao_min: Number(f.duracao_min.value), capacidade: Number(f.capacidade.value), meet_link: f.meet_link.value.trim(), ativo: !!f.ativo.checked });
+      p = p.then(function (j) { if (!j.ok) { erro(j.erro || "erro"); bs.forEach(function (x) { x.disabled = false; }); return { _tratado: true }; } delete estado.turmaAberta[id || "nova"]; estado.digitando = false; erro(""); return recarregar().then(function () { return { _tratado: true }; }); });
+    }
     else if (tipo === "decidir") {
       var decisao = botao ? botao.value : "aprovado";
       if (decisao === "recusado" && !f.comentario.value.trim()) { bs.forEach(function (x) { x.disabled = false; }); erro("Para recusar, escreva o motivo em uma linha."); return; }
       p = api("decidir", { id: Number(id), decisao: decisao, comentario: f.comentario.value, conteudo_final: decisao === "editado" ? { texto: f.conteudo_final.value } : null });
     }
     if (!p) return;
-    p.then(function (j) { if (!j.ok) { erro(j.erro || "erro"); bs.forEach(function (x) { x.disabled = false; }); return; } delete estado.aberto[id]; erro(""); return recarregar(); });
+    p.then(function (j) { if (j && j._tratado) return; if (!j.ok) { erro(j.erro || "erro"); bs.forEach(function (x) { x.disabled = false; }); return; } delete estado.aberto[id]; erro(""); return recarregar(); });
   });
   el("p-filtros").addEventListener("click", function (ev) {
     var b = ev.target.closest("button[data-filtro]"); if (!b) return;
@@ -267,11 +333,17 @@
     var b = ev.target.closest("button[data-canal]"); if (!b) return;
     estado.canal = b.getAttribute("data-canal"); render();
   });
+  el("p-turmas-filtros").addEventListener("click", function (ev) {
+    var b = ev.target.closest("button[data-tfiltro]"); if (!b) return;
+    estado.turmasFiltro = b.getAttribute("data-tfiltro");
+    el("p-turmas-filtros").querySelectorAll("button[data-tfiltro]").forEach(function (x) { x.classList.toggle("ativa", x === b); });
+    renderTurmas();
+  });
   el("p-abas").addEventListener("click", function (ev) {
     var b = ev.target.closest("button[data-aba]"); if (!b) return;
     estado.aba = b.getAttribute("data-aba");
     el("p-abas").querySelectorAll("button").forEach(function (x) { x.classList.toggle("ativa", x === b); });
-    el("aba-leads").classList.toggle("oculto", estado.aba !== "leads"); el("aba-aprovacoes").classList.toggle("oculto", estado.aba !== "aprovacoes");
+    el("aba-leads").classList.toggle("oculto", estado.aba !== "leads"); el("aba-aprovacoes").classList.toggle("oculto", estado.aba !== "aprovacoes"); el("aba-turmas").classList.toggle("oculto", estado.aba !== "turmas");
   });
   el("p-busca").addEventListener("input", function () { estado.busca = this.value; render(); });
 

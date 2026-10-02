@@ -50,6 +50,7 @@
       entrega_dias: String(num(cfg.entrega_prazo_dias)),
       live_dia: live.dia, live_dia_min: live.diaMin, live_ddmm: live.ddmm, live_hora: live.hora,
       live_plataforma: cfg.live_plataforma || "",
+      encontro_duracao: String(num(cfg.encontro_duracao_min) || 30), encontro_capacidade: String(num(cfg.encontro_capacidade) || 35),
       fim_ddmm: fim.ddmm, fim_hora: fim.hora,
       parceiro: parceiro, parceiro_maiusc: parceiro.toUpperCase(),
       empresa_razao: cfg.empresa_razao || "", empresa_cnpj: cfg.empresa_cnpj || "",

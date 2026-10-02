@@ -1,79 +1,82 @@
-# Modelos de WhatsApp e convite da live · textos para aprovação (1/10)
+# Convite, confirmação e lembretes do encontro · textos para aprovação (2/10)
 
-Regras aplicadas: todo modelo abre com "Oi, {{1}}," e termina com texto fixo (nada de variável no início ou no fim,
-para a Meta não recusar). A ordem das variáveis é a mesma que o código manda (`_shared/fila.ts`). Nada publicado:
-os modelos ainda precisam ser cadastrados e aprovados na Meta, e o e-mail só sai com `envios_ativos` ligado.
+Formato decidido em 2/10: no lugar da live no Instagram, a Marcela apresenta a nova geração em encontros fechados
+pelo Google Meet, de 30 minutos, com no máximo 35 pessoas por grupo, a partir das 18h30 (grade 18h30 e 19h30, dias
+úteis de 15/10 a 30/10). Só quem está na lista participa. Nos textos, a reserva aparece assim: "No fim do encontro, a
+Marcela explica como garantir uma das 250 máquinas da pré-venda." A regra dos 10 dias da Circular fica só no roteiro.
+Duração, capacidade e número de máquinas vêm da config e nunca ficam fixos no texto. Os modelos de WhatsApp estão em
+docs/06. Nada abaixo está publicado: o código do branch espera o "sim" do Lucas (migração 800 e deploy das functions).
 
-## Convite com o link da live (quem se cadastrou na página)
+## Convite por e-mail (quem se cadastrou na página)
 
-Vai só para quem se cadastrou na página (gatilho de cadastro novo e cadastro de quem veio da base antiga pela
-página). A base antiga importada não recebe este convite: o gatilho pula `base_antiga = true`, e a trilha dela
-(`base_antiga` / `base_antiga_email`) tem texto próprio, ainda a aprovar.
-
-WhatsApp, modelo `konioca_convite_live_ig` (categoria Marketing, pt_BR). Variáveis: {{1}} nome, {{2}} dia da semana,
-{{3}} dd/mm, {{4}} hora, {{5}} máquinas. Botão de URL fixa para o perfil do Instagram e botão de resposta "Sair".
-
-    Oi, {{1}}, seu nome está na lista da pré-venda da nova Konioca.
-    A Marcela apresenta a nova geração ao vivo no Instagram da Konioca: {{2}}, {{3}}, às {{4}}. A live é aberta, mas só quem está na lista pode reservar uma das {{5}} máquinas.
-    Siga o perfil e ative o lembrete. Uma hora antes a gente avisa por aqui. Você consegue estar lá?
-    [Botão de URL: Seguir o Instagram]   [Resposta rápida: Sair]
-
-E-mail do convite (texto consolidado de 1/10). Assunto: "{Nome}, seu acesso à pré-venda está garantido!" (primeiro
-nome). Remetente na caixa de entrada: "Time da Konioca" (config.email_from; o endereço não muda). Pré-visualização:
-"A pré-venda das 250 máquinas é só para quem está na lista." A data e a hora vêm da config.
+Gatilho: cadastro novo na página (um item por canal, docs/14). A base antiga importada não recebe este convite.
+Assunto mantido: "{Nome}, seu acesso à pré-venda está garantido!". Remetente: "Time da Konioca" (`email_from`).
+Pré-visualização: "A pré-venda das 250 máquinas é só para quem está na lista."
 
     Ana, você está na lista da nova Konioca.
-    No dia 15/10, às 19h, a Marcela apresenta a nova geração ao vivo no Instagram. A live é aberta, e muita gente vai assistir. Mas só quem está na lista pode reservar uma das 250 máquinas da pré-venda.
-    Você já está dentro. Até a live, é por aqui que você vê primeiro os bastidores da nova máquina e as novidades da Marcela.
-    [Botão: Seguir o Instagram da Konioca]
-    Uma hora antes, a gente avisa por aqui e no seu WhatsApp. Você consegue estar lá?
+    A Marcela vai apresentar a nova geração em encontros fechados pelo Google Meet: 30 minutos, no máximo 35 pessoas por grupo. Só quem está na lista participa e pode reservar uma das 250 máquinas da pré-venda.
+    Você já está dentro. Até o seu encontro, é por aqui que você vê primeiro os bastidores da nova máquina e as novidades da Marcela.
+    Escolha o seu horário. Depois, a gente confirma por e-mail com o link do Meet e avisa na véspera e uma hora antes.
+    [Botão: Escolher meu horário]  ->  https://prevenda.konioca.com/horario/?t={token}
 
     Time da Marcela
 
     Para não receber mais mensagens da pré-venda: {link de saída}
 
-Na versão em HTML o link do perfil é o botão "Seguir o Instagram da Konioca". Visual (1/10): faixa verde no topo
-com a logo centralizada (180 px), foto real da máquina atual, inteira, sem recorte, na largura toda (600 px, texto alternativo
-"Máquina Konioca", JPEG abaixo de 150 KB, do arquivo FOTO-HORIZONTAL-PREVIA do Drive), depois o texto. A mesma foto é
-a prévia do link (og:image, 1200x630, foto inteira centralizada sobre fundo desfocado). Sem emoji.
-As imagens ficam hospedadas em `site/assets/img/email/` (Cloudflare Pages), base em `config.email_imagens_url`.
+Visual igual ao aprovado em 1/10 (faixa verde com a logo, foto da máquina atual inteira, texto, botão laranja).
+Sem Instagram em lugar nenhum.
 
-## Reaquecimento de quem foi contatado à mão no WhatsApp
+## Página de horário (`/horario/?t={token}`)
 
-Quem o time já chamou à mão no WhatsApp (botão "contatado à mão" no painel, ou `lead_contato_manual`) não recebe o
-convite padrão por WhatsApp (item cancelado com motivo `contato_manual`). O e-mail de convite segue igual para todos.
-Quando o WhatsApp oficial ligar, essa pessoa recebe o modelo abaixo, uma vez. Se o modelo não estiver aprovado na Meta
-(`config.wa_tpl_reaquecimento_manual_aprovado = false`), o item fica parado na fila e nada sai sozinho.
+Lista os horários com vaga, agrupados por dia (turma cheia some). Depois da escolha: "Ana, seu horário está
+confirmado.", cartão com dia, hora, duração e link do Meet, botão "Salvar na minha agenda" (arquivo .ics) e link
+"Trocar de horário". Rodapé: "Horários no fuso de Brasília. Só quem está na lista participa. No fim do encontro, a Marcela
+explica como garantir uma das 250 máquinas da pré-venda." Sem token válido, a página
+pede para abrir pelo link do e-mail.
 
-WhatsApp, modelo `konioca_reaquecimento_manual` (categoria Marketing, pt_BR). Variável única: {{1}} primeiro nome.
+## Confirmação por e-mail (sai na hora da escolha, tipo `encontro_confirmacao`)
 
-    Oi, {{1}}, aqui é do time da Marcela, da Konioca. A gente ficou muito feliz com o seu interesse na nova máquina. Você foi uma das primeiras pessoas a entrar na lista. A Marcela vai mostrar a nova geração ao vivo no Instagram, com as condições da pré-venda das 250 unidades. Quer que a gente te avise uma hora antes?
+Assunto: "{Nome}, seu horário com a Marcela: quinta, 15/10, às 18h30". Anexo `encontro-konioca.ics` (título
+"Konioca · encontro com a Marcela (Google Meet)", 30 minutos, alarme uma hora antes, link do Meet no evento).
 
-## Lembrete de uma hora antes
+    Ana, seu encontro está confirmado: quinta, 15/10, às 18h30 (horário de Brasília), pelo Google Meet, 30 minutos.
+    Entre pelo link na hora marcada. O arquivo da agenda vai anexado, e a gente lembra na véspera e uma hora antes. No fim do encontro, a Marcela explica como garantir uma das 250 máquinas da pré-venda.
+    [Botão: Entrar no Meet]  ->  link da turma
+    Precisa trocar de horário? [Trocar de horário]
 
-WhatsApp, modelo `konioca_lembrete_live` (Utility). Variáveis: {{1}} nome, {{2}} hora, {{3}} perfil do Instagram.
+    Time da Marcela
 
-    Oi, {{1}}, a live da Konioca começa às {{2}}. É aberta, no Instagram da Konioca: {{3}}
-    Na hora, é só abrir o perfil da Konioca.
+Se a turma ainda não tiver link do Meet, o e-mail espera na fila (volta a cada 10 minutos) até o time preencher o link
+no painel. Trocar de horário cancela os lembretes antigos e manda uma confirmação nova.
 
-Variante com a pergunta selecionada, modelo `konioca_lembrete_live_pergunta`. Variáveis: {{1}} nome, {{2}} hora,
-{{3}} pergunta, {{4}} perfil.
+## Lembrete na véspera (18h, tipo `encontro_lembrete_vespera`)
 
-    Oi, {{1}}, a live da Konioca começa às {{2}}. A Marcela separou a sua pergunta: {{3}}
-    É aberta, no Instagram da Konioca: {{4}}
-    Na hora, é só abrir o perfil da Konioca.
+Assunto: "{Nome}, amanhã às 18h30: seu encontro com a Marcela".
 
-## Gravação (dia seguinte), para aprovar depois
+    Ana, amanhã, quinta, 15/10, às 18h30, a Marcela apresenta a nova geração para a sua turma, pelo Google Meet, 30 minutos.
+    O link é o mesmo da confirmação. No fim do encontro, a Marcela explica como garantir uma das 250 máquinas da pré-venda.
+    [Botão: Abrir o link do Meet]
+    Não vai conseguir? [Trocar de horário]
 
-Modelo `konioca_gravacao` (Marketing). Variáveis: {{1}} nome, {{2}} link da gravação. Botões de resposta:
-"Quero uma", "Tenho uma dúvida", "Agora não" (a conversa automática já entende os três).
+    Time da Marcela
 
-    Oi, {{1}}, a gravação da live da Konioca está no ar: {{2}}
-    Se ficou alguma dúvida, responda por aqui que o Time da Marcela te atende.
+## Lembrete de uma hora antes (tipo `encontro_lembrete_1h`, 17h30 ou 18h30 conforme a turma)
 
-## Regra da Circular
+Assunto: "{Nome}, começa em 1 hora: 18h30".
 
-Nenhum destes textos fala em reservar ou pagar na noite da live. Quem se cadastra recebe a Circular por e-mail e só
-pode fazer a pré-reserva 10 dias depois de confirmar o recebimento (`circular_prazo_dias`). A frase para o roteiro
-da Marcela: "Quem se cadastrou agora recebe a Circular por e-mail e a pré-reserva abre dez dias depois de confirmar
-o recebimento."
+    Ana, seu encontro com a Marcela começa às 18h30, pelo Google Meet.
+    Entre uns minutos antes. No fim do encontro, a Marcela explica como garantir uma das 250 máquinas da pré-venda.
+    [Botão: Entrar no Meet]
+
+    Time da Marcela
+
+Os três e-mails são isentos do limite semanal de mensagens (`msgs_tipos_isentos`), porque a pessoa pediu o horário.
+
+## Reaquecimento de quem foi contatado à mão
+
+Mesma regra de 1/10 (não recebe o convite padrão por WhatsApp; o e-mail segue). Texto novo em docs/06, item 6.
+
+## Regra da Circular (para o roteiro da Marcela)
+
+"Quem já confirmou a Circular há dez dias reserva agora, no fim do encontro. Quem se cadastrou agora recebe a
+Circular por e-mail e a reserva abre dez dias depois de confirmar o recebimento." Roteiro completo em docs/19.
