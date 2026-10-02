@@ -178,3 +178,28 @@ test("Convite por WhatsApp vence em convite_whatsapp_ate só se o WhatsApp ofici
   assert.equal(conviteWhatsappVencido({}, false, new Date("2026-12-01T00:00:00-03:00")), false, "sem data na config: nunca cancela");
   assert.equal(conviteWhatsappVencido({ convite_whatsapp_ate: "[DATA]" }, false, new Date("2026-12-01T00:00:00-03:00")), false);
 });
+
+test("Encontro no Google Meet (2/10): confirmação com .ics anexado, lembretes da véspera e de 1 h; sem link do Meet nada sai", () => {
+  const en = { id: 7, inicio: "2026-10-15T13:00:00Z", duracao_min: 30, meet_link: "https://meet.google.com/abc-defg-hij" };
+  const c = montarEnvio("encontro_confirmacao", "email", { ...LEAD, encontro: en }, CFG, API);
+  assert.equal(c.canal, "email");
+  assert.equal(c.assunto, "Ana, seu horário com a Marcela: quinta, 15/10, às 10h");
+  assert.match(c.texto, /^Ana, seu encontro está confirmado: quinta, 15\/10, às 10h \(horário de Brasília\), pelo Google Meet, 30 minutos\./);
+  assert.match(c.texto, /Circular confirmada há 10 dias\) reserva uma das 250 máquinas/);
+  assert.match(c.texto, /Entrar no Meet: https:\/\/meet\.google\.com\/abc-defg-hij/);
+  assert.match(c.texto, /Trocar de horário|trocar de horário/);
+  assert.equal(c.anexos.length, 1); assert.equal(c.anexos[0].filename, "encontro-konioca.ics");
+  const ics = Buffer.from(c.anexos[0].content, "base64").toString("utf8");
+  assert.match(ics, /DTSTART:20261015T130000Z/); assert.match(ics, /DTEND:20261015T133000Z/); assert.match(ics, /meet\.google\.com\/abc-defg-hij/);
+  const v = montarEnvio("encontro_lembrete_vespera", "email", { ...LEAD, encontro: en }, CFG, API);
+  assert.equal(v.assunto, "Ana, amanhã às 10h: seu encontro com a Marcela"); assert.equal(v.anexos, undefined);
+  const h = montarEnvio("encontro_lembrete_1h", "email", { ...LEAD, encontro: en }, CFG, API);
+  assert.equal(h.assunto, "Ana, começa em 1 hora: 10h"); assert.match(h.texto, /meet\.google\.com\/abc-defg-hij/);
+  assert.equal(montarEnvio("encontro_confirmacao", "email", { ...LEAD, encontro: { ...en, meet_link: null } }, CFG, API).canal, "nenhum");
+  assert.equal(montarEnvio("encontro_confirmacao", "email", { ...LEAD, encontro: null }, CFG, API).canal, "nenhum");
+  assert.ok(!/instagram|live/i.test(c.texto + v.texto + h.texto), "sem Instagram ou live");
+  // WhatsApp: template com o código do Meet no botão de URL dinâmica
+  const w = montarEnvio("encontro_confirmacao", "whatsapp", { ...LEAD, encontro: en }, { ...CFG, wa_tpl_encontro_confirmacao: "konioca_encontro_confirmacao" }, API);
+  assert.equal(w.nome, "konioca_encontro_confirmacao"); assert.deepEqual(w.params, ["Ana", "quinta, 15/10, às 10h"]); assert.equal(w.botaoUrlSufixo, "abc-defg-hij");
+  assert.equal(montarEnvio("encontro_confirmacao", "whatsapp", { ...LEAD, encontro: en }, CFG, API).canal, "nenhum", "sem modelo configurado nada sai");
+});

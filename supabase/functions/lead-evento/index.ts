@@ -10,7 +10,7 @@ const INTENCOES = new Set([
   "Levar para academia, escola ou evento",
   "Ainda estou pesquisando",
 ]);
-const TIPOS = new Set(["intencao", "clicou_grupo", "clicou_whatsapp_time", "clicou_agenda", "viu_obrigado"]);
+const TIPOS = new Set(["intencao", "clicou_grupo", "clicou_whatsapp_time", "clicou_agenda", "clicou_horario", "viu_obrigado"]);
 
 Deno.serve(async (req) => {
   const cors = await corsHeaders(req);

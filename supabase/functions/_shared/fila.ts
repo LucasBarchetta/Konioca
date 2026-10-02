@@ -3,18 +3,21 @@
 import { type Config, cfgBool, cfgNum, cfgText, pendente } from "./cfg.ts";
 import { formatarReais, ganchoMesesAtras, ganchoTexto, limiteRecebimentoCircular, partesData } from "./datas.ts";
 import { primeiroNome } from "./conversa.ts";
+import { base64Utf8, icsEvento } from "./ics.ts";
+import { codigoMeet, type EncontroLead, quandoEncontro } from "./encontros.ts";
 
 export interface LeadFila {
   id: string; nome: string; whatsapp: string | null; email: string; token: string; turma: string | null;
   pergunta_live: string | null; estado_conversa: string; base_antiga_gancho?: string | null; base_antiga_prioridade?: string | null;
   base_antiga_variante?: string | null; // teste A/B do P2 (2/10): "a" = texto aprovado, "b" = versão de impacto; links p2_a / p2_b
+  encontro?: EncontroLead | null;       // turma escolhida (encontro fechado no Google Meet, formato de 2/10)
 }
 export interface Turma { nome: string; live: string; subgrupo_link: string }
 
 export type Envio =
   | { canal: "whatsapp"; modo: "template"; nome: string; params: string[]; botaoUrlSufixo?: string; audio?: string }
   | { canal: "whatsapp"; modo: "texto"; texto: string }
-  | { canal: "email"; assunto: string; texto: string; html: string }
+  | { canal: "email"; assunto: string; texto: string; html: string; anexos?: { filename: string; content: string }[] }
   | { canal: "nenhum"; motivo: string };
 
 export function turmaDoLead(cfg: Config, lead: LeadFila): Turma | null {
@@ -216,6 +219,61 @@ ${paragrafos.map(P).join("\n")}
     const texto = [abertura, l1, l2, l3, l4a + l4b, l5, url, l6, ``, assinatura, ``, `Para não receber mais mensagens: ${optout}`].join("\n");
     const html = montarHtml(assunto, previa, [esc(abertura), esc(l1), "<strong>" + esc(l2) + "</strong>", esc(l3), esc(l4a) + "<strong>" + esc(l4b) + "</strong>"], l5, "Quero entrar na lista", assinatura);
     return { canal: "email", assunto, texto, html };
+  }
+
+  if (tipo === "encontro_confirmacao" || tipo === "encontro_lembrete_vespera" || tipo === "encontro_lembrete_1h") {
+    // Encontro fechado no Google Meet (formato de 2/10). Confirmação sai na hora da escolha; lembretes na véspera e 1 h antes.
+    // Sem link do Meet na turma, nada sai (o item volta à fila em 10 min até o time preencher o link no painel).
+    const en = lead.encontro;
+    if (!en) return { canal: "nenhum", motivo: "lead sem turma" };
+    if (!en.meet_link || pendente(en.meet_link) || !/^https:\/\/meet\.google\.com\//.test(en.meet_link)) return { canal: "nenhum", motivo: "link do Meet da turma pendente" };
+    const quando = quandoEncontro(en.inicio);
+    const hora = partesData(en.inicio).hora;
+    const dur = String(en.duracao_min || cfgNum(cfg, "encontro_duracao_min", 30));
+    const trocar = escolherUrl;
+    if (canal === "whatsapp") {
+      // Templates (docs/06): konioca_encontro_confirmacao {{1}} nome, {{2}} dia e hora; konioca_encontro_lembrete {{1}} nome, {{2}} hora.
+      // Botão de URL dinâmica com o código do Meet (URL fixa https://meet.google.com/ + código).
+      const nomeTpl = tipo === "encontro_confirmacao" ? cfgText(cfg, "wa_tpl_encontro_confirmacao") : cfgText(cfg, "wa_tpl_encontro_lembrete");
+      if (!nomeTpl || pendente(nomeTpl)) return { canal: "nenhum", motivo: "modelo do encontro pendente" };
+      return { canal: "whatsapp", modo: "template", nome: nomeTpl, params: tipo === "encontro_confirmacao" ? [nome, quando] : [nome, hora], botaoUrlSufixo: codigoMeet(en.meet_link) };
+    }
+    const circular = `No fim do encontro, quem já pode reservar (Circular confirmada há ${cfgNum(cfg, "circular_prazo_dias", 10)} dias) reserva uma das ${lote1} máquinas da pré-venda.`;
+    let assunto: string, p1: string, p2: string, botao: string, rodape: string;
+    if (tipo === "encontro_confirmacao") {
+      assunto = `${nome}, seu horário com a Marcela: ${quando}`;
+      p1 = `${nome}, seu encontro está confirmado: ${quando} (horário de Brasília), pelo Google Meet, ${dur} minutos.`;
+      p2 = `Entre pelo link na hora marcada. O arquivo da agenda vai anexado, e a gente lembra na véspera e uma hora antes. ${circular}`;
+      botao = "Entrar no Meet"; rodape = `Precisa trocar de horário? ${trocar}`;
+    } else if (tipo === "encontro_lembrete_vespera") {
+      assunto = `${nome}, amanhã às ${hora}: seu encontro com a Marcela`;
+      p1 = `${nome}, amanhã, ${quando}, a Marcela apresenta a nova geração para a sua turma, pelo Google Meet, ${dur} minutos.`;
+      p2 = `O link é o mesmo da confirmação. ${circular}`;
+      botao = "Abrir o link do Meet"; rodape = `Não vai conseguir? Troque de horário: ${trocar}`;
+    } else {
+      assunto = `${nome}, começa em 1 hora: ${hora}`;
+      p1 = `${nome}, seu encontro com a Marcela começa às ${hora}, pelo Google Meet.`;
+      p2 = `Entre uns minutos antes. ${circular}`;
+      botao = "Entrar no Meet"; rodape = "";
+    }
+    const texto = [p1, p2, `${botao}: ${en.meet_link}`, rodape, ``, assinatura].filter((x, i) => x !== "" || i < 2).join("\n");
+    const img = emailImagens(cfg);
+    const html = `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>${esc(assunto)}</title></head>
+<body style="margin:0;padding:0;background:#f4ebdb;font-family:Carlito,Calibri,'Segoe UI',sans-serif;color:#1f4a36">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f4ebdb"><tr><td align="center" style="padding:24px 12px">
+<table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;background:#ffffff;border-radius:10px;overflow:hidden">
+<tr><td align="center" style="background:#1f4a36;padding:22px 24px"><img src="${esc(img.logo)}" width="180" alt="Konioca" style="display:block;width:180px;height:auto;border:0"></td></tr>
+<tr><td style="padding:28px 24px 32px">
+<p style="margin:0 0 14px;font-size:17px;line-height:1.6"><strong>${esc(p1)}</strong></p>
+<p style="margin:0 0 20px;font-size:17px;line-height:1.6">${esc(p2)}</p>
+<a href="${esc(en.meet_link)}" style="display:block;text-align:center;padding:16px;background:#b04d0c;color:#f7f0e2;font-size:18px;font-weight:700;text-decoration:none;border-radius:7px">${esc(botao)}</a>
+${rodape ? `<p style="margin:20px 0 0;font-size:15px;line-height:1.6;color:#5a6b3a">${esc(rodape.replace(trocar, "").trim())} <a href="${esc(trocar)}" style="color:#5a6b3a">Trocar de horário</a></p>` : ""}
+<p style="margin:24px 0 0;font-family:Caladea,Cambria,Georgia,serif;font-style:italic;font-size:18px;color:#5a6b3a">${esc(assinatura)}</p>
+</td></tr></table></td></tr></table></body></html>`;
+    const anexos = tipo === "encontro_confirmacao"
+      ? [{ filename: "encontro-konioca.ics", content: base64Utf8(icsEvento({ uid: `encontro-${en.id}-${lead.id}@konioca`, inicio: new Date(en.inicio), duracaoMin: Number(dur), titulo: "Konioca · encontro com a Marcela (Google Meet)", descricao: `Nova geração da Konioca, encontro fechado para quem está na lista. Link: ${en.meet_link}`, url: en.meet_link, local: "Google Meet", alarmeMin: 60 })) }]
+      : undefined;
+    return { canal: "email", assunto, texto, html, anexos };
   }
 
   if (tipo === "texto") {

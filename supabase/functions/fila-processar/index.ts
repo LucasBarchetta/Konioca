@@ -56,7 +56,7 @@ Deno.serve(async (req) => {
   let enviados = 0, waEnviados = 0; const resultados: Record<string, string> = {};
 
   for (const item of (itens ?? []) as { id: number; lead_id: string; tipo: string; canal: string; payload: Record<string, unknown> | null; tentativas: number }[]) {
-    const { data: lead } = await sb.from("leads").select("id, nome, whatsapp, email, token, turma, pergunta_live, estado_conversa, optout_em, grupo_controle, wa_invalido_em, base_antiga_gancho, base_antiga_prioridade, base_antiga_variante, contato_manual_em, email_bloqueado_em").eq("id", item.lead_id).single();
+    const { data: lead } = await sb.from("leads").select("id, nome, whatsapp, email, token, turma, pergunta_live, estado_conversa, optout_em, grupo_controle, wa_invalido_em, base_antiga_gancho, base_antiga_prioridade, base_antiga_variante, contato_manual_em, email_bloqueado_em, encontro:encontros(id, inicio, duracao_min, meet_link)").eq("id", item.lead_id).single();
     if (!lead || lead.optout_em) { await fechar(item.id, "cancelado", "optout"); continue; }
     if (lead.grupo_controle && item.tipo !== "circular_lembrete") { await fechar(item.id, "pulado", "grupo_controle"); continue; }
     if (item.canal === "whatsapp" && (lead.wa_invalido_em || !lead.whatsapp)) { await fechar(item.id, "pulado", "numero_invalido"); continue; }
@@ -81,7 +81,9 @@ Deno.serve(async (req) => {
     if (item.canal === "whatsapp" && !whatsappConfigurado()) { await sb.from("fila_envios").update({ status: "pendente", tentativas: Math.max(0, item.tentativas - 1), agendado_para: new Date(Date.now() + 600_000).toISOString(), motivo: "WhatsApp ainda não configurado (WABA)" }).eq("id", item.id); continue; }
     if (item.canal === "whatsapp" && waEnviados >= limite) { await sb.from("fila_envios").update({ status: "pendente", motivo: "teto por minuto/dia" }).eq("id", item.id); continue; }
 
-    const envio = montarEnvio(item.tipo, item.canal, lead as LeadFila, cfg as Config, apiUrl);
+    // O join leads->encontros chega como objeto (FK única), mas o tipo inferido é lista; normaliza antes de montar.
+    const enc = Array.isArray(lead.encontro) ? (lead.encontro[0] ?? null) : lead.encontro;
+    const envio = montarEnvio(item.tipo, item.canal, { ...lead, encontro: enc } as unknown as LeadFila, cfg as Config, apiUrl);
     if (envio.canal === "nenhum") {
       // Config pendente é bloqueio geral, não falha do item: volta à fila em 10 min sem gastar tentativa.
       // Nada se perde enquanto um humano não preenche a configuração.
@@ -90,7 +92,7 @@ Deno.serve(async (req) => {
     }
 
     if (envio.canal === "email") {
-      const r = await enviarEmail(lead.email, envio.assunto, envio.texto, envio.html, item.tipo);
+      const r = await enviarEmail(lead.email, envio.assunto, envio.texto, envio.html, item.tipo, envio.anexos);
       if (!r.ok && /^email_bloqueado/.test(r.motivo ?? "")) { await fechar(item.id, "pulado", r.motivo); resultados[item.id] = r.motivo ?? "pulado"; continue; }
       await sb.from("mensagens").insert({ lead_id: lead.id, canal: "email", direcao: "out", tipo: "template", modelo: item.tipo, corpo: envio.texto, provedor_id: r.id ?? null, status: r.ok ? "enviado" : "falhou", erro: r.motivo ?? null, iniciada_pela_empresa: true, fila_id: item.id });
       await fechar(item.id, r.ok ? "enviado" : "falhou", r.motivo);

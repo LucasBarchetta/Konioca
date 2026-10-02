@@ -21,19 +21,11 @@
       if (token) K.post("lead-evento", { token: token, tipo: "viu_obrigado" }).catch(function () { /* ignora */ });
     }
 
-    // Agenda: arquivo .ics gerado pela live-ics (abre o calendário do celular ou do computador, sem conta Google).
-    var agenda = document.getElementById("btn-agenda");
-    if (agenda && cfg && cfg.live_data) {
-      agenda.href = K.API + "/live-ics";
-      agenda.addEventListener("click", function () { if (token) K.post("lead-evento", { token: token, tipo: "clicou_agenda" }).catch(function () {}); });
-    }
-
-    // Instagram da Konioca: vem da configuração (instagram_url); enquanto a chave não existir, usa o perfil oficial.
-    var ig = document.getElementById("btn-instagram");
-    if (ig) {
-      var perfil = cfg && typeof cfg.instagram_url === "string" && cfg.instagram_url && !/\[[^\]]*\]/.test(cfg.instagram_url) ? cfg.instagram_url : "https://www.instagram.com/koniocaoficial/";
-      ig.href = perfil;
-      ig.addEventListener("click", function () { if (token) K.post("lead-evento", { token: token, tipo: "clicou_instagram" }).catch(function () {}); });
+    // Escolha do horário (formato de 2/10): leva o token para a página /horario/.
+    var hor = document.getElementById("btn-horario");
+    if (hor) {
+      hor.href = "horario/" + (token ? "?t=" + encodeURIComponent(token) : "");
+      hor.addEventListener("click", function () { if (token) K.post("lead-evento", { token: token, tipo: "clicou_horario" }).catch(function () {}); });
     }
 
     var time = document.getElementById("btn-time");
