@@ -44,7 +44,7 @@ Quem decide cada item (`regraAprovacao(tipo, usa_marcela)`): basta um de `qualqu
 | Tipo | Basta um de | E também |
 |---|---|---|
 | e-mail, WhatsApp, texto (mensagens para leads ou base) | principal ou growth | conteudo, se usa voz ou imagem da Marcela |
-| roteiro de vídeo | growth | conteudo, se ela aparece |
+| roteiro de vídeo | principal ou growth | conteudo, se ela aparece |
 | peça | principal ou growth | conteudo, se usa a imagem dela |
 | proposta de teste A/B | principal ou growth | conteudo, se usa a imagem dela |
 | config | principal | |
@@ -56,9 +56,11 @@ quem está na regra e ainda não decidiu. Aprovar um item no painel não dispara
 dependendo do SIM do Lucas no chat, como toda publicação.
 
 Revisor automático (`revisarConteudo`, roda na API antes de qualquer aprovação, para todo papel; ninguém passa por cima):
-preço diferente do da página (todo "R$" precisa ser o preço da pré-venda, o atual ou a diferença em mil, da config),
-construção "de/por", promessa de faturamento, lucro ou renda, e máquina ou imagem feita por IA (declarada no conteúdo,
-`imagem_ia`). O item barrado fica pendente com o motivo na tela até alguém corrigir o conteúdo.
+preço diferente do da página (todo "R$" precisa ser o preço da pré-venda, o atual, a diferença em mil, R$ 1.000 ou um
+valor de `config.revisor_valores_permitidos`), construção "de/por", promessa de faturamento, lucro ou renda, e máquina
+ou produto feito por IA (declarado no conteúdo, `maquina_ia`; ilustração de pessoa ou cenário por IA não é barrada).
+Ajustes do Lucas de 3/10: o principal aprova qualquer tipo de item; trava de IA só para produto e máquina; R$ 1.000
+entre os valores permitidos. O item barrado fica pendente com o motivo na tela até alguém corrigir o conteúdo.
 
 ## O que sai da fila (etapa 3)
 

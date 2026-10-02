@@ -150,10 +150,11 @@ export type TipoAprovacao = "email" | "whatsapp" | "texto" | "roteiro_video" | "
 export interface RegraAprovacao { qualquer_um_de: Papel[]; tambem: Papel[] }
 
 /**
- * Regra do Lucas (2/10 à noite):
+ * Regra do Lucas (2/10 à noite, com os ajustes de 3/10):
+ * - o principal aprova qualquer tipo de item;
  * - e-mails e mensagens para leads ou para a base: aprovação final do principal ou do growth (basta um); com voz ou
  *   imagem da Marcela, ela também aprova;
- * - roteiros de vídeo: o growth aprova, e a Marcela também quando ela aparece;
+ * - roteiros de vídeo: o growth (ou o principal) aprova, e a Marcela também quando ela aparece;
  * - peças com a imagem da Marcela: a Marcela aprova (peça sem ela: principal ou growth, como mensagem);
  * - proposta de teste A/B: principal ou growth; config: só o principal;
  * - operacional comenta, não aprova conteúdo (nunca entra na regra).
@@ -161,7 +162,7 @@ export interface RegraAprovacao { qualquer_um_de: Papel[]; tambem: Papel[] }
 export function regraAprovacao(tipo: string, usaMarcela: boolean): RegraAprovacao {
   const tambem: Papel[] = usaMarcela ? ["conteudo"] : [];
   switch (tipo) {
-    case "roteiro_video": return { qualquer_um_de: ["growth"], tambem };
+    case "roteiro_video": return { qualquer_um_de: ["principal", "growth"], tambem };
     case "config": return { qualquer_um_de: ["principal"], tambem: [] };
     case "email": case "whatsapp": case "texto": case "peca": case "proposta_ab": default:
       return { qualquer_um_de: ["principal", "growth"], tambem };
@@ -202,10 +203,12 @@ export function textoRegra(r: RegraAprovacao, nomes: Record<string, string> = {}
 }
 
 // Revisor automático: barra antes da aprovação, para todo papel. Nenhum aprovador passa por cima.
-// Checa: preço diferente do da página (config), "de/por", promessa de faturamento ou lucro, máquina feita por IA
-// (declarada no conteúdo, já que o texto não revela a origem da imagem).
-export interface ConteudoRevisao { texto?: string | null; html?: string | null; assunto?: string | null; previa?: string | null; imagem_ia?: boolean | null; imagens?: { ia?: boolean }[] | null }
-export interface ConfigPrecos { preco_prevenda?: number; preco_atual?: number }
+// Checa: preço diferente do da página (config), "de/por", promessa de faturamento ou lucro, e máquina ou produto feito
+// por IA (declarado no conteúdo, já que o texto não revela a origem da imagem; ilustração de pessoa ou cenário por IA
+// não é barrada, ajuste do Lucas de 3/10).
+export interface ConteudoRevisao { texto?: string | null; html?: string | null; assunto?: string | null; previa?: string | null; maquina_ia?: boolean | null; imagens?: { ia?: boolean; tipo?: string }[] | null }
+/** Preços da página e outros valores que podem aparecer (R$ 1.000 entra por padrão, ajuste do Lucas de 3/10; outros em config.revisor_valores_permitidos). */
+export interface ConfigPrecos { preco_prevenda?: number; preco_atual?: number; valores_permitidos?: number[] }
 
 function formatarMil(n: number): string { return "R$ " + String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, "."); }
 
@@ -219,6 +222,7 @@ export function revisarConteudo(c: ConteudoRevisao, precos: ConfigPrecos): { ok:
   if (novo > 0) permitidos.add(formatarMil(novo));
   if (atual > 0) permitidos.add(formatarMil(atual));
   if (novo > 0 && atual > novo) permitidos.add(`R$ ${Math.floor((atual - novo) / 1000)} mil`);
+  for (const v of [1000, ...(precos.valores_permitidos ?? [])]) if (Number(v) > 0) permitidos.add(formatarMil(Number(v)));
   const valores = texto.match(/R\$\s?\d{1,3}(?:\.\d{3})*(?:,\d{2})?(?:\s?mil)?/g) ?? []; // "R$ 9.900", "R$ 16 mil"; o ponto final da frase fica de fora
   for (const v of valores) {
     const norm = v.replace(/\s+/g, " ").replace("R$ ", "R$ ").replace(/^R\$(\d)/, "R$ $1");
@@ -228,8 +232,8 @@ export function revisarConteudo(c: ConteudoRevisao, precos: ConfigPrecos): { ok:
   if (/\bde\s*\/\s*por\b/i.test(texto) || /\bde\s+R\$\s?[\d.]+(?:\s?mil)?\s+(?:por|para)\s+(?:apenas\s+|s[oó]\s+)?R\$/i.test(texto)) problemas.push('construção "de/por"');
   // 3) Promessa de faturamento, lucro, renda ou ganho.
   if (/\b(fature|faturamento|faturando|lucro|lucre|lucrando|renda|rendimento|ganhe|ganhos?|retorno)\b[^.\n]{0,60}(R\$|mil|por m[eê]s|mensal|mensais|por dia|di[aá]rios?|garantid[oa]s?)/i.test(texto) || /R\$\s?[\d.]+(?:\s?mil)?\s*(?:por|ao|\/)\s*(?:m[eê]s|dia|semana)\b/i.test(texto)) problemas.push("promessa de faturamento, lucro ou renda");
-  // 4) Máquina feita por IA: declarada no conteúdo.
-  if (c.imagem_ia === true || (Array.isArray(c.imagens) && c.imagens.some((i) => i && i.ia === true)) || /\[(imagem|m[aá]quina)\s+(por\s+)?IA\]/i.test(texto)) problemas.push("máquina ou imagem feita por IA");
+  // 4) Máquina ou produto feito por IA: declarado no conteúdo (maquina_ia, ou imagem com ia e tipo maquina/produto).
+  if (c.maquina_ia === true || (Array.isArray(c.imagens) && c.imagens.some((i) => i && i.ia === true && /^(m[aá]quina|produto)$/i.test(String(i.tipo ?? "")))) || /\[(m[aá]quina|produto)\s+(por\s+)?IA\]/i.test(texto)) problemas.push("máquina ou produto feito por IA");
   return { ok: problemas.length === 0, problemas: [...new Set(problemas)] };
 }
 

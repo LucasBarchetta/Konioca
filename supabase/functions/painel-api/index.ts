@@ -56,7 +56,8 @@ Deno.serve(async (req) => {
   const por = assinaturaAprovador(quem);
   const nomesPapeis: Record<string, string> = {};
   for (const a of aprovadores(cfg)) if (!nomesPapeis[a.papel]) nomesPapeis[a.papel] = a.nome.split(" ")[0];
-  const precos = { preco_prevenda: cfgNum(cfg, "preco_prevenda"), preco_atual: cfgNum(cfg, "preco_atual") };
+  const extras = cfg["revisor_valores_permitidos"];
+  const precos = { preco_prevenda: cfgNum(cfg, "preco_prevenda"), preco_atual: cfgNum(cfg, "preco_atual"), valores_permitidos: Array.isArray(extras) ? extras.map(Number).filter((n) => n > 0) : [] };
   const registrar = (lead_id: string, tipo: string, dados: Record<string, unknown>) =>
     sb.from("lead_eventos").insert({ lead_id, tipo, origem: "humano", dados: { ...dados, por, em: new Date().toISOString() } });
 
@@ -201,7 +202,7 @@ Deno.serve(async (req) => {
     const titulo = String(b.titulo ?? "").trim().slice(0, 200);
     const texto = String(b.texto ?? "").trim().slice(0, 4000);
     if (!titulo || !texto) return json({ erro: "título e texto da variação são obrigatórios" }, 400, cors);
-    const conteudo = { texto, onde: String(b.onde ?? "").trim().slice(0, 200) || null, hipotese: String(b.hipotese ?? "").trim().slice(0, 500) || null, imagem_ia: b.imagem_ia === true };
+    const conteudo = { texto, onde: String(b.onde ?? "").trim().slice(0, 200) || null, hipotese: String(b.hipotese ?? "").trim().slice(0, 500) || null, maquina_ia: b.maquina_ia === true };
     const revisao = revisarConteudo(conteudo, precos); // o revisor avisa já na proposta; o item entra mesmo assim, mas não pode ser aprovado enquanto não for corrigido
     const { data, error } = await sb.rpc("aprovacao_propor", { p_tipo: "proposta_ab", p_titulo: titulo, p_conteudo: conteudo, p_aprovador: "principal", p_por: por, p_usa_marcela: b.usa_marcela === true });
     if (error) return json({ erro: error.message }, 400, cors);
