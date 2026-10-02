@@ -5,6 +5,7 @@ import { selecionarHeuristica } from "../supabase/functions/_shared/perguntas.ts
 import { textoHaQuanto } from "../supabase/functions/_shared/datas.ts";
 
 const CFG = {
+  encontros_ativos: true, // formato de 2/10 (migração 800); sem a chave, a fila usa o convite legado da live
   live_data: "2026-10-15T19:00:00-03:00", prevenda_fim: "2026-10-30T23:59:59-03:00", circular_prazo_dias: 10, lote1_tamanho: 250,
   whatsapp_grupo_link: "https://chat.whatsapp.com/AbCdEf123", lp_url: "https://prevenda.konioca.com", assinatura_time: "Time da Marcela",
   wa_tpl_convite: "konioca_convite_live", wa_tpl_lembrete_live: "konioca_lembrete_live", wa_tpl_lembrete_live_pergunta: "konioca_lembrete_live_pergunta",
@@ -210,4 +211,20 @@ test("Sem live_data na config, o convite e os e-mails do encontro continuam sain
   assert.equal(c.canal, "email");
   const lead = { ...LEAD, encontro: { id: 2, inicio: "2026-10-15T13:00:00.000Z", duracao_min: 30, meet_link: "https://meet.google.com/abc-defg-hij" } };
   assert.equal(montarEnvio("encontro_confirmacao", "email", lead, semLive, API).canal, "email");
+});
+
+test("Sem encontros_ativos (antes da migração 800), o convite é o legado da live e não aponta para /horario/", () => {
+  const { encontros_ativos: _e, ...antes } = CFG;
+  const e = montarEnvio("convite", "email", LEAD, antes, API);
+  assert.equal(e.canal, "email");
+  assert.doesNotMatch(e.texto, /horario\//, "sem a página publicada, nada de link para /horario/");
+  assert.match(e.texto, /Instagram/);
+  const w = montarEnvio("convite", "whatsapp", LEAD, antes, API);
+  assert.equal(w.params.length, 5);
+  assert.equal(w.botaoUrlSufixo, undefined);
+  // A base antiga (P2 aprovado em 1/10 à noite) já sai com o texto dos encontros no Meet mesmo sem a chave
+  const base = { ...LEAD, base_antiga_prioridade: "P2", base_antiga_gancho: null, base_antiga_variante: "b" };
+  const b = montarEnvio("base_antiga_email", "email", base, { ...antes, preco_atual: 25900, preco_prevenda: 9900, financiamento_parceiro: "Bradesco" }, API);
+  assert.match(b.texto, /encontros fechados pelo Google Meet/);
+  assert.doesNotMatch(b.texto, /Instagram/);
 });

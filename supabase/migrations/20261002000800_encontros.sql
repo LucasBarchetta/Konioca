@@ -31,6 +31,7 @@ insert into public.config (chave, valor, publico, descricao) values
   ('encontro_duracao_min', '30', true, 'Duração de cada encontro no Google Meet (minutos)'),
   ('encontro_capacidade',  '35', true, 'Capacidade padrão de cada turma do encontro (pessoas)'),
   ('encontro_lembrete_vespera_hora', '18', false, 'Hora (SP) do lembrete da véspera do encontro')
+  ,('encontros_ativos', 'true', false, 'Formato de 2/10 ligado: convite com escolha de horário (/horario/), join de encontros na fila. Sem esta chave, a fila usa o convite legado da live.')
 on conflict (chave) do update set descricao = excluded.descricao;
 update public.config set valor = '"Google Meet"', descricao = 'Encontros fechados no Google Meet (formato de 2/10; a live no Instagram foi substituída)' where chave = 'live_plataforma';
 update public.config set descricao = 'Sem uso desde 2/10 (formato trocado por encontros no Google Meet). Fica só por histórico.' where chave in ('live_data', 'live_link', 'live_duracao_min', 'live_gravacao_link', 'lembrete_live_min_antes');

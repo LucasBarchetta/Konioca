@@ -51,12 +51,15 @@ Deno.serve(async (req) => {
   const { data: itens, error } = await sb.rpc("fila_proximos", { p_limite: Math.max(limite, 5) }); // e-mails passam mesmo com o teto do WhatsApp batido
   if (error) return json({ erro: error.message }, 500);
 
+  const encontrosAtivos = cfgBool(cfg, "encontros_ativos", false);
   const isentos = new Set(((cfg["msgs_tipos_isentos"] as string[] | undefined) ?? []));
   const maxSemana = cfgNum(cfg, "msgs_max_semana", 2);
   let enviados = 0, waEnviados = 0; const resultados: Record<string, string> = {};
 
   for (const item of (itens ?? []) as { id: number; lead_id: string; tipo: string; canal: string; payload: Record<string, unknown> | null; tentativas: number }[]) {
-    const { data: lead } = await sb.from("leads").select("id, nome, whatsapp, email, token, turma, pergunta_live, estado_conversa, optout_em, grupo_controle, wa_invalido_em, base_antiga_gancho, base_antiga_prioridade, base_antiga_variante, contato_manual_em, email_bloqueado_em, encontro:encontros(id, inicio, duracao_min, meet_link)").eq("id", item.lead_id).single();
+    // O join com encontros só existe depois da migração 800 (config.encontros_ativos); antes dela a tabela não existe.
+    const colunas = "id, nome, whatsapp, email, token, turma, pergunta_live, estado_conversa, optout_em, grupo_controle, wa_invalido_em, base_antiga_gancho, base_antiga_prioridade, base_antiga_variante, contato_manual_em, email_bloqueado_em" + (encontrosAtivos ? ", encontro:encontros(id, inicio, duracao_min, meet_link)" : "");
+    const { data: lead } = await sb.from("leads").select(colunas).eq("id", item.lead_id).single();
     if (!lead || lead.optout_em) { await fechar(item.id, "cancelado", "optout"); continue; }
     if (lead.grupo_controle && item.tipo !== "circular_lembrete") { await fechar(item.id, "pulado", "grupo_controle"); continue; }
     if (item.canal === "whatsapp" && (lead.wa_invalido_em || !lead.whatsapp)) { await fechar(item.id, "pulado", "numero_invalido"); continue; }
