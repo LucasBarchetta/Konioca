@@ -66,29 +66,71 @@ test("Temperatura: rótulo, filtro, contagem e ordem (quentes primeiro, depois o
   assert.deepEqual(temperaturasPresentes(leads).map((t) => t.temp + ":" + t.n), ["quente:2", "morno:1", "frio:1"]);
 });
 
-import { permissoesDe, podeDecidir, podeAcao } from "../supabase/functions/_shared/painel_regras.ts";
+import { permissoesDe, podeAcao, regraAprovacao, papeisDaRegra, estadoAprovacao, podeDecidirItem, textoRegra, revisarConteudo } from "../supabase/functions/_shared/painel_regras.ts";
 
-test("Papel growth: vê tudo, marca contato e resposta, comenta e propõe A/B; não reserva, não mexe em e-mail, turma ou presença", () => {
+test("Papel growth: vê tudo, marca contato e resposta, decide, comenta e propõe A/B; não reserva, não mexe em e-mail, turma ou presença", () => {
   const g = permissoesDe("growth");
-  assert.equal(g.ver, true); assert.equal(g.contato, true); assert.equal(g.respondeu, true); assert.equal(g.comentar, true); assert.equal(g.propor_ab, true);
+  assert.equal(g.ver, true); assert.equal(g.contato, true); assert.equal(g.respondeu, true); assert.equal(g.decidir, true); assert.equal(g.comentar, true); assert.equal(g.propor_ab, true);
   assert.equal(g.reservar, false); assert.equal(g.corrigir_email, false); assert.equal(g.turmas_editar, false); assert.equal(g.presenca, false);
-  for (const a of ["quem", "leads", "eventos", "aprovacoes", "encontros", "encontro_leads", "contato_manual", "respondeu", "comentar", "propor_ab"]) assert.equal(podeAcao("growth", a), true, a);
+  for (const a of ["quem", "leads", "eventos", "aprovacoes", "encontros", "encontro_leads", "contato_manual", "respondeu", "comentar", "propor_ab", "decidir"]) assert.equal(podeAcao("growth", a), true, a);
   for (const a of ["reservar", "reserva_cancelar", "corrigir_email", "encontro_salvar", "presenca", "link", "inventada"]) assert.equal(podeAcao("growth", a), false, a);
 });
 
-test("Decisão por item: growth decide qualquer item sem passar pelo principal (ordem de 2/10 à noite); os outros papéis também", () => {
-  assert.equal(podeDecidir("growth", "growth"), true);
-  assert.equal(podeDecidir("growth", "principal"), true);
-  assert.equal(podeDecidir("growth", "conteudo"), true);
-  assert.equal(podeDecidir("growth", null), true); // sem papel no item = principal
-  assert.equal(podeAcao("growth", "decidir", { aprovador: "growth" }), true);
-  assert.equal(podeAcao("growth", "decidir", { aprovador: "principal" }), true);
-  assert.equal(permissoesDe("growth").decidir, "todos");
-  for (const p of ["principal", "conteudo", "operacional"]) { assert.equal(podeDecidir(p, "growth"), true, p); assert.equal(podeAcao(p, "reservar"), true, p); assert.equal(permissoesDe(p).decidir, "todos", p); }
+test("Operacional comenta e propõe, não aprova conteúdo; papel desconhecido só vê", () => {
+  const o = permissoesDe("operacional");
+  assert.equal(o.decidir, false); assert.equal(o.comentar, true); assert.equal(o.propor_ab, true); assert.equal(o.turmas_editar, true);
+  assert.equal(podeAcao("operacional", "decidir"), false);
+  const x = permissoesDe("estagiario");
+  assert.equal(x.ver, true); assert.equal(x.contato, false); assert.equal(x.comentar, false); assert.equal(x.decidir, false);
+  assert.equal(podeAcao("estagiario", "leads"), true); assert.equal(podeAcao("estagiario", "respondeu"), false);
 });
 
-test("Papel desconhecido na config só vê", () => {
-  const x = permissoesDe("estagiario");
-  assert.equal(x.ver, true); assert.equal(x.contato, false); assert.equal(x.comentar, false); assert.deepEqual(x.decidir, []);
-  assert.equal(podeAcao("estagiario", "leads"), true); assert.equal(podeAcao("estagiario", "respondeu"), false); assert.equal(podeAcao(undefined, "decidir", { aprovador: "principal" }), false);
+test("Regra de aprovação por tipo e uso da Marcela (ordem do Lucas, 2/10 à noite)", () => {
+  assert.deepEqual(regraAprovacao("email", false), { qualquer_um_de: ["principal", "growth"], tambem: [] });
+  assert.deepEqual(regraAprovacao("whatsapp", true), { qualquer_um_de: ["principal", "growth"], tambem: ["conteudo"] });
+  assert.deepEqual(regraAprovacao("roteiro_video", false), { qualquer_um_de: ["growth"], tambem: [] });
+  assert.deepEqual(regraAprovacao("roteiro_video", true), { qualquer_um_de: ["growth"], tambem: ["conteudo"] });
+  assert.deepEqual(regraAprovacao("peca", true), { qualquer_um_de: ["principal", "growth"], tambem: ["conteudo"] });
+  assert.deepEqual(regraAprovacao("proposta_ab", false), { qualquer_um_de: ["principal", "growth"], tambem: [] });
+  assert.deepEqual(regraAprovacao("config", true), { qualquer_um_de: ["principal"], tambem: [] });
+  assert.deepEqual(papeisDaRegra(regraAprovacao("email", true)), ["principal", "growth", "conteudo"]);
+  assert.equal(textoRegra(regraAprovacao("email", true), { principal: "Lucas", growth: "LG", conteudo: "Marcela" }), "Lucas ou LG; e Marcela (usa voz ou imagem dela)");
+});
+
+test("Estado do item: basta um de qualquer_um_de e todos de tambem; recusa fecha; edição vira editado", () => {
+  const r = regraAprovacao("email", true);
+  assert.deepEqual(estadoAprovacao(r, []), { status: "pendente", faltam: ["principal", "growth", "conteudo"] });
+  assert.deepEqual(estadoAprovacao(r, [{ papel: "growth", decisao: "aprovado" }]), { status: "pendente", faltam: ["conteudo"] });
+  assert.deepEqual(estadoAprovacao(r, [{ papel: "conteudo", decisao: "aprovado" }]), { status: "pendente", faltam: ["principal", "growth"] });
+  assert.deepEqual(estadoAprovacao(r, [{ papel: "growth", decisao: "aprovado" }, { papel: "conteudo", decisao: "editado" }]), { status: "editado", faltam: [] });
+  assert.deepEqual(estadoAprovacao(r, [{ papel: "principal", decisao: "aprovado" }, { papel: "conteudo", decisao: "recusado" }]), { status: "recusado", faltam: [] });
+  assert.deepEqual(estadoAprovacao(regraAprovacao("roteiro_video", false), [{ papel: "principal", decisao: "aprovado" }]), { status: "pendente", faltam: ["growth"] });
+});
+
+test("Quem pode decidir agora: só quem está na regra, tem permissão e ainda não decidiu", () => {
+  const email = { tipo: "email", usa_marcela: false, status: "pendente" };
+  assert.equal(podeDecidirItem("growth", email), true); assert.equal(podeDecidirItem("principal", email), true);
+  assert.equal(podeDecidirItem("conteudo", email), false); assert.equal(podeDecidirItem("operacional", email), false);
+  assert.equal(podeDecidirItem("conteudo", { ...email, usa_marcela: true }), true);
+  assert.equal(podeDecidirItem("growth", email, [{ papel: "growth", decisao: "aprovado" }]), false);
+  assert.equal(podeDecidirItem("growth", { ...email, status: "aprovado" }), false);
+  const roteiro = { tipo: "roteiro_video", usa_marcela: true, status: "pendente" };
+  assert.equal(podeDecidirItem("growth", roteiro), true); assert.equal(podeDecidirItem("conteudo", roteiro), true); assert.equal(podeDecidirItem("principal", roteiro), false);
+  assert.equal(podeDecidirItem("operacional", { tipo: "peca", usa_marcela: true, status: "pendente" }), false);
+});
+
+test("Revisor automático: preço fora da página, de/por, promessa de faturamento, imagem por IA", () => {
+  const precos = { preco_prevenda: 9900, preco_atual: 25900 };
+  assert.deepEqual(revisarConteudo({ texto: "A nova geração custa R$ 9.900. A atual custa R$ 25.900. São R$ 16 mil a menos." }, precos), { ok: true, problemas: [] });
+  assert.deepEqual(revisarConteudo({ texto: "A nova geração custa R$ 8.900." }, precos).problemas, ["preço diferente do da página: R$ 8.900"]);
+  assert.ok(revisarConteudo({ texto: "De R$ 25.900 por R$ 9.900." }, precos).problemas.includes('construção "de/por"'));
+  assert.ok(revisarConteudo({ texto: "Preço de/por na capa" }, precos).problemas.includes('construção "de/por"'));
+  assert.ok(revisarConteudo({ texto: "Fature R$ 10 mil por mês com a sua Konioca." }, precos).problemas.includes("promessa de faturamento, lucro ou renda"));
+  assert.ok(revisarConteudo({ texto: "Lucro garantido no primeiro mês." }, precos).problemas.includes("promessa de faturamento, lucro ou renda"));
+  assert.ok(revisarConteudo({ texto: "Renda extra de R$ 3.000 mensais." }, precos).problemas.includes("promessa de faturamento, lucro ou renda"));
+  assert.equal(revisarConteudo({ texto: "Mais que tapioca, liberdade. A renda não é o assunto deste e-mail." }, precos).ok, true);
+  assert.deepEqual(revisarConteudo({ texto: "Veja a máquina.", imagem_ia: true }, precos).problemas, ["máquina ou imagem feita por IA"]);
+  assert.deepEqual(revisarConteudo({ texto: "Veja a máquina.", imagens: [{ ia: true }] }, precos).problemas, ["máquina ou imagem feita por IA"]);
+  assert.equal(revisarConteudo({ html: "<p>A nova geração custa <strong>R$ 9.900</strong>.</p>" }, precos).ok, true);
+  assert.equal(revisarConteudo({ assunto: "Ana, a nova Konioca custa R$ 9.900", texto: "" }, precos).ok, true);
 });

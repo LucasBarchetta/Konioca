@@ -28,9 +28,8 @@
     return CANAIS.filter(function (c) { return n[c[0]]; }).map(function (c) { return { canal: c[0], rotulo: c[1], n: n[c[0]] }; });
   }
   // Permissões do papel (vêm da painel-api em "quem"; a API recusa fora disso, aqui só esconde o botão). Sem "pode" = como antes.
-  var TUDO = { ver: true, contato: true, respondeu: true, reservar: true, corrigir_email: true, turmas_editar: true, presenca: true, decidir: "todos", comentar: true, propor_ab: true };
+  var TUDO = { ver: true, contato: true, respondeu: true, reservar: true, corrigir_email: true, turmas_editar: true, presenca: true, decidir: true, comentar: true, propor_ab: true };
   function pode(chave) { var p = (estado.quem && estado.quem.pode) || TUDO; return p[chave] === true; }
-  function podeDecidir(aprovador) { var p = (estado.quem && estado.quem.pode) || TUDO; return p.decidir === "todos" || (Array.isArray(p.decidir) && p.decidir.indexOf(aprovador || "principal") >= 0); }
   var INTERVALO = 30000; // atualização automática com a página visível
   var el = function (id) { return document.getElementById(id); };
   function erro(msg) { var e = el("p-erro"); if (!msg) { e.classList.add("oculto"); return; } e.textContent = msg; e.classList.remove("oculto"); }
@@ -204,24 +203,27 @@
   function formPropor() {
     if (!pode("propor_ab")) return "";
     if (!estado.proporAberto) return '<div class="p-filtros"><button type="button" data-acao="propor-abrir" class="ativa" style="background:#b04d0c;border-color:#b04d0c">Propor variação de teste A/B</button></div>';
-    return '<article class="p-card"><h3>Propor variação de teste A/B</h3><form class="p-form" data-form="propor" data-id="nova"><input name="titulo" placeholder="Título curto (ex.: assunto do P3/P4 pelo preço)" maxlength="200" required style="flex:1;min-width:240px"><input name="onde" placeholder="Onde: e-mail da base, LP, WhatsApp…" maxlength="200" style="flex:1;min-width:200px"><textarea name="texto" placeholder="A variação, do jeito que sairia" maxlength="4000" required></textarea><input name="hipotese" placeholder="Hipótese: o que você espera que mude e por quê" maxlength="500" style="flex:1;min-width:240px"><button type="submit" class="primario">Enviar para o Lucas decidir</button><button type="button" data-acao="propor-fechar" data-id="nova">Cancelar</button><div class="p-ajuda">Vira um item pendente para o principal. Nada é enviado a ninguém até ele aprovar.</div></form></article>';
+    return '<article class="p-card"><h3>Propor variação de teste A/B</h3><form class="p-form" data-form="propor" data-id="nova"><input name="titulo" placeholder="Título curto (ex.: assunto do P3/P4 pelo preço)" maxlength="200" required style="flex:1;min-width:240px"><input name="onde" placeholder="Onde: e-mail da base, LP, WhatsApp…" maxlength="200" style="flex:1;min-width:200px"><textarea name="texto" placeholder="A variação, do jeito que sairia" maxlength="4000" required></textarea><input name="hipotese" placeholder="Hipótese: o que você espera que mude e por quê" maxlength="500" style="flex:1;min-width:240px"><label><input type="checkbox" name="usa_marcela"> usa voz ou imagem da Marcela</label><label><input type="checkbox" name="imagem_ia"> tem imagem feita por IA</label><button type="submit" class="primario">Enviar para aprovação</button><button type="button" data-acao="propor-fechar" data-id="nova">Cancelar</button><div class="p-ajuda">Vira um item pendente: aprova o Lucas ou o LG (e a Marcela, se usar a imagem dela). O revisor automático barra preço fora da página, "de/por", promessa de faturamento e imagem por IA. Nada é enviado a ninguém até a aprovação.</div></form></article>';
   }
   function renderAprovacoes() {
     var itens = estado.aprovacoes;
-    var pend = itens.filter(function (i) { return i.status === "pendente" && podeDecidir(i.aprovador); });
+    var pend = itens.filter(function (i) { return i.status === "pendente" && i.pode_decidir; });
     var b = el("p-aprov-n"); b.textContent = String(pend.length); b.classList.toggle("oculto", !pend.length);
     var topo = formPropor();
     if (!itens.length) { el("p-aprovacoes").innerHTML = topo + '<div class="p-vazio">Nenhum item para aprovar. Quando um texto, e-mail ou peça precisar do seu ok, ele aparece aqui e você recebe um aviso por e-mail.</div>'; return; }
     el("p-aprovacoes").innerHTML = topo + itens.map(function (i) {
       var c = i.conteudo || {}, corpo = c.texto || c.html || JSON.stringify(c);
       var extra = c.onde ? "Onde: " + c.onde + (c.hipotese ? " · Hipótese: " + c.hipotese : "") : (c.hipotese ? "Hipótese: " + c.hipotese : "");
+      var rev = i.revisao || { ok: true, problemas: [] };
+      var trava = rev.ok ? "" : '<div class="p-tags">' + tag("Revisor automático barrou: " + rev.problemas.join("; "), "vermelho") + "</div>";
+      var decs = (i.decisoes || []).map(function (d) { return "<div>" + esc(dataHora(d.em)) + " · " + esc(d.por) + ": " + esc(d.decisao) + (d.comentario ? " · " + esc(d.comentario) : "") + "</div>"; }).join("");
       var acoes;
       if (i.status !== "pendente") acoes = '<div class="p-meta">' + esc(i.status) + " por " + esc(i.decidido_por || "") + " em " + dataHora(i.decidido_em) + (i.comentario ? " · " + esc(i.comentario) : "") + "</div>";
-      else if (podeDecidir(i.aprovador)) acoes = '<form class="p-form" data-form="decidir" data-id="' + i.id + '"><textarea name="conteudo_final">' + esc(c.texto || "") + '</textarea><input name="comentario" placeholder="Comentário (obrigatório para recusar)" maxlength="500" style="flex:1;min-width:200px"><button type="submit" class="primario" value="aprovado">Aprovar</button><button type="submit" value="editado">Aprovar com a minha edição</button><button type="submit" value="recusado">Recusar</button></form>';
-      else acoes = '<div class="p-meta">Pendente · quem decide: ' + esc(i.aprovador) + "</div>";
+      else if (i.pode_decidir) acoes = '<form class="p-form" data-form="decidir" data-id="' + i.id + '"><textarea name="conteudo_final">' + esc((i.conteudo_final && i.conteudo_final.texto) || c.texto || "") + '</textarea><input name="comentario" placeholder="Comentário (obrigatório para recusar)" maxlength="500" style="flex:1;min-width:200px"><button type="submit" class="primario" value="aprovado">Aprovar</button><button type="submit" value="editado">Aprovar com a minha edição</button><button type="submit" value="recusado">Recusar</button></form>';
+      else acoes = '<div class="p-meta">Pendente' + (i.faltam && i.faltam.length ? " · falta: " + esc(i.faltam.join(", ")) : "") + (rev.ok ? "" : " · corrija o conteúdo antes de aprovar") + "</div>";
       var coms = (i.comentarios || []).map(function (k) { return "<div>" + esc(dataHora(k.criado_em)) + " · " + esc(k.por) + ": " + esc(k.texto) + "</div>"; }).join("");
       var formCom = pode("comentar") ? '<form class="p-form" data-form="comentar" data-id="' + i.id + '"><input name="texto" placeholder="Comentar (fica registrado com o seu nome; nada é enviado)" maxlength="1000" required style="flex:1;min-width:240px"><button type="submit">Comentar</button></form>' : "";
-      return '<article class="p-card"><h3>' + esc(i.titulo) + '</h3><div class="p-meta">' + esc(TIPOS_APROV[i.tipo] || i.tipo) + " · criado " + dataHora(i.criado_em) + (i.criado_por ? " por " + esc(i.criado_por) : "") + " · decide: " + esc(i.aprovador) + '</div><div class="p-hist" style="white-space:pre-wrap">' + esc(corpo).slice(0, 4000) + (extra ? '<div class="p-meta" style="margin-top:6px">' + esc(extra) + "</div>" : "") + "</div>" + (coms ? '<div class="p-hist">' + coms + "</div>" : "") + acoes + formCom + "</article>";
+      return '<article class="p-card"><h3>' + esc(i.titulo) + '</h3><div class="p-meta">' + esc(TIPOS_APROV[i.tipo] || i.tipo) + (i.usa_marcela ? " · usa voz ou imagem da Marcela" : "") + " · criado " + dataHora(i.criado_em) + (i.criado_por ? " por " + esc(i.criado_por) : "") + " · aprova: " + esc(i.regra_texto || i.aprovador) + '</div>' + trava + '<div class="p-hist" style="white-space:pre-wrap">' + esc(corpo).slice(0, 4000) + (extra ? '<div class="p-meta" style="margin-top:6px">' + esc(extra) + "</div>" : "") + "</div>" + (decs ? '<div class="p-hist">' + decs + "</div>" : "") + (coms ? '<div class="p-hist">' + coms + "</div>" : "") + acoes + formCom + "</article>";
     }).join("");
   }
   function carregarHistorico(id) {
@@ -337,7 +339,7 @@
     }
     else if (tipo === "comentar") p = api("comentar", { id: Number(id), texto: f.texto.value });
     else if (tipo === "propor") {
-      p = api("propor_ab", { titulo: f.titulo.value, onde: f.onde.value, texto: f.texto.value, hipotese: f.hipotese.value });
+      p = api("propor_ab", { titulo: f.titulo.value, onde: f.onde.value, texto: f.texto.value, hipotese: f.hipotese.value, usa_marcela: !!f.usa_marcela.checked, imagem_ia: !!f.imagem_ia.checked });
       p = p.then(function (j) { if (!j.ok) { erro(j.erro || "erro"); bs.forEach(function (x) { x.disabled = false; }); return { _tratado: true }; } estado.proporAberto = false; estado.digitando = false; erro(""); return recarregar().then(function () { return { _tratado: true }; }); });
     }
     else if (tipo === "decidir") {
@@ -346,7 +348,7 @@
       p = api("decidir", { id: Number(id), decisao: decisao, comentario: f.comentario.value, conteudo_final: decisao === "editado" ? { texto: f.conteudo_final.value } : null });
     }
     if (!p) return;
-    p.then(function (j) { if (j && j._tratado) return; if (!j.ok) { erro(j.erro || "erro"); bs.forEach(function (x) { x.disabled = false; }); return; } delete estado.aberto[id]; erro(""); return recarregar(); });
+    p.then(function (j) { if (j && j._tratado) return; if (!j.ok) { erro(j.erro || "erro"); bs.forEach(function (x) { x.disabled = false; }); return; } delete estado.aberto[id]; erro(j.status === "pendente" && j.faltam && j.faltam.length ? "Sua decisão ficou registrada. Ainda falta: " + j.faltam.join(", ") + "." : ""); return recarregar(); });
   });
   el("p-filtros").addEventListener("click", function (ev) {
     var b = ev.target.closest("button[data-filtro]"); if (!b) return;

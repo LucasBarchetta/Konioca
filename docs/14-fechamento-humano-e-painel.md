@@ -26,23 +26,39 @@ Construído em 1/10 (migração 700, functions `painel-api` e `painel-avisar`, p
 - Placar no topo: reservas do lote 1 sobre `lote1_tamanho`. O `public-config` lê o mesmo placar para a LP quando
   `contador_visivel` estiver ligado.
 
-## Papéis do painel (2/10 à noite, pedido do Lucas)
+## Papéis e regra de aprovação (2/10 à noite, pedido do Lucas)
 
-A regra fica em `_shared/painel_regras.ts` (`permissoesDe`, `podeAcao`); a `painel-api` recusa com 403 o que o papel não
-faz e a tela esconde o botão. Quem é quem está só em `config.painel_aprovadores` (nome, e-mail, papel, escopo).
+A regra fica em `_shared/painel_regras.ts` (`permissoesDe`, `podeAcao`, `regraAprovacao`, `revisarConteudo`); a
+`painel-api` recusa com 403 o que o papel não faz e com 422 o que o revisor automático barra; a tela só esconde o botão.
+Quem é quem está só em `config.painel_aprovadores` (nome, e-mail, papel, escopo).
 
-| Papel | Vê | Faz | Não faz |
+| Papel | Vê | Faz no lead e nas turmas | Na aba Aprovações |
 |---|---|---|---|
-| principal (Lucas) | tudo | tudo; aprovação final de e-mails e mensagens para a base; decide qualquer item | |
-| conteudo (Marcela) | tudo | como o principal, menos gerar link; itens em que ela aparece ou fala | |
-| operacional (Matheus, cópia marketing) | tudo | como o principal, menos gerar link; turmas e links do Meet | |
-| growth (LG) | tudo: leads, turmas, Desempenho, aprovações | "Contatado à mão", "Respondeu"; decide qualquer item da aba Aprovações sem passar pelo principal (roteiros de vídeo, e-mails, propostas); propõe variações de teste A/B (itens `proposta_ab`); comenta em qualquer item | reserva, correção de e-mail (mexe na Circular e no convite), turmas, presença. Ligar ou desligar envios, preço, datas e turmas não passam pelo painel (config, com SIM do Lucas) |
+| principal (Lucas) | tudo | tudo | aprova mensagens para leads ou base, peças, propostas e config; comenta; propõe A/B |
+| conteudo (Marcela) | tudo | tudo, menos gerar link | aprova o que usa voz ou imagem dela (mensagens, roteiros, peças); comenta; propõe A/B |
+| operacional (Matheus, cópia marketing) | tudo | tudo, menos gerar link (turmas e links do Meet) | comenta e propõe A/B; não aprova conteúdo |
+| growth (LG) | tudo: leads, turmas, Desempenho, aprovações | "Contatado à mão" e "Respondeu"; sem reserva, correção de e-mail, turmas e presença | aprova mensagens para leads ou base, roteiros de vídeo, peças e propostas; comenta; propõe A/B |
 
-Roteiro de vídeo com rosto ou voz da Marcela: um item para `growth` e um para `conteudo` (os dois precisam aprovar); sem
-ela, só `growth`. Comentários ficam em `aprovacoes_comentarios` (migração 820), com "Nome (papel)" e hora; nada é enviado.
-A proposta de A/B entra pendente endereçada ao principal (que recebe o aviso do `painel-avisar`), mas qualquer papel com
-decisão pode aprová-la, inclusive o growth. Aprovar um item no painel não dispara nada: o envio em si continua
+Quem decide cada item (`regraAprovacao(tipo, usa_marcela)`): basta um de `qualquer_um_de` e, além disso, cada um de `tambem`.
+
+| Tipo | Basta um de | E também |
+|---|---|---|
+| e-mail, WhatsApp, texto (mensagens para leads ou base) | principal ou growth | conteudo, se usa voz ou imagem da Marcela |
+| roteiro de vídeo | growth | conteudo, se ela aparece |
+| peça | principal ou growth | conteudo, se usa a imagem dela |
+| proposta de teste A/B | principal ou growth | conteudo, se usa a imagem dela |
+| config | principal | |
+
+Cada decisão fica em `aprovacoes_decisoes` (uma por papel por item, "Nome (papel)", hora); o item fecha como aprovado,
+editado ou recusado quando a regra se cumpre ou alguém recusa (`aprovacao_registrar`, migração 820). Comentários em
+`aprovacoes_comentarios`. A proposta de A/B entra pendente com a mesma regra das mensagens; o `painel-avisar` avisa
+quem está na regra e ainda não decidiu. Aprovar um item no painel não dispara nada: o envio em si continua
 dependendo do SIM do Lucas no chat, como toda publicação.
+
+Revisor automático (`revisarConteudo`, roda na API antes de qualquer aprovação, para todo papel; ninguém passa por cima):
+preço diferente do da página (todo "R$" precisa ser o preço da pré-venda, o atual ou a diferença em mil, da config),
+construção "de/por", promessa de faturamento, lucro ou renda, e máquina ou imagem feita por IA (declarada no conteúdo,
+`imagem_ia`). O item barrado fica pendente com o motivo na tela até alguém corrigir o conteúdo.
 
 ## O que sai da fila (etapa 3)
 

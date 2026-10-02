@@ -110,12 +110,9 @@ export function temperaturasPresentes(leads: { temperatura?: string | null }[]):
   return TEMPERATURAS.map((t) => ({ ...t, n: n[t.temp] ?? 0 }));
 }
 
-// Papéis do painel (2/10): o que cada um pode fazer. A painel-api recusa fora disso; a tela só esconde o botão.
-// principal: tudo. conteudo e operacional: como antes (tudo, menos gerar link). growth (LG): vê tudo, marca
-// "Contatado à mão" e "Respondeu", decide qualquer item da aba Aprovações sem passar pelo principal (ordem do Lucas
-// de 2/10 à noite: "LG pode aprovar sem minha permissão também"), propõe variações de teste A/B e comenta.
-// Fora do growth: reserva, correção de e-mail (mexe na Circular e no convite), turmas e presença. Ligar ou desligar
-// envios, preço, datas e turmas nunca passam pelo painel: ficam na config, com SIM do Lucas.
+// Papéis do painel (2/10 à noite, regra do Lucas): a painel-api recusa fora disso; a tela só esconde o botão.
+// Quem decide cada item da aba Aprovações depende do tipo do item e de usar ou não voz ou imagem da Marcela
+// (regraAprovacao). O revisor automático (revisarConteudo) barra antes de qualquer aprovação, para todo papel.
 export type Papel = "principal" | "conteudo" | "operacional" | "growth";
 export const PAPEIS: readonly Papel[] = ["principal", "conteudo", "operacional", "growth"];
 
@@ -127,40 +124,125 @@ export interface Permissoes {
   corrigir_email: boolean;   // "Corrigir e-mail" (reenvia convite)
   turmas_editar: boolean;    // criar e editar turmas
   presenca: boolean;         // presente / faltou
-  decidir: "todos" | Papel[]; // itens da aba Aprovações que pode aprovar, editar ou recusar
+  decidir: boolean;          // pode decidir algum item (qual item, decide regraAprovacao); operacional comenta, não aprova
   comentar: boolean;         // comentar em qualquer item da aba Aprovações
-  propor_ab: boolean;        // propor variação de teste A/B (vira item para o principal)
+  propor_ab: boolean;        // propor variação de teste A/B (vira item para aprovação)
 }
 
-const TUDO: Permissoes = { ver: true, contato: true, respondeu: true, reservar: true, corrigir_email: true, turmas_editar: true, presenca: true, decidir: "todos", comentar: true, propor_ab: true };
-const GROWTH: Permissoes = { ver: true, contato: true, respondeu: true, reservar: false, corrigir_email: false, turmas_editar: false, presenca: false, decidir: "todos", comentar: true, propor_ab: true };
-const SO_VER: Permissoes = { ver: true, contato: false, respondeu: false, reservar: false, corrigir_email: false, turmas_editar: false, presenca: false, decidir: [], comentar: false, propor_ab: false };
+const TUDO: Permissoes = { ver: true, contato: true, respondeu: true, reservar: true, corrigir_email: true, turmas_editar: true, presenca: true, decidir: true, comentar: true, propor_ab: true };
+const OPERACIONAL: Permissoes = { ...TUDO, decidir: false };
+const GROWTH: Permissoes = { ver: true, contato: true, respondeu: true, reservar: false, corrigir_email: false, turmas_editar: false, presenca: false, decidir: true, comentar: true, propor_ab: true };
+const SO_VER: Permissoes = { ver: true, contato: false, respondeu: false, reservar: false, corrigir_email: false, turmas_editar: false, presenca: false, decidir: false, comentar: false, propor_ab: false };
 
 export function permissoesDe(papel: string | undefined | null): Permissoes {
   switch (papel) {
-    case "principal": case "conteudo": case "operacional": return TUDO;
+    case "principal": case "conteudo": return TUDO;
+    case "operacional": return OPERACIONAL;
     case "growth": return GROWTH;
     default: return SO_VER; // papel desconhecido na config: só leitura, até alguém corrigir
   }
 }
 
-/** Pode decidir (aprovar, editar, recusar) um item endereçado ao papel `aprovador`? */
-export function podeDecidir(papel: string | undefined | null, aprovador: string | undefined | null): boolean {
-  const d = permissoesDe(papel).decidir;
-  return d === "todos" || d.includes((aprovador ?? "principal") as Papel);
+/** Tipos de item da aba Aprovações. Mensagens para leads ou para a base: email, whatsapp, texto. */
+export type TipoAprovacao = "email" | "whatsapp" | "texto" | "roteiro_video" | "peca" | "proposta_ab" | "config";
+
+/** Quem precisa aprovar: basta um de `qualquer_um_de` e, além disso, cada papel de `tambem`. */
+export interface RegraAprovacao { qualquer_um_de: Papel[]; tambem: Papel[] }
+
+/**
+ * Regra do Lucas (2/10 à noite):
+ * - e-mails e mensagens para leads ou para a base: aprovação final do principal ou do growth (basta um); com voz ou
+ *   imagem da Marcela, ela também aprova;
+ * - roteiros de vídeo: o growth aprova, e a Marcela também quando ela aparece;
+ * - peças com a imagem da Marcela: a Marcela aprova (peça sem ela: principal ou growth, como mensagem);
+ * - proposta de teste A/B: principal ou growth; config: só o principal;
+ * - operacional comenta, não aprova conteúdo (nunca entra na regra).
+ */
+export function regraAprovacao(tipo: string, usaMarcela: boolean): RegraAprovacao {
+  const tambem: Papel[] = usaMarcela ? ["conteudo"] : [];
+  switch (tipo) {
+    case "roteiro_video": return { qualquer_um_de: ["growth"], tambem };
+    case "config": return { qualquer_um_de: ["principal"], tambem: [] };
+    case "email": case "whatsapp": case "texto": case "peca": case "proposta_ab": default:
+      return { qualquer_um_de: ["principal", "growth"], tambem };
+  }
+}
+
+export function papeisDaRegra(r: RegraAprovacao): Papel[] {
+  return [...new Set([...r.qualquer_um_de, ...r.tambem])];
+}
+
+export interface Decisao { papel: string; decisao: string; por?: string; em?: string }
+
+/** Estado do item a partir das decisões registradas: pendente (e o que falta), aprovado, editado ou recusado. */
+export function estadoAprovacao(r: RegraAprovacao, decisoes: Decisao[]): { status: "pendente" | "aprovado" | "editado" | "recusado"; faltam: Papel[] } {
+  if (decisoes.some((d) => d.decisao === "recusado")) return { status: "recusado", faltam: [] };
+  const ok = new Set(decisoes.filter((d) => d.decisao === "aprovado" || d.decisao === "editado").map((d) => d.papel));
+  const faltam: Papel[] = [];
+  if (!r.qualquer_um_de.some((p) => ok.has(p))) faltam.push(...r.qualquer_um_de);
+  for (const p of r.tambem) if (!ok.has(p)) faltam.push(p);
+  if (faltam.length) return { status: "pendente", faltam };
+  return { status: decisoes.some((d) => d.decisao === "editado") ? "editado" : "aprovado", faltam: [] };
+}
+
+/** Este papel pode decidir este item agora? Está na regra, tem permissão de decidir e ainda não decidiu. */
+export function podeDecidirItem(papel: string | undefined | null, item: { tipo: string; usa_marcela?: boolean | null; status?: string }, decisoes: Decisao[] = []): boolean {
+  if (!papel || !permissoesDe(papel).decidir) return false;
+  if (item.status && item.status !== "pendente") return false;
+  const r = regraAprovacao(item.tipo, !!item.usa_marcela);
+  if (!papeisDaRegra(r).includes(papel as Papel)) return false;
+  return !decisoes.some((d) => d.papel === papel);
+}
+
+/** Texto curto da regra para a tela: "Lucas ou LG; e a Marcela (usa a imagem dela)". Nomes vêm da config. */
+export function textoRegra(r: RegraAprovacao, nomes: Record<string, string> = {}): string {
+  const n = (p: Papel) => nomes[p] ?? p;
+  const base = r.qualquer_um_de.map(n).join(" ou ");
+  return r.tambem.length ? `${base}; e ${r.tambem.map(n).join(" e ")} (usa voz ou imagem dela)` : base;
+}
+
+// Revisor automático: barra antes da aprovação, para todo papel. Nenhum aprovador passa por cima.
+// Checa: preço diferente do da página (config), "de/por", promessa de faturamento ou lucro, máquina feita por IA
+// (declarada no conteúdo, já que o texto não revela a origem da imagem).
+export interface ConteudoRevisao { texto?: string | null; html?: string | null; assunto?: string | null; previa?: string | null; imagem_ia?: boolean | null; imagens?: { ia?: boolean }[] | null }
+export interface ConfigPrecos { preco_prevenda?: number; preco_atual?: number }
+
+function formatarMil(n: number): string { return "R$ " + String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, "."); }
+
+export function revisarConteudo(c: ConteudoRevisao, precos: ConfigPrecos): { ok: boolean; problemas: string[] } {
+  const problemas: string[] = [];
+  const partes = [c.assunto, c.previa, c.texto, c.html ? c.html.replace(/<[^>]+>/g, " ") : null].filter((x): x is string => typeof x === "string" && x.length > 0);
+  const texto = partes.join("\n").replace(/&nbsp;/g, " ");
+  // 1) Preço: todo "R$ valor" precisa ser um dos preços da página (pré-venda, atual) ou a diferença em mil entre eles.
+  const novo = Number(precos.preco_prevenda), atual = Number(precos.preco_atual);
+  const permitidos = new Set<string>();
+  if (novo > 0) permitidos.add(formatarMil(novo));
+  if (atual > 0) permitidos.add(formatarMil(atual));
+  if (novo > 0 && atual > novo) permitidos.add(`R$ ${Math.floor((atual - novo) / 1000)} mil`);
+  const valores = texto.match(/R\$\s?\d{1,3}(?:\.\d{3})*(?:,\d{2})?(?:\s?mil)?/g) ?? []; // "R$ 9.900", "R$ 16 mil"; o ponto final da frase fica de fora
+  for (const v of valores) {
+    const norm = v.replace(/\s+/g, " ").replace("R$ ", "R$ ").replace(/^R\$(\d)/, "R$ $1");
+    if (!permitidos.has(norm)) problemas.push(`preço diferente do da página: ${v.trim()}`);
+  }
+  // 2) "de/por": "de R$ X por R$ Y", "de/por", "de X por Y".
+  if (/\bde\s*\/\s*por\b/i.test(texto) || /\bde\s+R\$\s?[\d.]+(?:\s?mil)?\s+(?:por|para)\s+(?:apenas\s+|s[oó]\s+)?R\$/i.test(texto)) problemas.push('construção "de/por"');
+  // 3) Promessa de faturamento, lucro, renda ou ganho.
+  if (/\b(fature|faturamento|faturando|lucro|lucre|lucrando|renda|rendimento|ganhe|ganhos?|retorno)\b[^.\n]{0,60}(R\$|mil|por m[eê]s|mensal|mensais|por dia|di[aá]rios?|garantid[oa]s?)/i.test(texto) || /R\$\s?[\d.]+(?:\s?mil)?\s*(?:por|ao|\/)\s*(?:m[eê]s|dia|semana)\b/i.test(texto)) problemas.push("promessa de faturamento, lucro ou renda");
+  // 4) Máquina feita por IA: declarada no conteúdo.
+  if (c.imagem_ia === true || (Array.isArray(c.imagens) && c.imagens.some((i) => i && i.ia === true)) || /\[(imagem|m[aá]quina)\s+(por\s+)?IA\]/i.test(texto)) problemas.push("máquina ou imagem feita por IA");
+  return { ok: problemas.length === 0, problemas: [...new Set(problemas)] };
 }
 
 const ACOES_LEITURA = new Set(["quem", "leads", "eventos", "aprovacoes", "encontros", "encontro_leads", "desempenho"]);
-const ACOES_ESCRITA: Record<string, keyof Omit<Permissoes, "decidir">> = {
+const ACOES_ESCRITA: Record<string, keyof Permissoes> = {
   contato_manual: "contato", respondeu: "respondeu", reservar: "reservar", reserva_cancelar: "reservar", corrigir_email: "corrigir_email",
-  encontro_salvar: "turmas_editar", presenca: "presenca", comentar: "comentar", propor_ab: "propor_ab",
+  encontro_salvar: "turmas_editar", presenca: "presenca", comentar: "comentar", propor_ab: "propor_ab", decidir: "decidir",
 };
 
-/** Ação da painel-api permitida para o papel? Para "decidir", passe o item (ou o papel dele em `aprovador`). */
-export function podeAcao(papel: string | undefined | null, acao: string, item?: { aprovador?: string | null }): boolean {
+/** Ação da painel-api permitida para o papel? Para "decidir", a regra do item é conferida depois (podeDecidirItem). */
+export function podeAcao(papel: string | undefined | null, acao: string): boolean {
   const p = permissoesDe(papel);
   if (ACOES_LEITURA.has(acao)) return p.ver;
-  if (acao === "decidir") return podeDecidir(papel, item?.aprovador);
   const chave = ACOES_ESCRITA[acao];
   return chave ? p[chave] === true : false;
 }
