@@ -96,5 +96,10 @@ Publicado em 1/10 com o "sim" do Lucas: migração 690, `_shared/email_eventos.t
 - 16h30: segunda onda concluída (333 entregues, 7 devolvidas, 11 ainda "enviado"); devolução do dia 3,00% (21 em 699),
   trilha ativa. Migração 810 aplicada em produção com o SIM do Lucas (marca do sorteio passa a `now()`) e registrada em
   `schema_migrations`.
+- 18h30, fechamento do P2 (duas ondas): 699 enviados (A 526, B 173), 658 entregues, 21 devolvidos (11 definitivas:
+  A 10, B 1; 10 temporárias), 20 sem confirmação do provedor, 4 cadastros pela página (A 3, B 1), 2 escolheram horário
+  de encontro, 0 opt-out, 0 spam, 0 pendentes, 0 falhas; 14 visitas à LP vindas da base; devolução do dia 3,00%.
+  Cliques não chegam como evento (o provedor não manda `email.clicked` para a base antiga). P1 (1/10): 47 enviados,
+  0 devolvidos, 1 clique, 0 cadastros. Taxa de cadastro do P2: 0,6% dos entregues.
 - Ferramenta: `execute_sql` também trava em `DROP FUNCTION` (como em UPDATE puro); para mudar o tipo de retorno de uma
   função, criar com outro nome (`_v2`).
