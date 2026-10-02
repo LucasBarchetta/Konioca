@@ -59,7 +59,9 @@ Deno.serve(async (req) => {
   for (const item of (itens ?? []) as { id: number; lead_id: string; tipo: string; canal: string; payload: Record<string, unknown> | null; tentativas: number }[]) {
     // O join com encontros só existe depois da migração 800 (config.encontros_ativos); antes dela a tabela não existe.
     const colunas = "id, nome, whatsapp, email, token, turma, pergunta_live, estado_conversa, optout_em, grupo_controle, wa_invalido_em, base_antiga_gancho, base_antiga_prioridade, base_antiga_variante, contato_manual_em, email_bloqueado_em" + (encontrosAtivos ? ", encontro:encontros(id, inicio, duracao_min, meet_link)" : "");
-    const { data: lead } = await sb.from("leads").select(colunas).eq("id", item.lead_id).single();
+    type LeadLinha = LeadFila & { optout_em: string | null; grupo_controle: boolean; wa_invalido_em: string | null; email_bloqueado_em: string | null; contato_manual_em: string | null; encontro?: unknown };
+    const { data: leadBruto } = await sb.from("leads").select(colunas).eq("id", item.lead_id).single();
+    const lead = leadBruto as unknown as LeadLinha | null;
     if (!lead || lead.optout_em) { await fechar(item.id, "cancelado", "optout"); continue; }
     if (lead.grupo_controle && item.tipo !== "circular_lembrete") { await fechar(item.id, "pulado", "grupo_controle"); continue; }
     if (item.canal === "whatsapp" && (lead.wa_invalido_em || !lead.whatsapp)) { await fechar(item.id, "pulado", "numero_invalido"); continue; }
@@ -85,8 +87,8 @@ Deno.serve(async (req) => {
     if (item.canal === "whatsapp" && waEnviados >= limite) { await sb.from("fila_envios").update({ status: "pendente", motivo: "teto por minuto/dia" }).eq("id", item.id); continue; }
 
     // O join leads->encontros chega como objeto (FK única), mas o tipo inferido é lista; normaliza antes de montar.
-    const enc = Array.isArray(lead.encontro) ? (lead.encontro[0] ?? null) : lead.encontro;
-    const envio = montarEnvio(item.tipo, item.canal, { ...lead, encontro: enc } as unknown as LeadFila, cfg as Config, apiUrl);
+    const enc = (Array.isArray(lead.encontro) ? (lead.encontro[0] ?? null) : lead.encontro ?? null) as LeadFila["encontro"];
+    const envio = montarEnvio(item.tipo, item.canal, { ...lead, encontro: enc }, cfg as Config, apiUrl);
     if (envio.canal === "nenhum") {
       // Config pendente é bloqueio geral, não falha do item: volta à fila em 10 min sem gastar tentativa.
       // Nada se perde enquanto um humano não preenche a configuração.
