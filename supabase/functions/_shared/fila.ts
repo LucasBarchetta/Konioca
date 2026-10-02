@@ -34,7 +34,7 @@ export function emailImagens(cfg: Config): { logo: string; maquina: string; cone
 }
 
 /** Texto alternativo da arte 6 (regra do Lucas: descritivo, para quem não carrega imagem ou usa leitor de tela). */
-export const ARTE6_ALT = "Arte da Konioca: 'Empreender com alimentação não deveria começar com uma fortuna.' De um lado, o que uma loja exige: reforma, equipe, cozinha, equipamentos. Do outro, a Konioca. 'Mais que tapioca, liberdade.'";
+export const ARTE6_ALT = "Arte da Konioca: 'Empreender com alimentação não deveria começar com uma fortuna.' Uma pilha de caixas com o que uma loja exige (loja, reforma, cozinha, equipe, equipamentos) e a pergunta 'Precisa de tudo isso?'. A Marcela responde 'Não.' ao lado do carrinho Konioca, com a frase 'Mais que tapioca, liberdade.'";
 
 function esc(s: string): string { return s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c] as string)); }
 
