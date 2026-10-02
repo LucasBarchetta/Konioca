@@ -77,3 +77,16 @@ Publicado em 1/10 com o "sim" do Lucas: migração 690, `_shared/email_eventos.t
   por DNS sobre HTTPS, 37 domínios). Saíram 8 contatos (4 P2, 1 P3, 3 P4) com status `ignorado` e o motivo em `erro`:
   domínios inexistentes (gmail.comj, gmail.con, gluiz.com), sem MX (psrcorretora.com.br, hormail.com) e erros evidentes de
   digitação que caem em domínios de terceiros (icloud.cm, iutlook.com, gamil.com). Função `base_antiga_ignorar_dominios`.
+- 10h30, ordem do Lucas: os 5 erros de digitação evidentes voltam à lista com o e-mail corrigido (gmail.comj e gmail.con ->
+  gmail.com, icloud.cm -> icloud.com, iutlook.com -> outlook.com; 3 P2 e 1 P4), com a correção registrada em `observacoes`
+  (função `base_antiga_corrigir_dominios_v2`). O quinto (gamil.com, P2) ficou ignorado como duplicado: o endereço corrigido
+  já estava na lista em outro contato. Os 3 sem domínio válido seguem ignorados. Saldo da checagem: 4 contatos fora da lista.
+- 10h30, SIM do Lucas: `lead-intake` v11 e `circular-enviar` v11 publicados com o e-mail da Circular falando dos encontros
+  no Meet (sem a linha da live). A Circular segue sem sair: `circular_storage_path` continua pendente (sem PDF do jurídico)
+  e `circular_envios` está vazia; ela só sai depois do PDF final e do SIM dele.
+- Migração 810 (marca do sorteio A/B em `base_antiga_promover_ab` passa a `now()`): SIM para aplicar só depois que a
+  segunda onda das 15h terminar de sair (o lembrete das 15h cuida disso).
+- P3/P4 de segunda 5/10: teto de devolução 5% (o lembrete de segunda 7h30 faz o upsert, já que o de sábado devolve a 3%)
+  e spam em tolerância zero. O disparo em si depende do SIM dele no dia.
+- Ferramenta: `execute_sql` também trava em `DROP FUNCTION` (como em UPDATE puro); para mudar o tipo de retorno de uma
+  função, criar com outro nome (`_v2`).
