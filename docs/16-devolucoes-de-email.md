@@ -66,3 +66,14 @@ cadastrou o endpoint `https://ytsildpxummevfkjcjhs.supabase.co/functions/v1/circ
 
 Publicado em 1/10 com o "sim" do Lucas: migração 690, `_shared/email_eventos.ts` e `_shared/bloqueio.ts`, webhook,
 `email.ts`, `circular.ts`, `fila-processar`, `base-antiga-processar`, testes em `tests/email_eventos.test.mjs`.
+
+## Ajustes de 2/10 (P2)
+
+- 9h04: a trilha pausou sozinha (3 devoluções definitivas em 93 e-mails, 3,23%, teto 3%). O Lucas religou às 10h10 com
+  teto de 5% só na sexta; no sábado 3/10 o teto volta a 3% (lembrete armado). Acima do teto, pausa de novo e espera segunda.
+- Spam com tolerância zero: qualquer marcação de spam em e-mail da base antiga pausa a trilha na hora (circular-webhook,
+  função `pausarBaseAntiga`, mesma usada pelas devoluções), com alerta e e-mail ao aprovador principal.
+- Checagem dos e-mails da base antes do P3/P4 (ordem do Lucas): sintaxe (regex, 0 inválidos em 810) e domínio (MX ou A
+  por DNS sobre HTTPS, 37 domínios). Saíram 8 contatos (4 P2, 1 P3, 3 P4) com status `ignorado` e o motivo em `erro`:
+  domínios inexistentes (gmail.comj, gmail.con, gluiz.com), sem MX (psrcorretora.com.br, hormail.com) e erros evidentes de
+  digitação que caem em domínios de terceiros (icloud.cm, iutlook.com, gamil.com). Função `base_antiga_ignorar_dominios`.

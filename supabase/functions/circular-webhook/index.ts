@@ -3,7 +3,8 @@
 //   entrega/abertura/clique: status da mensagem (e marcos da Circular);
 //   devolução definitiva: mensagem "devolvido", endereço bloqueado para qualquer envio, evento no lead;
 //   devolução temporária: só registra; na repetição (config.email_devolucao_temporaria_max em 7 dias) bloqueia;
-//   spam: encerra tudo, igual ao opt-out (e-mail e WhatsApp), endereço bloqueado, evento no lead;
+//   spam: encerra tudo, igual ao opt-out (e-mail e WhatsApp), endereço bloqueado, evento no lead; se o e-mail era da base
+//   antiga, a trilha pausa na hora (tolerância zero, Lucas 2/10);
 //   base antiga: devoluções do dia acima do teto pausam a trilha e avisam os aprovadores.
 import { json } from "../_shared/http.ts";
 import { db } from "../_shared/db.ts";
@@ -83,8 +84,33 @@ Deno.serve(async (req) => {
     await sb.from("lead_eventos").insert({ lead_id: leadId, tipo: "optout", origem: "lead", dados: { canal: "email", motivo: "spam", provedor_id: id } });
   }
   resultado.bloqueado = !!email; resultado.saiu = !!leadId;
+  // Tolerância zero (Lucas, 2/10): qualquer marcação de spam vinda de e-mail da base antiga pausa a trilha na hora.
+  if (modelo === "base_antiga_email" && !cfgBool(cfg, "base_antiga_pausada", false)) {
+    const motivo = `pausada em ${new Date().toISOString()}: marcação de spam em e-mail da base antiga (tolerância zero)`;
+    resultado.base_antiga = await pausarBaseAntiga(cfg, motivo, email ? [email] : [], "[Konioca] Base antiga pausada por marcação de spam");
+  }
   return json(resultado);
 });
+
+/** Pausa a trilha da base antiga (config), registra o alerta e avisa o aprovador principal por e-mail. */
+async function pausarBaseAntiga(cfg: Record<string, unknown>, motivo: string, enderecos: string[], assunto: string): Promise<Record<string, unknown>> {
+  const sb = db();
+  await sb.from("config").update({ valor: true }).eq("chave", "base_antiga_pausada");
+  await sb.from("config").update({ valor: motivo }).eq("chave", "base_antiga_pausada_motivo");
+  await sb.from("alertas").insert({ tipo: "base_antiga_pausada", resumo: "Trilha da base antiga pausada sozinha: " + motivo });
+  const texto = [
+    `A trilha da base antiga foi pausada sozinha.`, motivo, ``,
+    `Endereços envolvidos:`, ...[...new Set(enderecos)].map((e) => "- " + e), ``,
+    `Para voltar: config.base_antiga_pausada = false, com o seu sim. Nada sai até lá.`,
+  ].join("\n");
+  const html = `<pre style="font-family:Carlito,Calibri,sans-serif;font-size:15px;white-space:pre-wrap">${texto.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c] as string))}</pre>`;
+  const avisados: string[] = [];
+  for (const a of aprovadores(cfg).filter((x) => x.papel === "principal")) {
+    const r = await enviarEmail(a.email, assunto, texto, html, "monitor");
+    if (r.ok) avisados.push(a.email);
+  }
+  return { pausou: true, avisados };
+}
 
 /** Base antiga: com devoluções do dia acima do teto, pausa a trilha (config) e avisa os aprovadores uma vez. */
 async function verificarBaseAntiga(cfg: Record<string, unknown>, emailDevolvido: string): Promise<Record<string, unknown>> {
@@ -94,26 +120,13 @@ async function verificarBaseAntiga(cfg: Record<string, unknown>, emailDevolvido:
   if (!dia) return { verificado: false };
   if (!dia.pausar || cfgBool(cfg, "base_antiga_pausada", false)) return { ...dia, pausou: false };
   const motivo = `pausada em ${new Date().toISOString()}: ${dia.devolvidos} devoluções em ${dia.enviados} e-mails no dia (${dia.pct}%), teto ${cfgNum(cfg, "base_antiga_devolucao_max_pct", 3)}%`;
-  await sb.from("config").update({ valor: true }).eq("chave", "base_antiga_pausada");
-  await sb.from("config").update({ valor: motivo }).eq("chave", "base_antiga_pausada_motivo");
-  await sb.from("alertas").insert({ tipo: "base_antiga_pausada", resumo: "Trilha da base antiga pausada sozinha: " + motivo });
   // Endereços devolvidos no dia, para o aviso.
   const hoje = new Date(); hoje.setHours(hoje.getHours() - 27);
   const { data: devolvidos } = await sb.from("mensagens").select("lead_id").eq("modelo", "base_antiga_email").eq("status", "devolvido").gt("criado_em", hoje.toISOString()).limit(200);
   const ids = [...new Set((devolvidos ?? []).map((d) => d.lead_id).filter(Boolean))] as string[];
   const { data: leads } = ids.length ? await sb.from("leads").select("email").in("id", ids) : { data: [] };
-  const lista = (leads ?? []).map((l) => l.email).concat(emailDevolvido ? [emailDevolvido] : []);
-  const texto = [
-    `A trilha da base antiga foi pausada sozinha.`, motivo, ``,
-    `Endereços devolvidos no dia:`, ...[...new Set(lista)].map((e) => "- " + e), ``,
-    `Para voltar: config.base_antiga_pausada = false, com o seu sim. Nada sai até lá.`,
-  ].join("\n");
-  const html = `<pre style="font-family:Carlito,Calibri,sans-serif;font-size:15px;white-space:pre-wrap">${texto.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c] as string))}</pre>`;
-  const avisados: string[] = [];
-  for (const a of aprovadores(cfg).filter((x) => x.papel === "principal")) {
-    const r = await enviarEmail(a.email, "[Konioca] Base antiga pausada por devoluções", texto, html, "monitor");
-    if (r.ok) avisados.push(a.email);
-  }
+  const lista = (leads ?? []).map((l) => l.email as string).concat(emailDevolvido ? [emailDevolvido] : []);
   void cfgText;
-  return { ...dia, pausou: true, avisados };
+  const r = await pausarBaseAntiga(cfg, motivo, lista, "[Konioca] Base antiga pausada por devoluções");
+  return { ...dia, ...r };
 }
