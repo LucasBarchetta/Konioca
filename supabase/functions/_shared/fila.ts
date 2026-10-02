@@ -50,7 +50,9 @@ export function conviteWhatsappVencido(cfg: Config, whatsappAtivo: boolean, agor
 export function montarEnvio(tipo: string, canal: string, lead: LeadFila, cfg: Config, apiUrl: string): Envio {
   const nome = primeiroNome(lead.nome);
   const turma = turmaDoLead(cfg, lead);
-  const live = partesData(turma?.live ?? cfgText(cfg, "live_data"));
+  // Dados da live antiga (só os tipos legados lembrete_live e gravacao usam). Sem live_data na config, não pode quebrar os outros envios.
+  const liveIso = turma?.live ?? cfgText(cfg, "live_data");
+  const live = partesData(liveIso && Number.isFinite(Date.parse(liveIso)) ? liveIso : "1970-01-01T00:00:00Z");
   const lote1 = String(cfgNum(cfg, "lote1_tamanho"));
   // Encontros fechados no Google Meet (formato de 2/10, substitui a live): duração e capacidade vêm da config.
   const encontroDuracao = String(cfgNum(cfg, "encontro_duracao_min", 30));
@@ -257,7 +259,7 @@ ${paragrafos.map(P).join("\n")}
       p2 = `Entre uns minutos antes. ${circular}`;
       botao = "Entrar no Meet"; rodape = "";
     }
-    const texto = [p1, p2, `${botao}: ${en.meet_link}`, rodape, ``, assinatura].filter((x, i) => x !== "" || i < 2).join("\n");
+    const texto = [p1, p2, `${botao}: ${en.meet_link}`, ...(rodape ? [rodape] : []), ``, assinatura].join("\n");
     const img = emailImagens(cfg);
     const html = `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>${esc(assunto)}</title></head>
 <body style="margin:0;padding:0;background:#f4ebdb;font-family:Carlito,Calibri,'Segoe UI',sans-serif;color:#1f4a36">

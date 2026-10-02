@@ -203,3 +203,11 @@ test("Encontro no Google Meet (2/10): confirmação com .ics anexado, lembretes 
   assert.equal(w.nome, "konioca_encontro_confirmacao"); assert.deepEqual(w.params, ["Ana", "quinta, 15/10, às 10h"]); assert.equal(w.botaoUrlSufixo, "abc-defg-hij");
   assert.equal(montarEnvio("encontro_confirmacao", "whatsapp", { ...LEAD, encontro: en }, CFG, API).canal, "nenhum", "sem modelo configurado nada sai");
 });
+
+test("Sem live_data na config, o convite e os e-mails do encontro continuam saindo (formato de 2/10)", () => {
+  const { live_data: _l, ...semLive } = CFG;
+  const c = montarEnvio("convite", "email", LEAD, semLive, API);
+  assert.equal(c.canal, "email");
+  const lead = { ...LEAD, encontro: { id: 2, inicio: "2026-10-15T13:00:00.000Z", duracao_min: 30, meet_link: "https://meet.google.com/abc-defg-hij" } };
+  assert.equal(montarEnvio("encontro_confirmacao", "email", lead, semLive, API).canal, "email");
+});
