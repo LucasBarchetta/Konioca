@@ -66,3 +66,48 @@ cadastrou o endpoint `https://ytsildpxummevfkjcjhs.supabase.co/functions/v1/circ
 
 Publicado em 1/10 com o "sim" do Lucas: migração 690, `_shared/email_eventos.ts` e `_shared/bloqueio.ts`, webhook,
 `email.ts`, `circular.ts`, `fila-processar`, `base-antiga-processar`, testes em `tests/email_eventos.test.mjs`.
+
+## Ajustes de 2/10 (P2)
+
+- 9h04: a trilha pausou sozinha (3 devoluções definitivas em 93 e-mails, 3,23%, teto 3%). O Lucas religou às 10h10 com
+  teto de 5% só na sexta; no sábado 3/10 o teto volta a 3% (lembrete armado). Acima do teto, pausa de novo e espera segunda.
+- Spam com tolerância zero: qualquer marcação de spam em e-mail da base antiga pausa a trilha na hora (circular-webhook,
+  função `pausarBaseAntiga`, mesma usada pelas devoluções), com alerta e e-mail ao aprovador principal.
+- Checagem dos e-mails da base antes do P3/P4 (ordem do Lucas): sintaxe (regex, 0 inválidos em 810) e domínio (MX ou A
+  por DNS sobre HTTPS, 37 domínios). Saíram 8 contatos (4 P2, 1 P3, 3 P4) com status `ignorado` e o motivo em `erro`:
+  domínios inexistentes (gmail.comj, gmail.con, gluiz.com), sem MX (psrcorretora.com.br, hormail.com) e erros evidentes de
+  digitação que caem em domínios de terceiros (icloud.cm, iutlook.com, gamil.com). Função `base_antiga_ignorar_dominios`.
+- 10h30, ordem do Lucas: os 5 erros de digitação evidentes voltam à lista com o e-mail corrigido (gmail.comj e gmail.con ->
+  gmail.com, icloud.cm -> icloud.com, iutlook.com -> outlook.com; 3 P2 e 1 P4), com a correção registrada em `observacoes`
+  (função `base_antiga_corrigir_dominios_v2`). O quinto (gamil.com, P2) ficou ignorado como duplicado: o endereço corrigido
+  já estava na lista em outro contato. Os 3 sem domínio válido seguem ignorados. Saldo da checagem: 4 contatos fora da lista.
+- 10h30, SIM do Lucas: `lead-intake` v11 e `circular-enviar` v11 publicados com o e-mail da Circular falando dos encontros
+  no Meet (sem a linha da live). A Circular segue sem sair: `circular_storage_path` continua pendente (sem PDF do jurídico)
+  e `circular_envios` está vazia; ela só sai depois do PDF final e do SIM dele.
+- Migração 810 (marca do sorteio A/B em `base_antiga_promover_ab` passa a `now()`): SIM para aplicar só depois que a
+  segunda onda das 15h terminar de sair (o lembrete das 15h cuida disso).
+- P3/P4 de segunda 5/10: teto de devolução 5% (o lembrete de segunda 7h30 faz o upsert, já que o de sábado devolve a 3%)
+  e spam em tolerância zero. O disparo em si depende do SIM dele no dia.
+- 16h00 (o lembrete das 15h chegou com 1h de atraso): relatório A/B da primeira onda (A: 161 entregues, 5 devoluções
+  definitivas, 2 cadastros pela página; B: 163 entregues, 1 definitiva, 1 cadastro; cliques não chegam como evento do
+  provedor, 0 opt-out, 0 spam). Vencedora A pela regra (mais cadastros). Segunda onda: 351 P2 na fila com a A; os 20
+  primeiros saíram antes da marcação da variante (bug de relógio) e levaram `utm_content=p2` em vez de `p2_a`. Função
+  auxiliar `p2_variante_unica(text)` marcou os 331 restantes.
+- 16h30: segunda onda concluída (333 entregues, 7 devolvidas, 11 ainda "enviado"); devolução do dia 3,00% (21 em 699),
+  trilha ativa. Migração 810 aplicada em produção com o SIM do Lucas (marca do sorteio passa a `now()`) e registrada em
+  `schema_migrations`.
+- 18h30, fechamento do P2 (duas ondas): 699 enviados (A 526, B 173), 658 entregues, 21 devolvidos (11 definitivas:
+  A 10, B 1; 10 temporárias), 20 sem confirmação do provedor, 4 cadastros pela página (A 3, B 1), 2 escolheram horário
+  de encontro, 0 opt-out, 0 spam, 0 pendentes, 0 falhas; 14 visitas à LP vindas da base; devolução do dia 3,00%.
+  Cliques não chegam como evento (o provedor não manda `email.clicked` para a base antiga). P1 (1/10): 47 enviados,
+  0 devolvidos, 1 clique, 0 cadastros. Taxa de cadastro do P2: 0,6% dos entregues.
+- P3/P4 de segunda 5/10 (pedido do Lucas em 2/10 à noite): teste de imagem, metade com a faixa de cones (atual) e
+  metade com a arte 6 do LG ("não deveria começar com uma fortuna") depois do primeiro parágrafo, sem a faixa; sorteio
+  por `base_antiga_promover_ab(..., array['P3','P4'], ..., array['a','b'])` (a = cones, b = arte 6), links
+  `p34_cones` / `p34_arte6` (migração 830 separa as gavetas no painel e na Desempenho). Regras de uso das artes: nunca
+  no topo, 600 px, até 150 KB, texto alternativo descritivo, sem "de/por", sem promessa de faturamento, sem máquina
+  desenhada por IA; a arte 2 só depois que o LG trocar o texto para "A Konioca de R$ 25.900 ganhou uma nova geração".
+  Arquivo da arte: `site/assets/img/email/arte6-600.jpg` (entra em main antes do disparo). Teste das duas versões para o
+  Lucas antes do disparo (`email-teste`, prioridade P3, variante a e b).
+- Ferramenta: `execute_sql` também trava em `DROP FUNCTION` (como em UPDATE puro); para mudar o tipo de retorno de uma
+  função, criar com outro nome (`_v2`).

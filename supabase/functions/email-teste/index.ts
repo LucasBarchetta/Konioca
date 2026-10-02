@@ -38,7 +38,7 @@ Deno.serve(async (req) => {
   const sb = db();
   const resultados: Record<string, string> = {};
   for (const a of destinos) {
-    const leadFicticio: LeadFila = { id: "teste", nome: a.nome, whatsapp: a.whatsapp, email: a.email, token: "teste", turma: null, pergunta_live: null, estado_conversa: "inicio", base_antiga_prioridade: b.prioridade ?? "P1", base_antiga_gancho: b.gancho ?? "fev/26", base_antiga_variante: b.variante ?? null };
+    const leadFicticio: LeadFila = { id: "teste", nome: a.nome, whatsapp: a.whatsapp ?? "", email: a.email, token: "teste", turma: null, pergunta_live: null, estado_conversa: "inicio", base_antiga_prioridade: b.prioridade ?? "P1", base_antiga_gancho: b.gancho ?? "fev/26", base_antiga_variante: b.variante ?? null };
     const envio = montarEnvio(tipo, "email", leadFicticio, todos as Config, apiUrl);
     if (envio.canal !== "email") { resultados[a.email] = "não montou: " + ("motivo" in envio ? envio.motivo : envio.canal); continue; }
     const r = await enviarEmail(a.email, "[TESTE" + (tipo === "base_antiga_email" ? " " + (b.prioridade ?? "P1") + (b.variante ? " " + String(b.variante).toUpperCase() : "") : "") + "] " + envio.assunto, envio.texto, envio.html, "teste");

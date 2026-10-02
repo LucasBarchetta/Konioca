@@ -26,11 +26,15 @@ export function turmaDoLead(cfg: Config, lead: LeadFila): Turma | null {
 }
 
 /** Imagens hospedadas dos e-mails (logo e foto da máquina). Base em config.email_imagens_url; nunca anexo. */
-export function emailImagens(cfg: Config): { logo: string; maquina: string; cones: string } {
+export function emailImagens(cfg: Config): { logo: string; maquina: string; cones: string; arte6: string } {
   const base = cfgText(cfg, "email_imagens_url", "https://prevenda.konioca.com/assets/img/email").replace(/\/$/, "");
   // maquina: corte horizontal aprovado (convite). cones: faixa 600 x 240 com três cones reais sobre o verde (base antiga, as três versões).
-  return { logo: `${base}/logo-360.png`, maquina: `${base}/maquina-600.jpg`, cones: `${base}/cones-600x240.jpg` };
+  // arte6: arte do LG aprovada em 2/10 ("não deveria começar com uma fortuna"), 600 px, até 150 KB; entra depois do primeiro parágrafo.
+  return { logo: `${base}/logo-360.png`, maquina: `${base}/maquina-600.jpg`, cones: `${base}/cones-600x240.jpg`, arte6: `${base}/arte6-600.jpg` };
 }
+
+/** Texto alternativo da arte 6 (regra do Lucas: descritivo, para quem não carrega imagem ou usa leitor de tela). */
+export const ARTE6_ALT = "Arte da Konioca: 'Empreender com alimentação não deveria começar com uma fortuna.' Uma pilha de caixas com o que uma loja exige (loja, reforma, cozinha, equipe, equipamentos) e a pergunta 'Precisa de tudo isso?'. A Marcela responde 'Não.' ao lado do carrinho Konioca, com a frase 'Mais que tapioca, liberdade.'";
 
 function esc(s: string): string { return s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c] as string)); }
 
@@ -192,7 +196,11 @@ export function montarEnvio(tipo: string, canal: string, lead: LeadFila, cfg: Co
     }
     // Teste A/B do P2 (2/10): a variante vai no link (p2_a / p2_b) para o painel e a aba Desempenho separarem os resultados.
     const variante = versao === "p2" && (lead.base_antiga_variante === "a" || lead.base_antiga_variante === "b") ? lead.base_antiga_variante : null;
-    const url = `${lp.replace(/\/$/, "")}/?utm_source=base&utm_medium=email&utm_campaign=base_antiga&utm_content=${variante ? `p2_${variante}` : versao}`;
+    // Teste do P3/P4 (5/10, pedido do Lucas em 2/10): mesmo texto; a = faixa de cones (atual), b = arte 6 do LG depois do
+    // primeiro parágrafo, sem a faixa. Cada metade com o seu utm_content (p34_cones / p34_arte6).
+    const arteP34 = versao === "p34" && lead.base_antiga_variante === "b";
+    const content = variante ? `p2_${variante}` : versao === "p34" && lead.base_antiga_variante === "a" ? "p34_cones" : arteP34 ? "p34_arte6" : versao;
+    const url = `${lp.replace(/\/$/, "")}/?utm_source=base&utm_medium=email&utm_campaign=base_antiga&utm_content=${content}`;
     const precoNovo = formatarReais(cfgNum(cfg, "preco_prevenda"));
     const precoAtual = formatarReais(cfgNum(cfg, "preco_atual"));
     const diferencaMil = Math.floor((cfgNum(cfg, "preco_atual") - cfgNum(cfg, "preco_prevenda")) / 1000);
@@ -203,15 +211,19 @@ export function montarEnvio(tipo: string, canal: string, lead: LeadFila, cfg: Co
     const img = emailImagens(cfg);
     const P = (t: string) => `<p style="margin:0 0 14px;font-size:17px;line-height:1.6">${t}</p>`;
     // Mesmo visual para A e B: faixa verde com a logo, faixa de cones, parágrafos, botão, linha de saída, assinatura, opt-out.
-    const montarHtml = (assunto: string, previa: string, paragrafos: string[], chamada: string, botao: string, assina: string) => `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>${esc(assunto)}</title></head>
+    // Com `arte`: sem a faixa de cones; a arte (600 px) entra depois do primeiro parágrafo, nunca no topo (regra do Lucas, 2/10).
+    const montarHtml = (assunto: string, previa: string, paragrafos: string[], chamada: string, botao: string, assina: string, arte?: { src: string; alt: string }) => `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>${esc(assunto)}</title></head>
 <body style="margin:0;padding:0;background:#f4ebdb;font-family:Carlito,Calibri,'Segoe UI',sans-serif;color:#1f4a36">
 <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:#f4ebdb;font-size:1px;line-height:1px">${esc(previa)}&#8204;&nbsp;&#8204;&nbsp;&#8204;&nbsp;&#8204;&nbsp;&#8204;&nbsp;&#8204;&nbsp;&#8204;&nbsp;&#8204;&nbsp;&#8204;&nbsp;&#8204;&nbsp;&#8204;&nbsp;&#8204;&nbsp;</div>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f4ebdb"><tr><td align="center" style="padding:24px 12px">
 <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;background:#ffffff;border-radius:10px;overflow:hidden">
 <tr><td align="center" style="background:#1f4a36;padding:22px 24px"><img src="${esc(img.logo)}" width="180" alt="Konioca" style="display:block;width:180px;height:auto;border:0"></td></tr>
-<tr><td style="padding:0;line-height:0;background:#1f4a36"><img src="${esc(img.cones)}" width="600" alt="Cones Konioca: beijinho, pizza e brigadeiro" style="display:block;width:100%;max-width:600px;height:auto;border:0"></td></tr>
-<tr><td style="padding:28px 24px 32px">
-${paragrafos.map(P).join("\n")}
+${arte ? "" : `<tr><td style="padding:0;line-height:0;background:#1f4a36"><img src="${esc(img.cones)}" width="600" alt="Cones Konioca: beijinho, pizza e brigadeiro" style="display:block;width:100%;max-width:600px;height:auto;border:0"></td></tr>`}
+${arte ? `<tr><td style="padding:28px 24px 10px">${P(paragrafos[0])}</td></tr>
+<tr><td style="padding:0;line-height:0"><img src="${esc(arte.src)}" width="600" alt="${esc(arte.alt)}" style="display:block;width:100%;max-width:600px;height:auto;border:0"></td></tr>
+<tr><td style="padding:24px 24px 32px">
+${paragrafos.slice(1).map(P).join("\n")}` : `<tr><td style="padding:28px 24px 32px">
+${paragrafos.map(P).join("\n")}`}
 <p style="margin:0 0 20px;font-size:17px;line-height:1.6">${esc(chamada)}</p>
 <a href="${esc(url)}" style="display:block;text-align:center;padding:16px;background:#b04d0c;color:#f7f0e2;font-size:18px;font-weight:700;text-decoration:none;border-radius:7px">${esc(botao)}</a>
 <p style="margin:20px 0 0;font-size:15px;line-height:1.6;color:#5a6b3a">${esc(l6)}</p>
@@ -260,7 +272,7 @@ ${paragrafos.map(P).join("\n")}
     const l4b = `Só quem está na lista participa e pode reservar uma das ${lote1} máquinas da pré-venda.`;
     const l5 = `Entrar na lista leva um minuto:`;
     const texto = [abertura, l1, l2, l3, l4a + l4b, l5, url, l6, ``, assinatura, ``, `Para não receber mais mensagens: ${optout}`].join("\n");
-    const html = montarHtml(assunto, previa, [esc(abertura), esc(l1), "<strong>" + esc(l2) + "</strong>", esc(l3), esc(l4a) + "<strong>" + esc(l4b) + "</strong>"], l5, "Quero entrar na lista", assinatura);
+    const html = montarHtml(assunto, previa, [esc(abertura), esc(l1), "<strong>" + esc(l2) + "</strong>", esc(l3), esc(l4a) + "<strong>" + esc(l4b) + "</strong>"], l5, "Quero entrar na lista", assinatura, arteP34 ? { src: img.arte6, alt: ARTE6_ALT } : undefined);
     return { canal: "email", assunto, texto, html };
   }
 

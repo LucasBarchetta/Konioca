@@ -5,7 +5,7 @@ import { db, exigirServico } from "../_shared/db.ts";
 import { carregarConfig, cfgNum, cfgText, type Config } from "../_shared/config.ts";
 import { corsHeaders, json, lerJson } from "../_shared/http.ts";
 import { acharAprovador, aprovadores, type Aprovador } from "../_shared/aprovadores.ts";
-import { assinaturaAprovador, botaoReservar, quantidadeValida } from "../_shared/painel_regras.ts";
+import { assinaturaAprovador, botaoReservar, type Decisao, estadoAprovacao, papeisDaRegra, permissoesDe, podeAcao, podeDecidirItem, quantidadeValida, regraAprovacao, revisarConteudo, textoRegra } from "../_shared/painel_regras.ts";
 
 async function tokenDe(email: string, versao: string): Promise<string> {
   const chave = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
@@ -51,14 +51,20 @@ Deno.serve(async (req) => {
 
   const quem = await aprovadorDoToken(cfg, String(b.t ?? ""));
   if (!quem) return json({ erro: "link inválido ou vencido" }, 401, cors);
+  // Permissão por papel (painel_regras.ts): a tela esconde o botão; aqui a recusa vale de verdade. "decidir" confere ainda a regra do item.
+  if (!podeAcao(quem.papel, acao)) return json({ erro: "o seu papel (" + quem.papel + ") não faz esta ação: " + acao }, 403, cors);
   const por = assinaturaAprovador(quem);
+  const nomesPapeis: Record<string, string> = {};
+  for (const a of aprovadores(cfg)) if (!nomesPapeis[a.papel]) nomesPapeis[a.papel] = a.nome.split(" ")[0];
+  const extras = cfg["revisor_valores_permitidos"];
+  const precos = { preco_prevenda: cfgNum(cfg, "preco_prevenda"), preco_atual: cfgNum(cfg, "preco_atual"), valores_permitidos: Array.isArray(extras) ? extras.map(Number).filter((n) => n > 0) : [] };
   const registrar = (lead_id: string, tipo: string, dados: Record<string, unknown>) =>
     sb.from("lead_eventos").insert({ lead_id, tipo, origem: "humano", dados: { ...dados, por, em: new Date().toISOString() } });
 
   if (acao === "quem") {
     const { data: placar } = await sb.from("v_placar").select("leads, saidas, reservas_lote1, reservas_total").single();
     const { count: pendentes } = await sb.from("aprovacoes").select("id", { count: "exact", head: true }).eq("status", "pendente");
-    return json({ ok: true, nome: quem.nome, papel: quem.papel, escopo: quem.escopo, placar: { ...(placar ?? {}), lote1_tamanho: cfgNum(cfg, "lote1_tamanho", 250) }, aprovacoes_pendentes: pendentes ?? 0, prazo_dias: cfgNum(cfg, "circular_prazo_dias", 10), agora: new Date().toISOString() }, 200, cors);
+    return json({ ok: true, nome: quem.nome, papel: quem.papel, escopo: quem.escopo, pode: permissoesDe(quem.papel), placar: { ...(placar ?? {}), lote1_tamanho: cfgNum(cfg, "lote1_tamanho", 250) }, aprovacoes_pendentes: pendentes ?? 0, prazo_dias: cfgNum(cfg, "circular_prazo_dias", 10), agora: new Date().toISOString() }, 200, cors);
   }
 
   if (acao === "leads") {
@@ -161,14 +167,68 @@ Deno.serve(async (req) => {
   }
 
   if (acao === "aprovacoes") {
+    // Cada item vai com a regra (quem decide), as decisões já registradas, o que falta, o parecer do revisor automático
+    // sobre o conteúdo atual e se este aprovador pode decidir agora. A tela não repete a regra: só mostra.
     const { data } = await sb.from("aprovacoes").select("*").order("criado_em", { ascending: false }).limit(100);
-    return json({ ok: true, itens: data ?? [] }, 200, cors);
+    const itens = (data ?? []) as Record<string, unknown>[];
+    const ids = itens.map((i) => i.id as number);
+    const { data: coms } = ids.length
+      ? await sb.from("aprovacoes_comentarios").select("aprovacao_id, por, texto, criado_em").in("aprovacao_id", ids).order("criado_em")
+      : { data: [] as { aprovacao_id: number; por: string; texto: string; criado_em: string }[] };
+    const { data: decs } = ids.length
+      ? await sb.from("aprovacoes_decisoes").select("aprovacao_id, papel, por, decisao, comentario, em").in("aprovacao_id", ids).order("em")
+      : { data: [] as { aprovacao_id: number; papel: string; por: string; decisao: string; comentario: string | null; em: string }[] };
+    const porItem = new Map<number, unknown[]>();
+    for (const c of coms ?? []) porItem.set(c.aprovacao_id, [...(porItem.get(c.aprovacao_id) ?? []), c]);
+    const decPorItem = new Map<number, Decisao[]>();
+    for (const d of decs ?? []) decPorItem.set(d.aprovacao_id, [...(decPorItem.get(d.aprovacao_id) ?? []), d]);
+    return json({ ok: true, itens: itens.map((i) => {
+      const id = i.id as number, tipo = String(i.tipo), usa = i.usa_marcela === true;
+      const regra = regraAprovacao(tipo, usa), decisoes = decPorItem.get(id) ?? [];
+      const estado = estadoAprovacao(regra, decisoes);
+      const revisao = revisarConteudo(((i.conteudo_final ?? i.conteudo) ?? {}) as Record<string, unknown>, precos);
+      return { ...i, comentarios: porItem.get(id) ?? [], decisoes, regra, regra_texto: textoRegra(regra, nomesPapeis), faltam: i.status === "pendente" ? estado.faltam.map((p) => nomesPapeis[p] ?? p) : [], revisao, pode_decidir: podeDecidirItem(quem.papel, { tipo, usa_marcela: usa, status: String(i.status) }, decisoes) && revisao.ok };
+    }) }, 200, cors);
+  }
+
+  if (acao === "comentar") {
+    const { data, error } = await sb.rpc("aprovacao_comentar", { p_id: Number(b.id), p_por: por, p_texto: String(b.texto ?? "").slice(0, 1000) });
+    if (error) return json({ erro: error.message }, 400, cors);
+    return json({ ok: true, id: data }, 200, cors);
+  }
+
+  if (acao === "propor_ab") {
+    // Proposta de variação de teste A/B: vira item pendente para o principal (painel-avisar manda o aviso). Nada é enviado.
+    const titulo = String(b.titulo ?? "").trim().slice(0, 200);
+    const texto = String(b.texto ?? "").trim().slice(0, 4000);
+    if (!titulo || !texto) return json({ erro: "título e texto da variação são obrigatórios" }, 400, cors);
+    const conteudo = { texto, onde: String(b.onde ?? "").trim().slice(0, 200) || null, hipotese: String(b.hipotese ?? "").trim().slice(0, 500) || null, maquina_ia: b.maquina_ia === true };
+    const revisao = revisarConteudo(conteudo, precos); // o revisor avisa já na proposta; o item entra mesmo assim, mas não pode ser aprovado enquanto não for corrigido
+    const { data, error } = await sb.rpc("aprovacao_propor", { p_tipo: "proposta_ab", p_titulo: titulo, p_conteudo: conteudo, p_aprovador: "principal", p_por: por, p_usa_marcela: b.usa_marcela === true });
+    if (error) return json({ erro: error.message }, 400, cors);
+    return json({ ok: true, id: data, revisao }, 200, cors);
   }
 
   if (acao === "decidir") {
-    const { error } = await sb.rpc("aprovacao_decidir", { p_id: Number(b.id), p_decisao: String(b.decisao ?? ""), p_por: por, p_comentario: String(b.comentario ?? "").slice(0, 500) || null, p_conteudo_final: b.conteudo_final ?? null });
+    // Regra do item (regraAprovacao) e revisor automático: a API recusa fora disso, para qualquer papel.
+    const { data: item } = await sb.from("aprovacoes").select("id, tipo, usa_marcela, status, conteudo, conteudo_final").eq("id", Number(b.id)).maybeSingle();
+    if (!item) return json({ erro: "item não encontrado" }, 404, cors);
+    const { data: decs } = await sb.from("aprovacoes_decisoes").select("papel, decisao").eq("aprovacao_id", item.id);
+    const regra = regraAprovacao(String(item.tipo), item.usa_marcela === true);
+    if (!podeDecidirItem(quem.papel, item, decs ?? [])) {
+      const quemDecide = textoRegra(regra, nomesPapeis);
+      return json({ erro: item.status !== "pendente" ? "este item já foi decidido" : (decs ?? []).some((d) => d.papel === quem.papel) ? "você já decidiu este item" : "este item é decidido por: " + quemDecide + " (o seu papel é " + quem.papel + ")" }, 403, cors);
+    }
+    const decisao = String(b.decisao ?? "");
+    if (decisao === "aprovado" || decisao === "editado") {
+      const conteudo = decisao === "editado" && b.conteudo_final && typeof b.conteudo_final === "object" ? (b.conteudo_final as Record<string, unknown>) : ((item.conteudo_final ?? item.conteudo) as Record<string, unknown>);
+      const revisao = revisarConteudo(conteudo ?? {}, precos);
+      if (!revisao.ok) return json({ erro: "O revisor automático barrou: " + revisao.problemas.join("; ") + ". Corrija o conteúdo antes de aprovar.", revisao }, 422, cors);
+    }
+    const { data: status, error } = await sb.rpc("aprovacao_registrar", { p_id: item.id, p_papel: quem.papel, p_por: por, p_decisao: decisao, p_comentario: String(b.comentario ?? "").slice(0, 500) || null, p_conteudo_final: b.conteudo_final ?? null, p_qualquer: regra.qualquer_um_de, p_todos: regra.tambem });
     if (error) return json({ erro: error.message }, 400, cors);
-    return json({ ok: true }, 200, cors);
+    const faltam = status === "pendente" ? estadoAprovacao(regra, [...(decs ?? []), { papel: quem.papel, decisao }]).faltam.map((p) => nomesPapeis[p] ?? p) : [];
+    return json({ ok: true, status, faltam, papeis: papeisDaRegra(regra) }, 200, cors);
   }
 
   return json({ erro: "ação desconhecida: " + acao }, 400, cors);

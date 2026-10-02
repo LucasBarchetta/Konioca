@@ -7,6 +7,7 @@ import { db, exigirServico } from "../_shared/db.ts";
 import { carregarConfig } from "../_shared/config.ts";
 import { json, lerJson } from "../_shared/http.ts";
 import { acharAprovador, aprovadores, emailsDe, type Aprovador } from "../_shared/aprovadores.ts";
+import { papeisDaRegra, permissoesDe, regraAprovacao } from "../_shared/painel_regras.ts";
 import { enviarEmail } from "../_shared/email.ts";
 
 function esc(s: string): string { return s.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c] as string)); }
@@ -39,14 +40,17 @@ Deno.serve(async (req) => {
     const r = await enviarParaTodos(a, "[Konioca] Seu acesso ao painel da pré-venda", texto, html);
     return json({ ok: r.ok, para: r.para });
   }
-  const { data: itens } = await sb.from("aprovacoes").select("id, tipo, titulo, aprovador, criado_em").eq("status", "pendente").is("avisado_em", null).order("criado_em");
+  const { data: itens } = await sb.from("aprovacoes").select("id, tipo, titulo, aprovador, usa_marcela, criado_em").eq("status", "pendente").is("avisado_em", null).order("criado_em");
   if (!itens?.length) return json({ ok: true, avisados: {}, itens: 0 });
   const apiUrl = (Deno.env.get("SUPABASE_URL") ?? "") + "/functions/v1";
   const chave = req.headers.get("authorization") ?? "";
   const avisados: Record<string, string> = {};
   for (const a of aprovadores(cfg)) {
     if (b.email && !emailsDe(a).includes(String(b.email).trim().toLowerCase())) continue;
-    const meus = itens.filter((i) => i.aprovador === a.papel || a.papel === "principal");
+    // Aviso para quem está na regra do item (regraAprovacao): principal ou growth nas mensagens, growth nos roteiros,
+    // Marcela quando usa voz ou imagem dela. Quem não decide (operacional) não recebe aviso.
+    if (!permissoesDe(a.papel).decidir) continue;
+    const meus = itens.filter((i) => papeisDaRegra(regraAprovacao(String(i.tipo), i.usa_marcela === true)).includes(a.papel));
     if (!meus.length) continue;
     const r0 = await fetch(`${apiUrl}/painel-api`, { method: "POST", headers: { "content-type": "application/json", authorization: chave }, body: JSON.stringify({ acao: "link", email: a.email }) });
     const link = (await r0.json().catch(() => ({}))) as { url?: string };

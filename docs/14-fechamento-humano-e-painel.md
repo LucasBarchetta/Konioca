@@ -26,6 +26,42 @@ Construído em 1/10 (migração 700, functions `painel-api` e `painel-avisar`, p
 - Placar no topo: reservas do lote 1 sobre `lote1_tamanho`. O `public-config` lê o mesmo placar para a LP quando
   `contador_visivel` estiver ligado.
 
+## Papéis e regra de aprovação (2/10 à noite, pedido do Lucas)
+
+A regra fica em `_shared/painel_regras.ts` (`permissoesDe`, `podeAcao`, `regraAprovacao`, `revisarConteudo`); a
+`painel-api` recusa com 403 o que o papel não faz e com 422 o que o revisor automático barra; a tela só esconde o botão.
+Quem é quem está só em `config.painel_aprovadores` (nome, e-mail, papel, escopo).
+
+| Papel | Vê | Faz no lead e nas turmas | Na aba Aprovações |
+|---|---|---|---|
+| principal (Lucas) | tudo | tudo | aprova mensagens para leads ou base, peças, propostas e config; comenta; propõe A/B |
+| conteudo (Marcela) | tudo | tudo, menos gerar link | aprova o que usa voz ou imagem dela (mensagens, roteiros, peças); comenta; propõe A/B |
+| operacional (Matheus, cópia marketing) | tudo | tudo, menos gerar link (turmas e links do Meet) | comenta e propõe A/B; não aprova conteúdo |
+| growth (LG) | tudo: leads, turmas, Desempenho, aprovações | "Contatado à mão" e "Respondeu"; sem reserva, correção de e-mail, turmas e presença | aprova mensagens para leads ou base, roteiros de vídeo, peças e propostas; comenta; propõe A/B |
+
+Quem decide cada item (`regraAprovacao(tipo, usa_marcela)`): basta um de `qualquer_um_de` e, além disso, cada um de `tambem`.
+
+| Tipo | Basta um de | E também |
+|---|---|---|
+| e-mail, WhatsApp, texto (mensagens para leads ou base) | principal ou growth | conteudo, se usa voz ou imagem da Marcela |
+| roteiro de vídeo | principal ou growth | conteudo, se ela aparece |
+| peça | principal ou growth | conteudo, se usa a imagem dela |
+| proposta de teste A/B | principal ou growth | conteudo, se usa a imagem dela |
+| config | principal | |
+
+Cada decisão fica em `aprovacoes_decisoes` (uma por papel por item, "Nome (papel)", hora); o item fecha como aprovado,
+editado ou recusado quando a regra se cumpre ou alguém recusa (`aprovacao_registrar`, migração 820). Comentários em
+`aprovacoes_comentarios`. A proposta de A/B entra pendente com a mesma regra das mensagens; o `painel-avisar` avisa
+quem está na regra e ainda não decidiu. Aprovar um item no painel não dispara nada: o envio em si continua
+dependendo do SIM do Lucas no chat, como toda publicação.
+
+Revisor automático (`revisarConteudo`, roda na API antes de qualquer aprovação, para todo papel; ninguém passa por cima):
+preço diferente do da página (todo "R$" precisa ser o preço da pré-venda, o atual, a diferença em mil, R$ 1.000 ou um
+valor de `config.revisor_valores_permitidos`), construção "de/por", promessa de faturamento, lucro ou renda, e máquina
+ou produto feito por IA (declarado no conteúdo, `maquina_ia`; ilustração de pessoa ou cenário por IA não é barrada).
+Ajustes do Lucas de 3/10: o principal aprova qualquer tipo de item; trava de IA só para produto e máquina; R$ 1.000
+entre os valores permitidos. O item barrado fica pendente com o motivo na tela até alguém corrigir o conteúdo.
+
 ## O que sai da fila (etapa 3)
 
 Meio de pagamento, PIX, contrato na D4Sign, aceite dos termos e pedido pelo sistema saem do escopo do time de agentes.
