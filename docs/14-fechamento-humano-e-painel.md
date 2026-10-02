@@ -26,6 +26,22 @@ Construído em 1/10 (migração 700, functions `painel-api` e `painel-avisar`, p
 - Placar no topo: reservas do lote 1 sobre `lote1_tamanho`. O `public-config` lê o mesmo placar para a LP quando
   `contador_visivel` estiver ligado.
 
+## Papéis do painel (2/10 à noite, pedido do Lucas)
+
+A regra fica em `_shared/painel_regras.ts` (`permissoesDe`, `podeAcao`); a `painel-api` recusa com 403 o que o papel não
+faz e a tela esconde o botão. Quem é quem está só em `config.painel_aprovadores` (nome, e-mail, papel, escopo).
+
+| Papel | Vê | Faz | Não faz |
+|---|---|---|---|
+| principal (Lucas) | tudo | tudo; aprovação final de e-mails e mensagens para a base; decide qualquer item | |
+| conteudo (Marcela) | tudo | como o principal, menos gerar link; itens em que ela aparece ou fala | |
+| operacional (Matheus, cópia marketing) | tudo | como o principal, menos gerar link; turmas e links do Meet | |
+| growth (LG) | tudo: leads, turmas, Desempenho, aprovações | "Contatado à mão", "Respondeu"; aprova roteiros de vídeo (itens endereçados a `growth`); propõe variações de teste A/B (viram item `proposta_ab` para o principal); comenta em qualquer item | reserva, correção de e-mail (mexe na Circular e no convite), ligar ou desligar envios, preço, datas, turmas, presença, aprovação final de e-mails e mensagens para a base |
+
+Roteiro de vídeo com rosto ou voz da Marcela: um item para `growth` e um para `conteudo` (os dois precisam aprovar); sem
+ela, só `growth`. Comentários ficam em `aprovacoes_comentarios` (migração 820), com "Nome (papel)" e hora; nada é enviado.
+A proposta de A/B entra pendente para o principal e o `painel-avisar` manda o aviso a ele como qualquer item.
+
 ## O que sai da fila (etapa 3)
 
 Meio de pagamento, PIX, contrato na D4Sign, aceite dos termos e pedido pelo sistema saem do escopo do time de agentes.

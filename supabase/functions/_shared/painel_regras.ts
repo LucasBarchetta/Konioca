@@ -109,3 +109,58 @@ export function temperaturasPresentes(leads: { temperatura?: string | null }[]):
   for (const l of leads) { const t = l.temperatura ?? "frio"; n[t] = (n[t] ?? 0) + 1; }
   return TEMPERATURAS.map((t) => ({ ...t, n: n[t.temp] ?? 0 }));
 }
+
+// Papéis do painel (2/10): o que cada um pode fazer. A painel-api recusa fora disso; a tela só esconde o botão.
+// principal: tudo. conteudo e operacional: como antes (tudo, menos gerar link). growth (LG): vê tudo, marca
+// "Contatado à mão" e "Respondeu", decide só itens endereçados ao papel growth (roteiros de vídeo), propõe
+// variações de teste A/B (viram item para o principal) e comenta em qualquer item da aba Aprovações.
+// Fora do growth: reserva, correção de e-mail (mexe na Circular e no convite), turmas, presença e a decisão final
+// de e-mails e mensagens para a base (continua com o principal).
+export type Papel = "principal" | "conteudo" | "operacional" | "growth";
+export const PAPEIS: readonly Papel[] = ["principal", "conteudo", "operacional", "growth"];
+
+export interface Permissoes {
+  ver: boolean;              // leads, turmas, aprovações, Desempenho
+  contato: boolean;          // "Contatado à mão"
+  respondeu: boolean;        // "Respondeu"
+  reservar: boolean;         // "Reservou" e "Desfazer reserva"
+  corrigir_email: boolean;   // "Corrigir e-mail" (reenvia convite)
+  turmas_editar: boolean;    // criar e editar turmas
+  presenca: boolean;         // presente / faltou
+  decidir: "todos" | Papel[]; // itens da aba Aprovações que pode aprovar, editar ou recusar
+  comentar: boolean;         // comentar em qualquer item da aba Aprovações
+  propor_ab: boolean;        // propor variação de teste A/B (vira item para o principal)
+}
+
+const TUDO: Permissoes = { ver: true, contato: true, respondeu: true, reservar: true, corrigir_email: true, turmas_editar: true, presenca: true, decidir: "todos", comentar: true, propor_ab: true };
+const GROWTH: Permissoes = { ver: true, contato: true, respondeu: true, reservar: false, corrigir_email: false, turmas_editar: false, presenca: false, decidir: ["growth"], comentar: true, propor_ab: true };
+const SO_VER: Permissoes = { ver: true, contato: false, respondeu: false, reservar: false, corrigir_email: false, turmas_editar: false, presenca: false, decidir: [], comentar: false, propor_ab: false };
+
+export function permissoesDe(papel: string | undefined | null): Permissoes {
+  switch (papel) {
+    case "principal": case "conteudo": case "operacional": return TUDO;
+    case "growth": return GROWTH;
+    default: return SO_VER; // papel desconhecido na config: só leitura, até alguém corrigir
+  }
+}
+
+/** Pode decidir (aprovar, editar, recusar) um item endereçado ao papel `aprovador`? */
+export function podeDecidir(papel: string | undefined | null, aprovador: string | undefined | null): boolean {
+  const d = permissoesDe(papel).decidir;
+  return d === "todos" || d.includes((aprovador ?? "principal") as Papel);
+}
+
+const ACOES_LEITURA = new Set(["quem", "leads", "eventos", "aprovacoes", "encontros", "encontro_leads", "desempenho"]);
+const ACOES_ESCRITA: Record<string, keyof Omit<Permissoes, "decidir">> = {
+  contato_manual: "contato", respondeu: "respondeu", reservar: "reservar", reserva_cancelar: "reservar", corrigir_email: "corrigir_email",
+  encontro_salvar: "turmas_editar", presenca: "presenca", comentar: "comentar", propor_ab: "propor_ab",
+};
+
+/** Ação da painel-api permitida para o papel? Para "decidir", passe o item (ou o papel dele em `aprovador`). */
+export function podeAcao(papel: string | undefined | null, acao: string, item?: { aprovador?: string | null }): boolean {
+  const p = permissoesDe(papel);
+  if (ACOES_LEITURA.has(acao)) return p.ver;
+  if (acao === "decidir") return podeDecidir(papel, item?.aprovador);
+  const chave = ACOES_ESCRITA[acao];
+  return chave ? p[chave] === true : false;
+}

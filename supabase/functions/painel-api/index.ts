@@ -5,7 +5,7 @@ import { db, exigirServico } from "../_shared/db.ts";
 import { carregarConfig, cfgNum, cfgText, type Config } from "../_shared/config.ts";
 import { corsHeaders, json, lerJson } from "../_shared/http.ts";
 import { acharAprovador, aprovadores, type Aprovador } from "../_shared/aprovadores.ts";
-import { assinaturaAprovador, botaoReservar, quantidadeValida } from "../_shared/painel_regras.ts";
+import { assinaturaAprovador, botaoReservar, permissoesDe, podeAcao, quantidadeValida } from "../_shared/painel_regras.ts";
 
 async function tokenDe(email: string, versao: string): Promise<string> {
   const chave = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
@@ -51,6 +51,8 @@ Deno.serve(async (req) => {
 
   const quem = await aprovadorDoToken(cfg, String(b.t ?? ""));
   if (!quem) return json({ erro: "link inválido ou vencido" }, 401, cors);
+  // Permissão por papel (painel_regras.ts): a tela esconde o botão; aqui a recusa vale de verdade. "decidir" confere o item.
+  if (acao !== "decidir" && !podeAcao(quem.papel, acao)) return json({ erro: "o seu papel (" + quem.papel + ") não faz esta ação: " + acao }, 403, cors);
   const por = assinaturaAprovador(quem);
   const registrar = (lead_id: string, tipo: string, dados: Record<string, unknown>) =>
     sb.from("lead_eventos").insert({ lead_id, tipo, origem: "humano", dados: { ...dados, por, em: new Date().toISOString() } });
@@ -58,7 +60,7 @@ Deno.serve(async (req) => {
   if (acao === "quem") {
     const { data: placar } = await sb.from("v_placar").select("leads, saidas, reservas_lote1, reservas_total").single();
     const { count: pendentes } = await sb.from("aprovacoes").select("id", { count: "exact", head: true }).eq("status", "pendente");
-    return json({ ok: true, nome: quem.nome, papel: quem.papel, escopo: quem.escopo, placar: { ...(placar ?? {}), lote1_tamanho: cfgNum(cfg, "lote1_tamanho", 250) }, aprovacoes_pendentes: pendentes ?? 0, prazo_dias: cfgNum(cfg, "circular_prazo_dias", 10), agora: new Date().toISOString() }, 200, cors);
+    return json({ ok: true, nome: quem.nome, papel: quem.papel, escopo: quem.escopo, pode: permissoesDe(quem.papel), placar: { ...(placar ?? {}), lote1_tamanho: cfgNum(cfg, "lote1_tamanho", 250) }, aprovacoes_pendentes: pendentes ?? 0, prazo_dias: cfgNum(cfg, "circular_prazo_dias", 10), agora: new Date().toISOString() }, 200, cors);
   }
 
   if (acao === "leads") {
@@ -162,10 +164,36 @@ Deno.serve(async (req) => {
 
   if (acao === "aprovacoes") {
     const { data } = await sb.from("aprovacoes").select("*").order("criado_em", { ascending: false }).limit(100);
-    return json({ ok: true, itens: data ?? [] }, 200, cors);
+    const itens = (data ?? []) as Record<string, unknown>[];
+    const ids = itens.map((i) => i.id as number);
+    const { data: coms } = ids.length
+      ? await sb.from("aprovacoes_comentarios").select("aprovacao_id, por, texto, criado_em").in("aprovacao_id", ids).order("criado_em")
+      : { data: [] as { aprovacao_id: number; por: string; texto: string; criado_em: string }[] };
+    const porItem = new Map<number, unknown[]>();
+    for (const c of coms ?? []) porItem.set(c.aprovacao_id, [...(porItem.get(c.aprovacao_id) ?? []), c]);
+    return json({ ok: true, itens: itens.map((i) => ({ ...i, comentarios: porItem.get(i.id as number) ?? [] })) }, 200, cors);
+  }
+
+  if (acao === "comentar") {
+    const { data, error } = await sb.rpc("aprovacao_comentar", { p_id: Number(b.id), p_por: por, p_texto: String(b.texto ?? "").slice(0, 1000) });
+    if (error) return json({ erro: error.message }, 400, cors);
+    return json({ ok: true, id: data }, 200, cors);
+  }
+
+  if (acao === "propor_ab") {
+    // Proposta de variação de teste A/B: vira item pendente para o principal (painel-avisar manda o aviso). Nada é enviado.
+    const titulo = String(b.titulo ?? "").trim().slice(0, 200);
+    const texto = String(b.texto ?? "").trim().slice(0, 4000);
+    if (!titulo || !texto) return json({ erro: "título e texto da variação são obrigatórios" }, 400, cors);
+    const { data, error } = await sb.rpc("aprovacao_propor", { p_tipo: "proposta_ab", p_titulo: titulo, p_conteudo: { texto, onde: String(b.onde ?? "").trim().slice(0, 200) || null, hipotese: String(b.hipotese ?? "").trim().slice(0, 500) || null }, p_aprovador: "principal", p_por: por });
+    if (error) return json({ erro: error.message }, 400, cors);
+    return json({ ok: true, id: data }, 200, cors);
   }
 
   if (acao === "decidir") {
+    const { data: item } = await sb.from("aprovacoes").select("id, aprovador").eq("id", Number(b.id)).maybeSingle();
+    if (!item) return json({ erro: "item não encontrado" }, 404, cors);
+    if (!podeAcao(quem.papel, "decidir", item)) return json({ erro: "este item é decidido pelo papel " + item.aprovador + ", não pelo seu (" + quem.papel + ")" }, 403, cors);
     const { error } = await sb.rpc("aprovacao_decidir", { p_id: Number(b.id), p_decisao: String(b.decisao ?? ""), p_por: por, p_comentario: String(b.comentario ?? "").slice(0, 500) || null, p_conteudo_final: b.conteudo_final ?? null });
     if (error) return json({ erro: error.message }, 400, cors);
     return json({ ok: true }, 200, cors);

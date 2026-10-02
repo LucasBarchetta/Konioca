@@ -9,8 +9,8 @@ import type { Config } from "./cfg.ts";
 export interface Aprovador {
   nome: string;
   email: string;
-  whatsapp: string;            // E.164; só entra em uso quando o WhatsApp oficial estiver ativo
-  papel: "principal" | "conteudo" | "operacional";
+  whatsapp?: string;           // E.164; só entra em uso quando o WhatsApp oficial estiver ativo (opcional: growth não recebe WhatsApp)
+  papel: "principal" | "conteudo" | "operacional" | "growth";
   escopo: string;              // texto para o painel: o que essa pessoa aprova
   emails_copia?: string[];     // outros endereços da mesma pessoa: recebem os mesmos avisos e o mesmo link (o token sai só de `email`)
 }

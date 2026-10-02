@@ -65,3 +65,29 @@ test("Temperatura: rótulo, filtro, contagem e ordem (quentes primeiro, depois o
   assert.equal(filtrarTemperatura(leads, "quente").length, 2); assert.equal(filtrarTemperatura(leads, "todas").length, 4);
   assert.deepEqual(temperaturasPresentes(leads).map((t) => t.temp + ":" + t.n), ["quente:2", "morno:1", "frio:1"]);
 });
+
+import { permissoesDe, podeDecidir, podeAcao } from "../supabase/functions/_shared/painel_regras.ts";
+
+test("Papel growth: vê tudo, marca contato e resposta, comenta e propõe A/B; não reserva, não mexe em e-mail, turma ou presença", () => {
+  const g = permissoesDe("growth");
+  assert.equal(g.ver, true); assert.equal(g.contato, true); assert.equal(g.respondeu, true); assert.equal(g.comentar, true); assert.equal(g.propor_ab, true);
+  assert.equal(g.reservar, false); assert.equal(g.corrigir_email, false); assert.equal(g.turmas_editar, false); assert.equal(g.presenca, false);
+  for (const a of ["quem", "leads", "eventos", "aprovacoes", "encontros", "encontro_leads", "contato_manual", "respondeu", "comentar", "propor_ab"]) assert.equal(podeAcao("growth", a), true, a);
+  for (const a of ["reservar", "reserva_cancelar", "corrigir_email", "encontro_salvar", "presenca", "link", "inventada"]) assert.equal(podeAcao("growth", a), false, a);
+});
+
+test("Decisão por item: growth só decide item endereçado a growth; principal, conteudo e operacional decidem qualquer um", () => {
+  assert.equal(podeDecidir("growth", "growth"), true);
+  assert.equal(podeDecidir("growth", "principal"), false);
+  assert.equal(podeDecidir("growth", "conteudo"), false);
+  assert.equal(podeDecidir("growth", null), false); // sem papel no item = principal
+  assert.equal(podeAcao("growth", "decidir", { aprovador: "growth" }), true);
+  assert.equal(podeAcao("growth", "decidir", { aprovador: "principal" }), false);
+  for (const p of ["principal", "conteudo", "operacional"]) { assert.equal(podeDecidir(p, "growth"), true, p); assert.equal(podeAcao(p, "reservar"), true, p); assert.equal(permissoesDe(p).decidir, "todos", p); }
+});
+
+test("Papel desconhecido na config só vê", () => {
+  const x = permissoesDe("estagiario");
+  assert.equal(x.ver, true); assert.equal(x.contato, false); assert.equal(x.comentar, false); assert.deepEqual(x.decidir, []);
+  assert.equal(podeAcao("estagiario", "leads"), true); assert.equal(podeAcao("estagiario", "respondeu"), false); assert.equal(podeAcao(undefined, "decidir", { aprovador: "principal" }), false);
+});

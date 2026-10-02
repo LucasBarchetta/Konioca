@@ -7,7 +7,7 @@
   try { if (token) sessionStorage.setItem("k_painel_t", token); else token = sessionStorage.getItem("k_painel_t") || ""; } catch (e) { /* sem storage */ }
   if (q.get("t")) { try { history.replaceState(null, "", location.pathname); } catch (e) { /* ok */ } }
 
-  var estado = { quem: null, leads: [], filtro: "todos", canal: "todos", temp: "todas", busca: "", aba: "leads", aberto: {}, canalAberto: {}, aprovacoes: [], turmas: [], turmasFiltro: "futuras", turmaAberta: {}, turmaPessoas: {}, novos: {}, atualizadoEm: 0, digitando: false, carregando: false, adiada: false };
+  var estado = { quem: null, leads: [], filtro: "todos", canal: "todos", temp: "todas", busca: "", aba: "leads", aberto: {}, canalAberto: {}, aprovacoes: [], proporAberto: false, turmas: [], turmasFiltro: "futuras", turmaAberta: {}, turmaPessoas: {}, novos: {}, atualizadoEm: 0, digitando: false, carregando: false, adiada: false };
   // Etiqueta de canal (primeiro toque, mesma gaveta da aba Desempenho: v_painel_leads.canal). Espelho de painel_regras.ts.
   var CANAIS = [["stories", "Stories"], ["bio_instagram", "Bio do Instagram"], ["bio_tiktok", "Bio do TikTok"], ["whatsapp", "WhatsApp"], ["base_p1", "E-mail base antiga P1"], ["base_p2", "E-mail base antiga P2"], ["base_p2_a", "E-mail base antiga P2 (A)"], ["base_p2_b", "E-mail base antiga P2 (B)"], ["base_p34", "E-mail base antiga P3-P4"], ["base_email", "E-mail base antiga"], ["convite", "Convite"], ["direto", "Direto"], ["outros", "Outros"]];
   function rotuloCanal(c) { for (var i = 0; i < CANAIS.length; i++) if (CANAIS[i][0] === (c || "outros")) return CANAIS[i][1]; return "Outros"; }
@@ -27,6 +27,10 @@
     var n = {}; leads.forEach(function (l) { var c = l.canal || "outros"; n[c] = (n[c] || 0) + 1; });
     return CANAIS.filter(function (c) { return n[c[0]]; }).map(function (c) { return { canal: c[0], rotulo: c[1], n: n[c[0]] }; });
   }
+  // Permissões do papel (vêm da painel-api em "quem"; a API recusa fora disso, aqui só esconde o botão). Sem "pode" = como antes.
+  var TUDO = { ver: true, contato: true, respondeu: true, reservar: true, corrigir_email: true, turmas_editar: true, presenca: true, decidir: "todos", comentar: true, propor_ab: true };
+  function pode(chave) { var p = (estado.quem && estado.quem.pode) || TUDO; return p[chave] === true; }
+  function podeDecidir(aprovador) { var p = (estado.quem && estado.quem.pode) || TUDO; return p.decidir === "todos" || (Array.isArray(p.decidir) && p.decidir.indexOf(aprovador || "principal") >= 0); }
   var INTERVALO = 30000; // atualização automática com a página visível
   var el = function (id) { return document.getElementById(id); };
   function erro(msg) { var e = el("p-erro"); if (!msg) { e.classList.add("oculto"); return; } e.textContent = msg; e.classList.remove("oculto"); }
@@ -88,15 +92,17 @@
     var meta = [fmtWhats(l.whatsapp), l.email, l.cidade, "cadastro " + dataHora(l.criado_em)].filter(Boolean).join(" · ");
     var acoes = "";
     if (!l.optout_em) {
-      if (!l.reservou_em) {
-        // Só com "pode cobrar" (regra do banco em lead_reservar; a tela espelha). Fora disso, botão desativado com o motivo.
-        if (l.pode_cobrar) acoes += '<button type="button" class="primario" data-acao="reservar-form" data-id="' + l.id + '">Reservou</button>';
-        else acoes += '<button type="button" class="primario" disabled title="A reserva só pode ser marcada depois do prazo legal da Circular">Reservou · ' + esc(c.texto) + '</button>';
+      if (pode("reservar")) {
+        if (!l.reservou_em) {
+          // Só com "pode cobrar" (regra do banco em lead_reservar; a tela espelha). Fora disso, botão desativado com o motivo.
+          if (l.pode_cobrar) acoes += '<button type="button" class="primario" data-acao="reservar-form" data-id="' + l.id + '">Reservou</button>';
+          else acoes += '<button type="button" class="primario" disabled title="A reserva só pode ser marcada depois do prazo legal da Circular">Reservou · ' + esc(c.texto) + '</button>';
+        }
+        else acoes += '<button type="button" class="discreto" data-acao="cancelar-form" data-id="' + l.id + '">Desfazer reserva</button>';
       }
-      else acoes += '<button type="button" class="discreto" data-acao="cancelar-form" data-id="' + l.id + '">Desfazer reserva</button>';
-      if (!l.contato_manual_em) acoes += '<button type="button" data-acao="contato" data-id="' + l.id + '">Contatado à mão</button>';
-      acoes += '<button type="button" data-acao="respondeu" data-id="' + l.id + '">Respondeu</button>';
-      acoes += '<button type="button" class="discreto" data-acao="email-form" data-id="' + l.id + '">Corrigir e-mail</button>';
+      if (pode("contato") && !l.contato_manual_em) acoes += '<button type="button" data-acao="contato" data-id="' + l.id + '">Contatado à mão</button>';
+      if (pode("respondeu")) acoes += '<button type="button" data-acao="respondeu" data-id="' + l.id + '">Respondeu</button>';
+      if (pode("corrigir_email")) acoes += '<button type="button" class="discreto" data-acao="email-form" data-id="' + l.id + '">Corrigir e-mail</button>';
     }
     acoes += '<button type="button" class="discreto" data-acao="historico" data-id="' + l.id + '">' + (estado.aberto[l.id] === "historico" ? "Fechar histórico" : "Histórico") + "</button>";
     var extra = estado.aberto[l.id] === "reservar" ? formReserva(l) : estado.aberto[l.id] === "cancelar" ? formCancelar(l) : estado.aberto[l.id] === "email" ? formEmail(l) : estado.aberto[l.id] === "historico" ? '<div class="p-hist" id="hist-' + l.id + '">carregando…</div>' : "";
@@ -156,7 +162,7 @@
     if (t.aviso_inscritos && t.inscritos > t.aviso_inscritos && !cheia) tags.push(tag("Acima de " + t.aviso_inscritos + ": abrir a próxima", "ouro"));
     tags.push(tag(t.meet_link ? "Link do Meet ok" : "Sem link do Meet", t.meet_link ? "" : "vermelho"));
     if (!t.ativo) tags.push(tag("Desativada", "cinza"));
-    var acoes = '<button type="button" data-acao="turma-pessoas" data-id="' + t.id + '">' + (aberta === "pessoas" ? "Fechar lista" : "Lista (" + t.inscritos + ")") + '</button><button type="button" class="discreto" data-acao="turma-editar" data-id="' + t.id + '">Editar</button>' + (t.meet_link ? '<a class="p-tag" href="' + esc(t.meet_link) + '" target="_blank" rel="noopener" style="align-self:center">Abrir o Meet</a>' : "");
+    var acoes = '<button type="button" data-acao="turma-pessoas" data-id="' + t.id + '">' + (aberta === "pessoas" ? "Fechar lista" : "Lista (" + t.inscritos + ")") + '</button>' + (pode("turmas_editar") ? '<button type="button" class="discreto" data-acao="turma-editar" data-id="' + t.id + '">Editar</button>' : "") + (t.meet_link ? '<a class="p-tag" href="' + esc(t.meet_link) + '" target="_blank" rel="noopener" style="align-self:center">Abrir o Meet</a>' : "");
     var extra = aberta === "editar" ? formTurma(t) : aberta === "pessoas" ? '<div class="p-hist" id="turma-pessoas-' + t.id + '">carregando…</div>' : "";
     return '<article class="p-card p-turma' + (cheia ? " cheia" : "") + (!t.ativo ? " inativa" : "") + '" data-turma="' + t.id + '"><h3>' + esc(quandoTurma(t.inicio)) + ' <span class="p-canal" style="cursor:default">' + t.duracao_min + " min</span></h3><div class=\"p-meta\">" + esc(dataHora(t.inicio)) + ' · capacidade ' + t.capacidade + '</div><div class="p-tags">' + tags.join("") + '</div><div class="p-acoes">' + acoes + "</div>" + extra + "</article>";
   }
@@ -167,6 +173,7 @@
     });
     var insc = lista.reduce(function (n, t) { return n + t.inscritos; }, 0), vagas = lista.reduce(function (n, t) { return n + (t.ativo ? t.vagas : 0); }, 0);
     el("p-turmas-resumo").textContent = lista.length + (lista.length === 1 ? " turma" : " turmas") + " · " + insc + " inscritos · " + vagas + " vagas";
+    var bn = document.querySelector('#p-turmas-filtros button[data-acao="turma-nova"]'); if (bn) bn.classList.toggle("oculto", !pode("turmas_editar"));
     el("p-turmas").innerHTML = (estado.turmaAberta.nova ? '<article class="p-card">' + formTurma(null) + "</article>" : "") + (lista.length ? lista.map(cartaoTurma).join("") : '<div class="p-vazio">Nenhuma turma aqui.</div>');
     Object.keys(estado.turmaAberta).forEach(function (id) { if (estado.turmaAberta[id] === "pessoas") carregarPessoas(id); });
   }
@@ -177,7 +184,9 @@
       if (!j.leads.length) { h.textContent = "Ninguém escolheu esta turma ainda."; return; }
       h.innerHTML = j.leads.map(function (l) {
         return '<div class="p-pessoa"><span class="p-nome">' + esc(l.nome) + "</span><span>" + esc([fmtWhats(l.whatsapp), l.cidade].filter(Boolean).join(" · ")) + "</span>" + (l.pode_cobrar ? tag("Pode cobrar", "verde") : l.circular_confirmada_em ? tag("Circular ok, prazo correndo", "cinza") : tag("Circular não confirmada", "vermelho")) + (l.reservou_em ? tag("Reservou", "ouro") : "") +
-          '<button type="button" data-acao="presenca" data-id="' + l.id + '" data-turma="' + id + '" data-presente="true" class="' + (l.encontro_presenca === true ? "ativa" : "") + '">Presente</button><button type="button" data-acao="presenca" data-id="' + l.id + '" data-turma="' + id + '" data-presente="false" class="faltou ' + (l.encontro_presenca === false ? "ativa" : "") + '">Faltou</button></div>';
+          (pode("presenca")
+            ? '<button type="button" data-acao="presenca" data-id="' + l.id + '" data-turma="' + id + '" data-presente="true" class="' + (l.encontro_presenca === true ? "ativa" : "") + '">Presente</button><button type="button" data-acao="presenca" data-id="' + l.id + '" data-turma="' + id + '" data-presente="false" class="faltou ' + (l.encontro_presenca === false ? "ativa" : "") + '">Faltou</button>'
+            : (l.encontro_presenca === true ? tag("Presente", "verde") : l.encontro_presenca === false ? tag("Faltou", "vermelho") : "")) + "</div>";
       }).join("");
     });
   }
@@ -191,15 +200,28 @@
     el("p-lista").innerHTML = vis.length ? vis.map(cartao).join("") : '<div class="p-vazio">Nada aqui com esse filtro.</div>';
     Object.keys(estado.aberto).forEach(function (id) { if (estado.aberto[id] === "historico") carregarHistorico(id); });
   }
+  var TIPOS_APROV = { texto: "Texto", email: "E-mail", whatsapp: "WhatsApp", peca: "Peça", config: "Configuração", roteiro_video: "Roteiro de vídeo", proposta_ab: "Proposta de teste A/B" };
+  function formPropor() {
+    if (!pode("propor_ab")) return "";
+    if (!estado.proporAberto) return '<div class="p-filtros"><button type="button" data-acao="propor-abrir" class="ativa" style="background:#b04d0c;border-color:#b04d0c">Propor variação de teste A/B</button></div>';
+    return '<article class="p-card"><h3>Propor variação de teste A/B</h3><form class="p-form" data-form="propor" data-id="nova"><input name="titulo" placeholder="Título curto (ex.: assunto do P3/P4 pelo preço)" maxlength="200" required style="flex:1;min-width:240px"><input name="onde" placeholder="Onde: e-mail da base, LP, WhatsApp…" maxlength="200" style="flex:1;min-width:200px"><textarea name="texto" placeholder="A variação, do jeito que sairia" maxlength="4000" required></textarea><input name="hipotese" placeholder="Hipótese: o que você espera que mude e por quê" maxlength="500" style="flex:1;min-width:240px"><button type="submit" class="primario">Enviar para o Lucas decidir</button><button type="button" data-acao="propor-fechar" data-id="nova">Cancelar</button><div class="p-ajuda">Vira um item pendente para o principal. Nada é enviado a ninguém até ele aprovar.</div></form></article>';
+  }
   function renderAprovacoes() {
     var itens = estado.aprovacoes;
-    var pend = itens.filter(function (i) { return i.status === "pendente"; });
+    var pend = itens.filter(function (i) { return i.status === "pendente" && podeDecidir(i.aprovador); });
     var b = el("p-aprov-n"); b.textContent = String(pend.length); b.classList.toggle("oculto", !pend.length);
-    if (!itens.length) { el("p-aprovacoes").innerHTML = '<div class="p-vazio">Nenhum item para aprovar. Quando um texto, e-mail ou peça precisar do seu ok, ele aparece aqui e você recebe um aviso por e-mail.</div>'; return; }
-    el("p-aprovacoes").innerHTML = itens.map(function (i) {
+    var topo = formPropor();
+    if (!itens.length) { el("p-aprovacoes").innerHTML = topo + '<div class="p-vazio">Nenhum item para aprovar. Quando um texto, e-mail ou peça precisar do seu ok, ele aparece aqui e você recebe um aviso por e-mail.</div>'; return; }
+    el("p-aprovacoes").innerHTML = topo + itens.map(function (i) {
       var c = i.conteudo || {}, corpo = c.texto || c.html || JSON.stringify(c);
-      var acoes = i.status === "pendente" ? '<form class="p-form" data-form="decidir" data-id="' + i.id + '"><textarea name="conteudo_final">' + esc(c.texto || "") + '</textarea><input name="comentario" placeholder="Comentário (obrigatório para recusar)" maxlength="500" style="flex:1;min-width:200px"><button type="submit" class="primario" value="aprovado">Aprovar</button><button type="submit" value="editado">Aprovar com a minha edição</button><button type="submit" value="recusado">Recusar</button></form>' : '<div class="p-meta">' + esc(i.status) + " por " + esc(i.decidido_por || "") + " em " + dataHora(i.decidido_em) + (i.comentario ? " · " + esc(i.comentario) : "") + "</div>";
-      return '<article class="p-card"><h3>' + esc(i.titulo) + '</h3><div class="p-meta">' + esc(i.tipo) + " · criado " + dataHora(i.criado_em) + (i.criado_por ? " por " + esc(i.criado_por) : "") + " · aprova: " + esc(i.aprovador) + '</div><div class="p-hist" style="white-space:pre-wrap">' + esc(corpo).slice(0, 4000) + "</div>" + acoes + "</article>";
+      var extra = c.onde ? "Onde: " + c.onde + (c.hipotese ? " · Hipótese: " + c.hipotese : "") : (c.hipotese ? "Hipótese: " + c.hipotese : "");
+      var acoes;
+      if (i.status !== "pendente") acoes = '<div class="p-meta">' + esc(i.status) + " por " + esc(i.decidido_por || "") + " em " + dataHora(i.decidido_em) + (i.comentario ? " · " + esc(i.comentario) : "") + "</div>";
+      else if (podeDecidir(i.aprovador)) acoes = '<form class="p-form" data-form="decidir" data-id="' + i.id + '"><textarea name="conteudo_final">' + esc(c.texto || "") + '</textarea><input name="comentario" placeholder="Comentário (obrigatório para recusar)" maxlength="500" style="flex:1;min-width:200px"><button type="submit" class="primario" value="aprovado">Aprovar</button><button type="submit" value="editado">Aprovar com a minha edição</button><button type="submit" value="recusado">Recusar</button></form>';
+      else acoes = '<div class="p-meta">Pendente · quem decide: ' + esc(i.aprovador) + "</div>";
+      var coms = (i.comentarios || []).map(function (k) { return "<div>" + esc(dataHora(k.criado_em)) + " · " + esc(k.por) + ": " + esc(k.texto) + "</div>"; }).join("");
+      var formCom = pode("comentar") ? '<form class="p-form" data-form="comentar" data-id="' + i.id + '"><input name="texto" placeholder="Comentar (fica registrado com o seu nome; nada é enviado)" maxlength="1000" required style="flex:1;min-width:240px"><button type="submit">Comentar</button></form>' : "";
+      return '<article class="p-card"><h3>' + esc(i.titulo) + '</h3><div class="p-meta">' + esc(TIPOS_APROV[i.tipo] || i.tipo) + " · criado " + dataHora(i.criado_em) + (i.criado_por ? " por " + esc(i.criado_por) : "") + " · decide: " + esc(i.aprovador) + '</div><div class="p-hist" style="white-space:pre-wrap">' + esc(corpo).slice(0, 4000) + (extra ? '<div class="p-meta" style="margin-top:6px">' + esc(extra) + "</div>" : "") + "</div>" + (coms ? '<div class="p-hist">' + coms + "</div>" : "") + acoes + formCom + "</article>";
     }).join("");
   }
   function carregarHistorico(id) {
@@ -278,6 +300,8 @@
     else if (acao === "email-form") { estado.aberto[id] = "email"; render(); }
     else if (acao === "fechar") { delete estado.aberto[id]; estado.digitando = false; render(); }
     else if (acao === "turma-nova") { estado.turmaAberta.nova = true; renderTurmas(); }
+    else if (acao === "propor-abrir") { estado.proporAberto = true; renderAprovacoes(); }
+    else if (acao === "propor-fechar") { estado.proporAberto = false; estado.digitando = false; renderAprovacoes(); }
     else if (acao === "turma-editar") { estado.turmaAberta[id] = "editar"; renderTurmas(); }
     else if (acao === "turma-pessoas") { if (estado.turmaAberta[id] === "pessoas") delete estado.turmaAberta[id]; else estado.turmaAberta[id] = "pessoas"; renderTurmas(); }
     else if (acao === "turma-fechar") { delete estado.turmaAberta[id]; estado.digitando = false; renderTurmas(); }
@@ -310,6 +334,11 @@
     else if (tipo === "turma") {
       p = api("encontro_salvar", { id: id ? Number(id) : null, inicio: spParaIso(f.inicio.value), duracao_min: Number(f.duracao_min.value), capacidade: Number(f.capacidade.value), meet_link: f.meet_link.value.trim(), ativo: !!f.ativo.checked });
       p = p.then(function (j) { if (!j.ok) { erro(j.erro || "erro"); bs.forEach(function (x) { x.disabled = false; }); return { _tratado: true }; } delete estado.turmaAberta[id || "nova"]; estado.digitando = false; erro(""); return recarregar().then(function () { return { _tratado: true }; }); });
+    }
+    else if (tipo === "comentar") p = api("comentar", { id: Number(id), texto: f.texto.value });
+    else if (tipo === "propor") {
+      p = api("propor_ab", { titulo: f.titulo.value, onde: f.onde.value, texto: f.texto.value, hipotese: f.hipotese.value });
+      p = p.then(function (j) { if (!j.ok) { erro(j.erro || "erro"); bs.forEach(function (x) { x.disabled = false; }); return { _tratado: true }; } estado.proporAberto = false; estado.digitando = false; erro(""); return recarregar().then(function () { return { _tratado: true }; }); });
     }
     else if (tipo === "decidir") {
       var decisao = botao ? botao.value : "aprovado";
