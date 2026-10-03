@@ -111,3 +111,11 @@ Publicado em 1/10 com o "sim" do Lucas: migração 690, `_shared/email_eventos.t
   Lucas antes do disparo (`email-teste`, prioridade P3, variante a e b).
 - Ferramenta: `execute_sql` também trava em `DROP FUNCTION` (como em UPDATE puro); para mudar o tipo de retorno de uma
   função, criar com outro nome (`_v2`).
+- 20h45 a 21h30, SIM do Lucas, publicação em ordem: (1) painel: migração 820 aplicada e registrada, `painel-api` v6 e
+  `painel-avisar` v4 publicadas, PR #19 em main, LG (`growth`) na config `painel_aprovadores` (4 acessos: Lucas
+  principal, Marcela conteúdo, Matheus operacional, LG growth), e-mail com o link pessoal dele pela `painel-avisar`
+  (resposta "enviado", 20h47); (2) teste do P3/P4: migração 830 aplicada e registrada, `fila-processar` v21 e
+  `email-teste` v11 publicadas, arte 6 em main (no ar em prevenda.konioca.com, 119 KB), testes A (cones) e B (arte 6)
+  enviados ao Lucas pela `email-teste` (dois "enviado", 20h52). Smoke no fim: public-config 200, chave errada recusada,
+  LP 200, CSV do `leads-planilha` ok (10 linhas). Branch de trabalho reiniciado a partir de main. O disparo do P3/P4
+  continua esperando o SIM dele no teste.
