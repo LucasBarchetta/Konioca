@@ -76,4 +76,4 @@ body.painel{display:block;margin:0;background:#19422d;font-family:Carlito,Calibr
 .p-tabela th,.p-tabela td{padding:8px 10px;text-align:right;border-top:1px solid #eee6d2;white-space:nowrap}
 .p-tabela th{background:#f4ebdb;color:#5a6b3a;font-weight:700;border-top:0}
 .p-tabela th:first-child,.p-tabela td:first-child{text-align:left}
-.p-tabela td:nth-child(2){text-align:left}
+.p-tabela.p-disparos th:nth-child(2),.p-tabela.p-disparos td:nth-child(2){text-align:left}
