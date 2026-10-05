@@ -129,3 +129,7 @@ Publicado em 1/10 com o "sim" do Lucas: migração 690, `_shared/email_eventos.t
   domínios. Aba Aprovações vazia (nenhum item cadastrado ainda). Circular: `circular_storage_path` aponta para um nome
   com colchetes e não há objeto no bucket, então ela continua sem sair. O disparo do P3/P4 espera o SIM do Lucas no
   teste das duas versões (enviado sexta 20h52).
+- Segunda 5/10, 9h40, SIM do Lucas: P3/P4 enfileirado para as 10h pela `base_antiga_promover_ab(500, P3+P4, 10h, a/b)`:
+  448 contatos (7 já eram leads), A (cones) 223, B (arte 6) 225; P3 101/97, P4 122/128. Teto 5%, spam zero. Passo a passo
+  dos links do Meet reenviado ao Matheus (dois endereços, 9h48). Aba Desempenho parte 1 publicada (docs/17), com a
+  correção da contagem de cadastros.

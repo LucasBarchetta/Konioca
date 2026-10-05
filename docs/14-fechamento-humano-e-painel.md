@@ -159,6 +159,8 @@ No lugar de "atualizado há X s", o painel mostra "próxima atualização em X s
 
 ## Turmas (aba do painel, 2/10)
 
+Aba "Desempenho" (5/10, parte 1): docs/17. Só leitura, para todo papel.
+
 Formato de 2/10: encontros fechados no Google Meet no lugar da live. Aba "Turmas" no painel, para os três aprovadores.
 
 - Cadastro e edição de turma: data e hora (horário de Brasília), minutos (padrão 30), vagas (padrão 35), link do
