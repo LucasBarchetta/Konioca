@@ -133,3 +133,9 @@ Publicado em 1/10 com o "sim" do Lucas: migração 690, `_shared/email_eventos.t
   448 contatos (7 já eram leads), A (cones) 223, B (arte 6) 225; P3 101/97, P4 122/128. Teto 5%, spam zero. Passo a passo
   dos links do Meet reenviado ao Matheus (dois endereços, 9h48). Aba Desempenho parte 1 publicada (docs/17), com a
   correção da contagem de cadastros.
+- 5/10, 10h20 a 10h40: checagem do fim de semana a pedido do Lucas: zero chamadas à lead-intake de sexta 18h até segunda
+  10h30 (13 visitas e 16 leituras de config no mesmo período), nenhum erro nas functions nem no Postgres, plano B não
+  acionado; cadastro de teste completo pela rota pública gravou no banco e na planilha em 4 s e foi removido (a linha
+  de teste na aba "Tempo real" da planilha fica para apagar à mão). Os 3 cadastros de sexta 8h50 eram contatos importados
+  pelo P2 que depois se cadastraram pela página (10h20, 11h28, 11h59). Aviso dos dois itens da aba Aprovações enviado à
+  Marcela e ao LG (10h22). Migração 850: data do cadastro pela página para contatos da base na lista e na planilha.

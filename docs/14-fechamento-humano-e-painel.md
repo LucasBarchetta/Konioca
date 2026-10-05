@@ -161,6 +161,8 @@ No lugar de "atualizado há X s", o painel mostra "próxima atualização em X s
 
 Aba "Desempenho" (5/10, parte 1): docs/17. Só leitura, para todo papel.
 
+Data do lead (5/10, pedido do Lucas): contato da base antiga aparece na lista de leads e na planilha com a data em que se cadastrou pela página (`base_antiga_convertido_em`), não a da importação. Contato importado que ainda não se cadastrou não aparece em nenhuma das duas (migração 850, views `v_painel_leads` e `v_leads_planilha`; `lead-intake` e `planilha-processar` mandam a mesma data à planilha em tempo real). Quem já era lead pela página antes da importação continua com a data real.
+
 Formato de 2/10: encontros fechados no Google Meet no lugar da live. Aba "Turmas" no painel, para os três aprovadores.
 
 - Cadastro e edição de turma: data e hora (horário de Brasília), minutos (padrão 30), vagas (padrão 35), link do
