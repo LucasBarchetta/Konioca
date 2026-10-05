@@ -119,3 +119,13 @@ Publicado em 1/10 com o "sim" do Lucas: migração 690, `_shared/email_eventos.t
   enviados ao Lucas pela `email-teste` (dois "enviado", 20h52). Smoke no fim: public-config 200, chave errada recusada,
   LP 200, CSV do `leads-planilha` ok (10 linhas). Branch de trabalho reiniciado a partir de main. O disparo do P3/P4
   continua esperando o SIM dele no teste.
+- Sábado 3/10, 8h: teto de devolução voltou a 3% (ordem de sexta). Domingo 4/10, 8h52, pedido do Lucas: link pessoal do
+  painel reenviado aos quatro acessos pela `painel-avisar` (Matheus com cópia), todos "enviado".
+- Segunda 5/10, 7h30, antes do P3/P4: teto de devolução de volta a 5% (upsert, ordem do Lucas de 2/10), trilha ativa,
+  `envios_ativos` true. Leitura tardia do P2 com as devoluções que chegaram depois do fechamento de 18h30: 699 enviados,
+  659 entregues, 40 devolvidos (A: 10 definitivas, 20 temporárias; B: 1 definitiva, 9 temporárias), 5,7% no total,
+  quase tudo caixa cheia (MailboxFull). O teto do dia só conta o dia corrente, por isso a trilha não pausou. Cadastros do
+  P2 seguem 4 (A 3, B 1), 0 opt-out, 0 spam. Fila do P3/P4: 201 P3 e 254 P4 importados; 4 ignorados pela checagem de
+  domínios. Aba Aprovações vazia (nenhum item cadastrado ainda). Circular: `circular_storage_path` aponta para um nome
+  com colchetes e não há objeto no bucket, então ela continua sem sair. O disparo do P3/P4 espera o SIM do Lucas no
+  teste das duas versões (enviado sexta 20h52).
