@@ -139,3 +139,8 @@ Publicado em 1/10 com o "sim" do Lucas: migração 690, `_shared/email_eventos.t
   de teste na aba "Tempo real" da planilha fica para apagar à mão). Os 3 cadastros de sexta 8h50 eram contatos importados
   pelo P2 que depois se cadastraram pela página (10h20, 11h28, 11h59). Aviso dos dois itens da aba Aprovações enviado à
   Marcela e ao LG (10h22). Migração 850: data do cadastro pela página para contatos da base na lista e na planilha.
+- 5/10, 11h30, fechamento do P3/P4 (uma onda, 10h00 a 10h23): 448 enviados (A cones 223, B arte 6 225), 414 entregues
+  (A 210, B 204), 15 devolvidos (A 6, todas definitivas; B 9, 4 definitivas), 19 sem confirmação do provedor, 0 spam,
+  1 opt-out (B), 0 cadastros pela página até 11h30, 3 cliques na LP vindos de e-mail da base ainda na gaveta genérica
+  (página em cache com o contador antigo). Devolução do dia 3,35%, trilha ativa. Turmas: as 4 ativas seguem sem link do
+  Meet (passo a passo reenviado ao Matheus às 9h48); nova conferência às 14h.
