@@ -18,8 +18,9 @@ Deno.serve(async (req) => {
   let enviados = 0; const falhas: Record<string, string> = {};
   for (const it of itens ?? []) {
     const { data: l } = await sb.from("leads")
-      .select("criado_em, nome, whatsapp, email, cidade, tem_negocio, origem, utm_source, utm_medium, bloqueado_em, optout_em, anonimizado_em")
+      .select("criado_em, base_antiga_convertido_em, nome, whatsapp, email, cidade, tem_negocio, origem, utm_source, utm_medium, bloqueado_em, optout_em, anonimizado_em")
       .eq("id", it.lead_id).maybeSingle();
+    if (l?.base_antiga_convertido_em) l.criado_em = l.base_antiga_convertido_em; // contato da base antiga: data do cadastro pela página (5/10)
     if (!l || l.optout_em || l.anonimizado_em) { await sb.from("planilha_envios").update({ status: "cancelado", motivo: "lead saiu ou foi anonimizado" }).eq("id", it.id); continue; }
     const r = await enviarLinhaPlanilha(linhaTempoReal(l as LeadPlanilha));
     const tentativas = it.tentativas + 1;

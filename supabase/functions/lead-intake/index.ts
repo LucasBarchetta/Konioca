@@ -30,8 +30,9 @@ const TEXTO_CONSENTIMENTO_PADRAO = "Aceito receber mensagens da Konioca no Whats
 /** Planilha em tempo real: registra a linha (durável) e tenta enviar na hora; o cron planilha-processar cobre as falhas. */
 async function planilhaTempoReal(leadId: string) {
   const sb = db();
-  const { data: l } = await sb.from("leads").select("criado_em, nome, whatsapp, email, cidade, tem_negocio, origem, utm_source, utm_medium, bloqueado_em").eq("id", leadId).single();
+  const { data: l } = await sb.from("leads").select("criado_em, base_antiga_convertido_em, nome, whatsapp, email, cidade, tem_negocio, origem, utm_source, utm_medium, bloqueado_em").eq("id", leadId).single();
   if (!l) return;
+  if (l.base_antiga_convertido_em) l.criado_em = l.base_antiga_convertido_em; // contato da base antiga: data do cadastro pela página (5/10)
   const { data: envio } = await sb.from("planilha_envios").insert({ lead_id: leadId }).select("id").single();
   if (!planilhaConfigurada()) return; // fica pendente até os segredos existirem
   const r = await enviarLinhaPlanilha(linhaTempoReal(l));
