@@ -7,7 +7,7 @@
   try { if (token) sessionStorage.setItem("k_painel_t", token); else token = sessionStorage.getItem("k_painel_t") || ""; } catch (e) { /* sem storage */ }
   if (q.get("t")) { try { history.replaceState(null, "", location.pathname); } catch (e) { /* ok */ } }
 
-  var estado = { quem: null, leads: [], filtro: "todos", canal: "todos", temp: "todas", busca: "", aba: "leads", aberto: {}, canalAberto: {}, aprovacoes: [], proporAberto: false, turmas: [], turmasFiltro: "futuras", turmaAberta: {}, turmaPessoas: {}, novos: {}, atualizadoEm: 0, digitando: false, carregando: false, adiada: false };
+  var estado = { quem: null, leads: [], filtro: "todos", canal: "todos", temp: "todas", busca: "", aba: "leads", aberto: {}, canalAberto: {}, aprovacoes: [], proporAberto: false, turmas: [], turmasFiltro: "futuras", turmaAberta: {}, turmaPessoas: {}, desempenho: null, periodo: "7d", novos: {}, atualizadoEm: 0, digitando: false, carregando: false, adiada: false };
   // Etiqueta de canal (primeiro toque, mesma gaveta da aba Desempenho: v_painel_leads.canal). Espelho de painel_regras.ts.
   var CANAIS = [["stories", "Stories"], ["bio_instagram", "Bio do Instagram"], ["bio_tiktok", "Bio do TikTok"], ["whatsapp", "WhatsApp"], ["base_p1", "E-mail base antiga P1"], ["base_p2", "E-mail base antiga P2"], ["base_p2_a", "E-mail base antiga P2 (A)"], ["base_p2_b", "E-mail base antiga P2 (B)"], ["base_p34", "E-mail base antiga P3-P4"], ["base_p34_cones", "E-mail base antiga P3-P4 (cones)"], ["base_p34_arte6", "E-mail base antiga P3-P4 (arte 6)"], ["base_email", "E-mail base antiga"], ["convite", "Convite"], ["direto", "Direto"], ["outros", "Outros"]];
   function rotuloCanal(c) { for (var i = 0; i < CANAIS.length; i++) if (CANAIS[i][0] === (c || "outros")) return CANAIS[i][1]; return "Outros"; }
@@ -176,6 +176,33 @@
     el("p-turmas").innerHTML = (estado.turmaAberta.nova ? '<article class="p-card">' + formTurma(null) + "</article>" : "") + (lista.length ? lista.map(cartaoTurma).join("") : '<div class="p-vazio">Nenhuma turma aqui.</div>');
     Object.keys(estado.turmaAberta).forEach(function (id) { if (estado.turmaAberta[id] === "pessoas") carregarPessoas(id); });
   }
+  // Aba Desempenho (docs/17, parte 1): resumo, tabela por canal e disparos de e-mail. Tudo vem pronto do banco (só leitura).
+  var PERIODOS = [["hoje", "Hoje"], ["7d", "Últimos 7 dias"], ["tudo", "Desde o início"]];
+  function taxa(n, d) { if (!d || d <= 0) return "–"; var p = (Number(n) * 100) / Number(d); var s = p === 0 || p === 100 ? String(Math.round(p)) : (Math.round(p * 10) / 10).toFixed(1).replace(".", ","); return s + "%"; }
+  function rotuloDisparo(d) {
+    var p = String(d.prioridade || ""), base = p === "P3" || p === "P4" ? "P3-P4" : p || "Base antiga", v = String(d.variante || "");
+    if (!v) return base;
+    if (d.canal === "base_p34_cones") return base + " (cones)"; if (d.canal === "base_p34_arte6") return base + " (arte 6)";
+    return base + " (" + v.toUpperCase() + ")";
+  }
+  function ddmmDia(dia) { var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(dia || "")); return m ? m[3] + "/" + m[2] : ""; }
+  function cartaoNumero(rotulo, valor, sub) { return '<div class="p-num"><div class="p-num-v">' + esc(valor) + '</div><div class="p-num-r">' + esc(rotulo) + (sub ? '<div class="p-num-s">' + esc(sub) + "</div>" : "") + "</div></div>"; }
+  function renderDesempenho() {
+    el("p-periodos").innerHTML = PERIODOS.map(function (x) { return '<button type="button" data-periodo="' + x[0] + '" class="' + (estado.periodo === x[0] ? "ativa" : "") + '">' + x[1] + "</button>"; }).join("");
+    var d = estado.desempenho;
+    if (!d) { el("p-desempenho").innerHTML = '<div class="p-vazio">carregando…</div>'; return; }
+    var r = d.resumo || {}, pl = r.placar || {};
+    var cards = cartaoNumero("visitantes novos", String(r.novos || 0), (r.visitas || 0) + " visitas") + cartaoNumero("cadastros pela página", String(r.cadastros || 0)) + cartaoNumero("taxa de cadastro", taxa(r.cadastros, r.novos), "cadastros / visitantes novos") + cartaoNumero("Circulares confirmadas", String(r.circulares || 0)) + cartaoNumero("reservas", String(r.reservas || 0)) + cartaoNumero("placar das " + (estado.quem && estado.quem.placar ? estado.quem.placar.lote1_tamanho || 250 : 250), String(pl.reservas_lote1 || 0), "pagas, desde o início");
+    var canais = (d.canais || []).filter(function (c) { return c.novos || c.visitas || c.cadastros; });
+    var tab = canais.length ? '<div class="p-tabela-wrap"><table class="p-tabela"><thead><tr><th>Canal</th><th>Visitantes</th><th>Cadastros</th><th>Taxa</th><th>Circular ok</th><th>Reservas</th><th>Taxa de reserva</th></tr></thead><tbody>' + canais.map(function (c) {
+      return "<tr><td>" + esc(rotuloCanal(c.canal)) + "</td><td>" + c.novos + "</td><td>" + c.cadastros + "</td><td>" + taxa(c.cadastros, c.novos) + "</td><td>" + c.circulares + "</td><td>" + c.reservas + "</td><td>" + taxa(c.reservas, c.cadastros) + "</td></tr>";
+    }).join("") + "</tbody></table></div>" : '<div class="p-vazio">Sem visitas nem cadastros neste período.</div>';
+    var disp = d.disparos || [];
+    var tabD = disp.length ? '<div class="p-tabela-wrap"><table class="p-tabela p-disparos"><thead><tr><th>Dia</th><th>Disparo</th><th>Enviados</th><th>Entregues</th><th>Devolvidos</th><th>Spam</th><th>Cliques</th><th>Cadastros</th><th>Taxa</th></tr></thead><tbody>' + disp.map(function (x) {
+      return "<tr><td>" + ddmmDia(x.dia) + "</td><td>" + esc(rotuloDisparo(x)) + "</td><td>" + x.enviados + "</td><td>" + x.entregues + "</td><td>" + x.devolvidos + (x.enviados ? ' <span class="p-n">' + taxa(x.devolvidos, x.enviados) + "</span>" : "") + "</td><td>" + x.spam + "</td><td>" + x.cliques + "</td><td>" + x.cadastros + "</td><td>" + taxa(x.cadastros, x.entregues) + "</td></tr>";
+    }).join("") + "</tbody></table></div>" + (d.cliques_sem_gaveta ? '<div class="p-sub" style="margin-top:6px">' + d.cliques_sem_gaveta + ' cliques de e-mail da base antiga chegaram sem a gaveta do disparo (contador anterior a 5/10) e não entram na coluna.</div>' : "") : '<div class="p-vazio">Nenhum disparo de e-mail neste período.</div>';
+    el("p-desempenho").innerHTML = '<div class="p-nums">' + cards + "</div><h3 class=\"p-titulo\">Por canal (primeiro toque)</h3>" + tab + "<h3 class=\"p-titulo\">Disparos de e-mail da base antiga</h3>" + tabD + '<div class="p-sub" style="margin-top:8px">Cadastro = quem se cadastrou pela página. Contato importado da base antiga só conta quando entra pela página. Visitantes = primeira visita no navegador, só no domínio oficial. Clique = visita vinda do link do disparo; o provedor não rastreia clique.</div>';
+  }
   function carregarPessoas(id) {
     api("encontro_leads", { encontro_id: Number(id) }).then(function (j) {
       var h = el("turma-pessoas-" + id); if (!h) return;
@@ -256,9 +283,10 @@
     if (estado.carregando) { if (!auto) estado.pendente = true; return Promise.resolve(); }
     if (auto && ocupado()) { estado.adiada = true; mostrarAtualizado(); return Promise.resolve(); }
     estado.carregando = true; estado.adiada = false;
-    return Promise.all([api("quem"), api("leads"), api("aprovacoes"), api("encontros")]).then(function (r) {
-      var quem = r[0], leads = r[1], ap = r[2], enc = r[3];
+    return Promise.all([api("quem"), api("leads"), api("aprovacoes"), api("encontros"), api("desempenho", { periodo: estado.periodo })]).then(function (r) {
+      var quem = r[0], leads = r[1], ap = r[2], enc = r[3], des = r[4];
       estado.turmas = (enc && enc.encontros) || [];
+      if (des && des.ok) estado.desempenho = des;
       if (!quem.ok) { if (quem._status === 401) restrito(); else if (!auto) erro(quem.erro || "Não foi possível abrir o painel."); return; }
       var antes = {}; estado.leads.forEach(function (l) { antes[l.id] = true; });
       var lista = leads.leads || [];
@@ -267,7 +295,7 @@
       el("p-nome").textContent = quem.nome; el("p-papel").textContent = quem.papel + " · " + (quem.escopo || "");
       el("p-placar-num").textContent = String(quem.placar.reservas_lote1 || 0); el("p-placar-lote").textContent = String(quem.placar.lote1_tamanho || 250);
       estado.atualizadoEm = Date.now(); estado.digitando = false;
-      liberar(); erro(""); render(); renderAprovacoes(); renderTurmas(); mostrarAtualizado();
+      liberar(); erro(""); render(); renderAprovacoes(); renderTurmas(); renderDesempenho(); mostrarAtualizado();
       if (Object.keys(estado.novos).length) setTimeout(function () { estado.novos = {}; document.querySelectorAll(".p-card.p-novo").forEach(function (c) { c.classList.remove("p-novo"); }); }, 6500);
     }).catch(function () { if (!auto) erro("Sem conexão com o painel. Tente de novo."); else { estado.atualizadoEm = Date.now(); mostrarAtualizado("sem conexão, tentando de novo em " + Math.round(INTERVALO / 1000) + " s"); } })
       .then(function () { estado.carregando = false; if (estado.pendente) { estado.pendente = false; return recarregar(); } });
@@ -374,7 +402,12 @@
     var b = ev.target.closest("button[data-aba]"); if (!b) return;
     estado.aba = b.getAttribute("data-aba");
     el("p-abas").querySelectorAll("button").forEach(function (x) { x.classList.toggle("ativa", x === b); });
-    el("aba-leads").classList.toggle("oculto", estado.aba !== "leads"); el("aba-aprovacoes").classList.toggle("oculto", estado.aba !== "aprovacoes"); el("aba-turmas").classList.toggle("oculto", estado.aba !== "turmas");
+    el("aba-leads").classList.toggle("oculto", estado.aba !== "leads"); el("aba-aprovacoes").classList.toggle("oculto", estado.aba !== "aprovacoes"); el("aba-turmas").classList.toggle("oculto", estado.aba !== "turmas"); el("aba-desempenho").classList.toggle("oculto", estado.aba !== "desempenho");
+  });
+  el("p-periodos").addEventListener("click", function (ev) {
+    var b = ev.target.closest("button[data-periodo]"); if (!b) return;
+    estado.periodo = b.getAttribute("data-periodo"); estado.desempenho = null; renderDesempenho();
+    api("desempenho", { periodo: estado.periodo }).then(function (j) { if (j.ok) { estado.desempenho = j; renderDesempenho(); } else erro(j.erro || "erro"); });
   });
   el("p-busca").addEventListener("input", function () { estado.busca = this.value; render(); });
 

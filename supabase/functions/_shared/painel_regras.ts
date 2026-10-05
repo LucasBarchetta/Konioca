@@ -250,3 +250,44 @@ export function podeAcao(papel: string | undefined | null, acao: string): boolea
   const chave = ACOES_ESCRITA[acao];
   return chave ? p[chave] === true : false;
 }
+
+// ---------------------------------------------------------------------------
+// Aba "Desempenho" (docs/17): período, taxas e rótulos. O cálculo fica no banco (função desempenho); aqui só o que a tela
+// precisa para pedir e mostrar.
+// ---------------------------------------------------------------------------
+
+export type Periodo = "hoje" | "7d" | "tudo";
+
+/** Dia de São Paulo (AAAA-MM-DD) de um instante. */
+export function diaSP(d: Date, timeZone = "America/Sao_Paulo"): string {
+  const p: Record<string, string> = {};
+  for (const x of new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(d)) p[x.type] = x.value;
+  return `${p.year}-${p.month}-${p.day}`;
+}
+
+/** Intervalo pedido ao banco: hoje; últimos 7 dias (hoje incluído); desde o início (sem limite). */
+export function intervaloPeriodo(periodo: string, agora: Date = new Date()): { periodo: Periodo; de: string | null; ate: string | null } {
+  const hoje = diaSP(agora);
+  if (periodo === "hoje") return { periodo: "hoje", de: hoje, ate: hoje };
+  if (periodo === "7d") return { periodo: "7d", de: diaSP(new Date(agora.getTime() - 6 * 86400000)), ate: hoje };
+  return { periodo: "tudo", de: null, ate: null };
+}
+
+/** Taxa em texto: "12,5%"; sem denominador, "–". Uma casa decimal; 100% e 0% sem vírgula. */
+export function taxa(n: number, d: number): string {
+  if (!d || d <= 0) return "–";
+  const p = (Number(n) * 100) / Number(d);
+  const s = p === 0 || p === 100 ? String(Math.round(p)) : (Math.round(p * 10) / 10).toFixed(1).replace(".", ",");
+  return s + "%";
+}
+
+/** Nome de um disparo da base antiga na tabela: "P2 (A)", "P3-P4 (arte 6)", "P1". */
+export function rotuloDisparo(d: { prioridade?: string | null; variante?: string | null; canal?: string | null }): string {
+  const p = String(d.prioridade ?? "");
+  const base = p === "P3" || p === "P4" ? "P3-P4" : p || "Base antiga";
+  const v = String(d.variante ?? "");
+  if (!v) return base;
+  if (d.canal === "base_p34_cones") return base + " (cones)";
+  if (d.canal === "base_p34_arte6") return base + " (arte 6)";
+  return base + " (" + v.toUpperCase() + ")";
+}

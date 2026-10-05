@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { quantidadeValida, textoCobranca, assinaturaAprovador, filtrarLeads, ddmm, botaoReservar, rotuloCanal, detalheCanal, filtrarCanal, canaisPresentes, rotuloTemperatura, filtrarTemperatura, ordenarPorTemperatura, temperaturasPresentes } from "../supabase/functions/_shared/painel_regras.ts";
+import { intervaloPeriodo, diaSP, taxa, rotuloDisparo, quantidadeValida, textoCobranca, assinaturaAprovador, filtrarLeads, ddmm, botaoReservar, rotuloCanal, detalheCanal, filtrarCanal, canaisPresentes, rotuloTemperatura, filtrarTemperatura, ordenarPorTemperatura, temperaturasPresentes } from "../supabase/functions/_shared/painel_regras.ts";
 
 test("Quantidade do 'Reservou': inteiro de 1 a 10", () => {
   assert.equal(quantidadeValida(1), 1); assert.equal(quantidadeValida("3"), 3); assert.equal(quantidadeValida(10), 10);
@@ -139,4 +139,24 @@ test("Revisor automático: preço fora da página, de/por, promessa de faturamen
   assert.equal(revisarConteudo({ texto: "Parcela de R$ 825." }, precos).ok, false);
   assert.equal(revisarConteudo({ html: "<p>A nova geração custa <strong>R$ 9.900</strong>.</p>" }, precos).ok, true);
   assert.equal(revisarConteudo({ assunto: "Ana, a nova Konioca custa R$ 9.900", texto: "" }, precos).ok, true);
+});
+
+test("Desempenho: período em dia de São Paulo (hoje, 7 dias, desde o início)", () => {
+  const agora = new Date("2026-10-05T01:30:00Z"); // 22h30 de 4/10 em SP
+  assert.equal(diaSP(agora), "2026-10-04");
+  assert.deepEqual(intervaloPeriodo("hoje", agora), { periodo: "hoje", de: "2026-10-04", ate: "2026-10-04" });
+  assert.deepEqual(intervaloPeriodo("7d", agora), { periodo: "7d", de: "2026-09-28", ate: "2026-10-04" });
+  assert.deepEqual(intervaloPeriodo("inventado", agora), { periodo: "tudo", de: null, ate: null });
+});
+
+test("Desempenho: taxa em texto e rótulo do disparo", () => {
+  assert.equal(taxa(4, 658), "0,6%"); assert.equal(taxa(0, 10), "0%"); assert.equal(taxa(10, 10), "100%"); assert.equal(taxa(1, 0), "–"); assert.equal(taxa(1, 8), "12,5%");
+  assert.equal(rotuloDisparo({ prioridade: "P1", variante: null }), "P1");
+  assert.equal(rotuloDisparo({ prioridade: "P2", variante: "a", canal: "base_p2_a" }), "P2 (A)");
+  assert.equal(rotuloDisparo({ prioridade: "P3", variante: "a", canal: "base_p34_cones" }), "P3-P4 (cones)");
+  assert.equal(rotuloDisparo({ prioridade: "P4", variante: "b", canal: "base_p34_arte6" }), "P3-P4 (arte 6)");
+});
+
+test("Desempenho: só leitura, para qualquer papel que vê o painel", () => {
+  for (const papel of ["principal", "conteudo", "operacional", "growth"]) assert.equal(podeAcao(papel, "desempenho"), true, papel);
 });

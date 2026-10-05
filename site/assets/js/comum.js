@@ -98,8 +98,8 @@
       var q = new URLSearchParams(location.search), p = rastreio();
       var corpo = JSON.stringify({
         pagina: pagina, host: location.hostname, nova: nova,
-        primeiro: { utm_source: p.utm_source || "", utm_medium: p.utm_medium || "", referrer: p.referrer || "" },
-        visita: { utm_source: q.get("utm_source") || "", utm_medium: q.get("utm_medium") || "", referrer: document.referrer || "" }
+        primeiro: { utm_source: p.utm_source || "", utm_medium: p.utm_medium || "", referrer: p.referrer || "", utm_content: p.utm_content || "" },
+        visita: { utm_source: q.get("utm_source") || "", utm_medium: q.get("utm_medium") || "", referrer: document.referrer || "", utm_content: q.get("utm_content") || "" }
       });
       if (navigator.sendBeacon) navigator.sendBeacon(API + "/visita", corpo);
       else fetch(API + "/visita", { method: "POST", body: corpo, keepalive: true }).catch(function () {});

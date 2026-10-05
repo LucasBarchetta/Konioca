@@ -5,7 +5,7 @@ import { db, exigirServico } from "../_shared/db.ts";
 import { carregarConfig, cfgNum, cfgText, type Config } from "../_shared/config.ts";
 import { corsHeaders, json, lerJson } from "../_shared/http.ts";
 import { acharAprovador, aprovadores, type Aprovador } from "../_shared/aprovadores.ts";
-import { assinaturaAprovador, botaoReservar, type Decisao, estadoAprovacao, papeisDaRegra, permissoesDe, podeAcao, podeDecidirItem, quantidadeValida, regraAprovacao, revisarConteudo, textoRegra } from "../_shared/painel_regras.ts";
+import { assinaturaAprovador, botaoReservar, type Decisao, estadoAprovacao, intervaloPeriodo, papeisDaRegra, permissoesDe, podeAcao, podeDecidirItem, quantidadeValida, regraAprovacao, revisarConteudo, textoRegra } from "../_shared/painel_regras.ts";
 
 async function tokenDe(email: string, versao: string): Promise<string> {
   const chave = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
@@ -71,6 +71,14 @@ Deno.serve(async (req) => {
     const { data, error } = await sb.from("v_painel_leads").select("*").order("criado_em", { ascending: false }).limit(2000);
     if (error) return json({ erro: error.message }, 500, cors);
     return json({ ok: true, leads: data ?? [] }, 200, cors);
+  }
+
+  // Aba Desempenho (docs/17), só leitura: os blocos vêm prontos do banco (função desempenho), por período em dia de SP.
+  if (acao === "desempenho") {
+    const iv = intervaloPeriodo(String(b.periodo ?? "7d"));
+    const { data, error } = await sb.rpc("desempenho", { p_de: iv.de, p_ate: iv.ate });
+    if (error) return json({ erro: error.message }, 500, cors);
+    return json({ ok: true, periodo: iv.periodo, ...(data as Record<string, unknown>) }, 200, cors);
   }
 
   if (acao === "eventos") {

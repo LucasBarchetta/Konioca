@@ -1,4 +1,23 @@
-# Aba "Desempenho" do painel · plano (substitui a aba "Números"; decisão do Lucas em 1/10)
+# Aba "Desempenho" do painel (substitui a aba "Números"; decisão do Lucas em 1/10)
+
+## Como está (5/10): parte 1 publicada
+
+Migração 840: função `desempenho(p_de, p_ate)` (JSON com resumo, tabela por canal e disparos; só leitura, em dia de
+São Paulo), `desempenho_cadastros()` e `gaveta_disparo()`. `painel-api` v7: ação `desempenho` ({periodo: hoje | 7d |
+tudo}), liberada para todo papel que vê o painel. `painel.js`: aba "Desempenho" com chips de período, cartões do resumo,
+tabela por canal e tabela de disparos; atualiza junto com o resto (30 s). Parte 2 (funil, gráfico por dia, links) fica
+para depois.
+
+Correção de 5/10 (pedido do Lucas): "cadastro" é só quem se cadastrou pela página. Contato importado da base antiga não
+conta; passa a contar quando entra pela página (`base_antiga_convertido_em`), na gaveta do link que ele usou. Leads de
+teste e do Monitor ficam de fora. A gaveta da base antiga (`origem_numeros`) passou a valer para `utm_source=base` com
+qualquer `utm_medium`: os 45 contatos P1 importados em 1/10 com `utm_medium=whatsapp` saem de "Outros" e vão para
+"E-mail base antiga P1" na etiqueta da lista de leads (continuam fora da contagem de cadastros).
+
+Contador de visitas: `comum.js` não mandava o `utm_content` (nem do primeiro toque nem do link da visita), por isso os
+cliques dos e-mails da base caíam todos em "base_email" e a coluna "cliques" por disparo ficava zerada. Corrigido em
+5/10; os cliques anteriores ficam na gaveta genérica e a aba mostra esse total à parte ("cliques sem gaveta").
+
 
 Dashboard por canal, para os três aprovadores, na mesma página `/painel/` e com o mesmo link assinado. Prazo: 8/10,
 para ter uma semana de dados antes da live de 15/10. Prévia antes de publicar.

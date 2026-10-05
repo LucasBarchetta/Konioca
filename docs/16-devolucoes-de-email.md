@@ -111,3 +111,25 @@ Publicado em 1/10 com o "sim" do Lucas: migração 690, `_shared/email_eventos.t
   Lucas antes do disparo (`email-teste`, prioridade P3, variante a e b).
 - Ferramenta: `execute_sql` também trava em `DROP FUNCTION` (como em UPDATE puro); para mudar o tipo de retorno de uma
   função, criar com outro nome (`_v2`).
+- 20h45 a 21h30, SIM do Lucas, publicação em ordem: (1) painel: migração 820 aplicada e registrada, `painel-api` v6 e
+  `painel-avisar` v4 publicadas, PR #19 em main, LG (`growth`) na config `painel_aprovadores` (4 acessos: Lucas
+  principal, Marcela conteúdo, Matheus operacional, LG growth), e-mail com o link pessoal dele pela `painel-avisar`
+  (resposta "enviado", 20h47); (2) teste do P3/P4: migração 830 aplicada e registrada, `fila-processar` v21 e
+  `email-teste` v11 publicadas, arte 6 em main (no ar em prevenda.konioca.com, 119 KB), testes A (cones) e B (arte 6)
+  enviados ao Lucas pela `email-teste` (dois "enviado", 20h52). Smoke no fim: public-config 200, chave errada recusada,
+  LP 200, CSV do `leads-planilha` ok (10 linhas). Branch de trabalho reiniciado a partir de main. O disparo do P3/P4
+  continua esperando o SIM dele no teste.
+- Sábado 3/10, 8h: teto de devolução voltou a 3% (ordem de sexta). Domingo 4/10, 8h52, pedido do Lucas: link pessoal do
+  painel reenviado aos quatro acessos pela `painel-avisar` (Matheus com cópia), todos "enviado".
+- Segunda 5/10, 7h30, antes do P3/P4: teto de devolução de volta a 5% (upsert, ordem do Lucas de 2/10), trilha ativa,
+  `envios_ativos` true. Leitura tardia do P2 com as devoluções que chegaram depois do fechamento de 18h30: 699 enviados,
+  659 entregues, 40 devolvidos (A: 10 definitivas, 20 temporárias; B: 1 definitiva, 9 temporárias), 5,7% no total,
+  quase tudo caixa cheia (MailboxFull). O teto do dia só conta o dia corrente, por isso a trilha não pausou. Cadastros do
+  P2 seguem 4 (A 3, B 1), 0 opt-out, 0 spam. Fila do P3/P4: 201 P3 e 254 P4 importados; 4 ignorados pela checagem de
+  domínios. Aba Aprovações vazia (nenhum item cadastrado ainda). Circular: `circular_storage_path` aponta para um nome
+  com colchetes e não há objeto no bucket, então ela continua sem sair. O disparo do P3/P4 espera o SIM do Lucas no
+  teste das duas versões (enviado sexta 20h52).
+- Segunda 5/10, 9h40, SIM do Lucas: P3/P4 enfileirado para as 10h pela `base_antiga_promover_ab(500, P3+P4, 10h, a/b)`:
+  448 contatos (7 já eram leads), A (cones) 223, B (arte 6) 225; P3 101/97, P4 122/128. Teto 5%, spam zero. Passo a passo
+  dos links do Meet reenviado ao Matheus (dois endereços, 9h48). Aba Desempenho parte 1 publicada (docs/17), com a
+  correção da contagem de cadastros.
