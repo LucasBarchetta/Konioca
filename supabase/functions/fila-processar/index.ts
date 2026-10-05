@@ -66,7 +66,7 @@ Deno.serve(async (req) => {
     if (lead.grupo_controle && item.tipo !== "circular_lembrete") { await fechar(item.id, "pulado", "grupo_controle"); continue; }
     if (item.canal === "whatsapp" && (lead.wa_invalido_em || !lead.whatsapp)) { await fechar(item.id, "pulado", "numero_invalido"); continue; }
     if (item.canal === "email" && (lead.email_bloqueado_em || !lead.email)) { await fechar(item.id, "pulado", "email_bloqueado"); resultados[item.id] = "pulado: e-mail bloqueado"; continue; }
-    if ((item.tipo === "base_antiga" || item.tipo === "base_antiga_email") && cfgBool(cfg, "base_antiga_pausada", false)) {
+    if ((item.tipo === "base_antiga" || item.tipo === "base_antiga_email" || item.tipo === "base_antiga_email2") && cfgBool(cfg, "base_antiga_pausada", false)) {
       // Trilha pausada por devoluções (docs/16): o item espera sem gastar tentativa até o sim do Lucas.
       await sb.from("fila_envios").update({ status: "pendente", tentativas: Math.max(0, item.tentativas - 1), agendado_para: new Date(Date.now() + 1800_000).toISOString(), motivo: "base antiga pausada (devoluções)" }).eq("id", item.id);
       resultados[item.id] = "base antiga pausada"; continue;

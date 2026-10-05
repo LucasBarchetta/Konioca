@@ -85,7 +85,7 @@ Deno.serve(async (req) => {
   }
   resultado.bloqueado = !!email; resultado.saiu = !!leadId;
   // Tolerância zero (Lucas, 2/10): qualquer marcação de spam vinda de e-mail da base antiga pausa a trilha na hora.
-  if (modelo === "base_antiga_email" && !cfgBool(cfg, "base_antiga_pausada", false)) {
+  if ((modelo === "base_antiga_email" || modelo === "base_antiga_email2") && !cfgBool(cfg, "base_antiga_pausada", false)) {
     const motivo = `pausada em ${new Date().toISOString()}: marcação de spam em e-mail da base antiga (tolerância zero)`;
     resultado.base_antiga = await pausarBaseAntiga(cfg, motivo, email ? [email] : [], "[Konioca] Base antiga pausada por marcação de spam");
   }
@@ -122,7 +122,7 @@ async function verificarBaseAntiga(cfg: Record<string, unknown>, emailDevolvido:
   const motivo = `pausada em ${new Date().toISOString()}: ${dia.devolvidos} devoluções em ${dia.enviados} e-mails no dia (${dia.pct}%), teto ${cfgNum(cfg, "base_antiga_devolucao_max_pct", 3)}%`;
   // Endereços devolvidos no dia, para o aviso.
   const hoje = new Date(); hoje.setHours(hoje.getHours() - 27);
-  const { data: devolvidos } = await sb.from("mensagens").select("lead_id").eq("modelo", "base_antiga_email").eq("status", "devolvido").gt("criado_em", hoje.toISOString()).limit(200);
+  const { data: devolvidos } = await sb.from("mensagens").select("lead_id").in("modelo", ["base_antiga_email", "base_antiga_email2"]).eq("status", "devolvido").gt("criado_em", hoje.toISOString()).limit(200);
   const ids = [...new Set((devolvidos ?? []).map((d) => d.lead_id).filter(Boolean))] as string[];
   const { data: leads } = ids.length ? await sb.from("leads").select("email").in("id", ids) : { data: [] };
   const lista = (leads ?? []).map((l) => l.email as string).concat(emailDevolvido ? [emailDevolvido] : []);

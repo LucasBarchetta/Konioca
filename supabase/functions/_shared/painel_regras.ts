@@ -56,7 +56,7 @@ export const CANAIS: readonly { canal: string; rotulo: string }[] = [
   { canal: "stories", rotulo: "Stories" }, { canal: "bio_instagram", rotulo: "Bio do Instagram" }, { canal: "bio_tiktok", rotulo: "Bio do TikTok" },
   { canal: "whatsapp", rotulo: "WhatsApp" }, { canal: "base_p1", rotulo: "E-mail base antiga P1" }, { canal: "base_p2", rotulo: "E-mail base antiga P2" },
   { canal: "base_p2_a", rotulo: "E-mail base antiga P2 (A)" }, { canal: "base_p2_b", rotulo: "E-mail base antiga P2 (B)" },
-  { canal: "base_p34", rotulo: "E-mail base antiga P3-P4" }, { canal: "base_p34_cones", rotulo: "E-mail base antiga P3-P4 (cones)" }, { canal: "base_p34_arte6", rotulo: "E-mail base antiga P3-P4 (arte 6)" }, { canal: "base_email", rotulo: "E-mail base antiga" }, { canal: "convite", rotulo: "Convite" },
+  { canal: "base_p34", rotulo: "E-mail base antiga P3-P4" }, { canal: "base_p34_cones", rotulo: "E-mail base antiga P3-P4 (cones)" }, { canal: "base_p34_arte6", rotulo: "E-mail base antiga P3-P4 (arte 6)" }, { canal: "base_b2", rotulo: "E-mail base antiga 2º envio" }, { canal: "base_email", rotulo: "E-mail base antiga" }, { canal: "convite", rotulo: "Convite" },
   { canal: "direto", rotulo: "Direto" }, { canal: "outros", rotulo: "Outros" },
 ];
 

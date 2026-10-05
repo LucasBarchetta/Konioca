@@ -181,7 +181,7 @@ export function montarEnvio(tipo: string, canal: string, lead: LeadFila, cfg: Co
     return { canal: "whatsapp", modo: "template", nome: cfgText(cfg, "wa_tpl_circular_lembrete"), params: [nome, lim.ddmm, confirmar] };
   }
 
-  if (tipo === "base_antiga" || tipo === "base_antiga_email") {
+  if (tipo === "base_antiga" || tipo === "base_antiga_email" || tipo === "base_antiga_email2") {
     // Base antiga ainda não está na lista: o convite leva à LP (cadastro, aceite e Circular). Sem oferta de produto.
     // Calendário de 1/10: P1 em 1/10, P2 em 2/10, P3 e P4 em 5/10, cada versão com o "sim" do Lucas no teste.
     const lp = cfgText(cfg, "lp_url");
@@ -200,7 +200,7 @@ export function montarEnvio(tipo: string, canal: string, lead: LeadFila, cfg: Co
     // primeiro parágrafo, sem a faixa. Cada metade com o seu utm_content (p34_cones / p34_arte6).
     const arteP34 = versao === "p34" && lead.base_antiga_variante === "b";
     const content = variante ? `p2_${variante}` : versao === "p34" && lead.base_antiga_variante === "a" ? "p34_cones" : arteP34 ? "p34_arte6" : versao;
-    const url = `${lp.replace(/\/$/, "")}/?utm_source=base&utm_medium=email&utm_campaign=base_antiga&utm_content=${content}`;
+    const url = `${lp.replace(/\/$/, "")}/?utm_source=base&utm_medium=email&utm_campaign=base_antiga&utm_content=${tipo === "base_antiga_email2" ? "b2" : content}`;
     const precoNovo = formatarReais(cfgNum(cfg, "preco_prevenda"));
     const precoAtual = formatarReais(cfgNum(cfg, "preco_atual"));
     const diferencaMil = Math.floor((cfgNum(cfg, "preco_atual") - cfgNum(cfg, "preco_prevenda")) / 1000);
@@ -231,6 +231,25 @@ ${paragrafos.map(P).join("\n")}`}
 <p style="margin:32px 0 0;font-size:12px;line-height:1.6;color:#5a6b3a"><a href="${esc(optout)}" style="color:#5a6b3a">Não quero mais receber mensagens</a></p>
 </td></tr></table></td></tr></table></body></html>`;
 
+    if (tipo === "base_antiga_email2") {
+      // Segundo e-mail da base antiga (pedido do Lucas, 5/10): só para quem recebeu o primeiro, não se cadastrou e não saiu.
+      // Ângulo: as turmas dos encontros estão abertas. Imagem = a versão vencedora do teste do P3/P4 (config
+      // base_antiga_email2_arte: "cones" ou "arte6"). Datas em texto na config (base_antiga_email2_datas), nunca fixas.
+      const datas = cfgText(cfg, "base_antiga_email2_datas");
+      if (!datas || pendente(datas)) return { canal: "nenhum", motivo: "base_antiga_email2_datas pendente" };
+      const arte2 = cfgText(cfg, "base_antiga_email2_arte", "cones") === "arte6";
+      const assunto = `${nome}, as turmas com a Marcela estão abertas`;
+      const previa = `Encontros fechados no Google Meet, até ${encontroCapacidade} pessoas por turma. Primeiras datas: ${datas}.`;
+      const b1 = `${nome}, a gente te escreveu sobre a nova geração da Konioca. Agora as turmas estão abertas.`;
+      const b2 = `A Marcela apresenta a máquina em encontros fechados pelo Google Meet: ${encontroDuracao} minutos, no máximo ${encontroCapacidade} pessoas por turma. As primeiras datas são ${datas}.`;
+      const b3a = `Só quem está na lista entra, e a lista é a mesma da pré-venda: `;
+      const b3b = `${lote1} máquinas por ${precoNovo}.`;
+      const b3c = ` A atual custa ${precoAtual}.`;
+      const b4 = `Entre na lista e escolha o seu horário:`;
+      const texto = [b1, b2, b3a + b3b + b3c, b4, url, l6, ``, assinatura, ``, `Para não receber mais mensagens: ${optout}`].join("\n");
+      const html = montarHtml(assunto, previa, [esc(b1), esc(b2), esc(b3a) + "<strong>" + esc(b3b) + "</strong>" + esc(b3c)], b4, "Quero minha vaga", assinatura, arte2 ? { src: img.arte6, alt: ARTE6_ALT } : undefined);
+      return { canal: "email", assunto, texto, html };
+    }
     if (variante === "b") {
       // Versão B (proposta de 1/10 para o teste A/B do P2): assunto e abertura pelo preço, na voz da Marcela.
       // Preço só como na página (config), sem "de/por" (são máquinas diferentes), sem escassez falsa, sem promessa de ganho, sem emoji.
