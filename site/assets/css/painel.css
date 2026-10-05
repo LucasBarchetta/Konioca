@@ -64,3 +64,16 @@ body.painel{display:block;margin:0;background:#19422d;font-family:Carlito,Calibr
 .p-pessoa button{font:inherit;font-size:13px;padding:6px 10px;border-radius:7px;border:1px solid #c4a77d;background:#fff;color:#1f4a36;cursor:pointer}
 .p-pessoa button.ativa{background:#1f4a36;color:#f7f0e2;border-color:#1f4a36}
 .p-pessoa button.faltou.ativa{background:#8a3a08;border-color:#8a3a08}
+/* Aba Desempenho (docs/17): cartões do resumo e tabelas por canal e por disparo, legíveis no celular. */
+.p-nums{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;margin-bottom:14px}
+.p-num{background:#fff;border:1px solid #e4d7bf;border-radius:10px;padding:10px 12px}
+.p-num-v{font-family:Caladea,Cambria,Georgia,serif;font-size:26px;line-height:1.1;color:#1f4a36}
+.p-num-r{font-size:13px;color:#5a6b3a;margin-top:2px}
+.p-num-s{font-size:12px;color:#8a8a7a}
+.p-titulo{font-family:Caladea,Cambria,Georgia,serif;font-weight:400;font-size:18px;margin:14px 0 6px}
+.p-tabela{width:100%;border-collapse:collapse;background:#fff;border:1px solid #e4d7bf;border-radius:10px;overflow:hidden;font-size:14px;display:block;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.p-tabela thead,.p-tabela tbody,.p-tabela tr{display:table;width:100%;table-layout:auto}
+.p-tabela th,.p-tabela td{padding:8px 10px;text-align:right;border-top:1px solid #eee6d2;white-space:nowrap}
+.p-tabela th{background:#f4ebdb;color:#5a6b3a;font-weight:700;border-top:0}
+.p-tabela th:first-child,.p-tabela td:first-child{text-align:left}
+.p-tabela td:nth-child(2){text-align:left}
