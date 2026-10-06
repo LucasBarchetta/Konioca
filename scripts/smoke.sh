@@ -2,9 +2,9 @@
 # Teste de ponta a ponta depois de cada publicação (functions ou site). Sem dado pessoal: só códigos e contagens.
 # Uso: SUPABASE_URL=https://<ref>.supabase.co SUPABASE_SERVICE_ROLE_KEY=<chave> ./scripts/smoke.sh
 # Sem a chave de serviço no ambiente (sessão dos agentes), rodar o equivalente pelo banco:
-#   select public.chamar_function('leads-planilha', '{"smoke":true}');
-#   -- alguns segundos depois:
-#   select status_code, content from net._http_response order by id desc limit 1;   -- esperado: 200 e {"ok":true,"linhas":N}
+#   select public.smoke_completo();            -- dispara página, painel, config pública, CSV e cadastro de teste (monitor)
+#   -- 20 a 40 segundos depois, com o id devolvido:
+#   select public.smoke_resultado(<id>);       -- esperado: {"ok": true, ...}; apaga o cadastro de teste e confere a fila
 set -euo pipefail
 URL="${SUPABASE_URL:?defina SUPABASE_URL}"; URL="${URL%/}/functions/v1"
 falhas=0

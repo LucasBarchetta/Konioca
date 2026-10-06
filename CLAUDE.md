@@ -1,15 +1,25 @@
-# Regras de trabalho neste repositório (Lucas, 1/10)
+# Regras de trabalho neste repositório (Lucas, 6/10; substitui as de 1/10)
 
-Permissões técnicas ficam em `.claude/settings.json`. O que a ferramenta não consegue distinguir vale por conduta:
+Permissões técnicas ficam em `.claude/settings.json`: tudo por regra explícita de liberação (lista `allow`), proibições na
+lista `deny`. Nada pede clique. Não se usa o modo que pula todas as confirmações. O que a ferramenta não distingue vale
+por conduta:
 
-- `execute_sql` no Supabase: só leitura (SELECT) sem pedir. UPDATE, INSERT, DELETE ou DDL em produção só depois do SIM explícito do Lucas no chat, na mesma conversa.
-- Chamada direta a function de envio em produção (fila-processar, circular-enviar, circular-lembrete, live-disparos, base-antiga-processar, email-teste para pessoas de fora da lista de aprovadores, painel-avisar), por curl ou por `chamar_function` no SQL: só depois do SIM. Teste para um aprovador pela exceção interna está liberado.
-- Publicação (deploy de function, migração, merge ou push em main, config que muda comportamento ao vivo, segredos, envio a pessoas reais): sempre com SIM antes. Nunca usar modo que pula confirmações.
-- Sempre bloqueado: apagar dados em produção sem pedido do Lucas; ler ou imprimir segredos (arquivos .env, Vault, segredos de functions, chaves em prints).
+- Liberado sem pedir: deploy de function, migração no banco de produção, merge e push em main, alteração de config, envio
+  pelo sistema (fila, e-mail pelo Resend, avisos do painel), triggers e check-ins.
+- Proibido sempre, sem pedir e sem exceção: apagar dados em produção sem pedido do Lucas (DELETE, TRUNCATE, DROP de
+  tabela com dados, apagar lead, mensagem, evento ou arquivo); ler, listar ou imprimir segredos (arquivos .env, Vault,
+  segredos de functions, chaves em prints ou em logs). A única exceção de apagar é a limpeza do cadastro de teste do
+  próprio smoke, marcado como teste.
 - Segredos e links de acesso ao painel nunca passam pelo chat: nascem no banco ou no Supabase e vão por e-mail a um aprovador.
 - Dados pessoais de leads e de terceiros nunca entram no repositório, nos prompts nem nas capturas de prévia (usar dados fictícios).
-- Toda mudança nova: prévia no `*.pages.dev` do branch, SIM, depois PR e merge em main, depois reiniciar o branch a partir de main.
-- Depois de cada publicação, rodar o teste de ponta a ponta (`scripts/smoke.sh` ou o equivalente pelo banco, descrito no cabeçalho do script).
+- O SIM do Lucas continua necessário só para: preço e condições comerciais, Circular e jurídico, contratações e gastos,
+  e mudança de formato da pré-venda. O que o Lucas ou o LG já aprovaram como conteúdo ou decisão publica sem SIM técnico.
+- Fluxo de mudança: branch a partir de main, `scripts/check.sh` verde, PR, merge em main, publicar, smoke completo,
+  reiniciar o branch a partir de main. Prévia no `*.pages.dev` do branch quando a mudança for visual.
+- Depois de toda publicação, rodar o smoke completo (`scripts/smoke.sh` pelo HTTP mais `select public.smoke_completo()`
+  pelo banco: página, cadastro de teste, planilha, painel, fila). Se falhar, desfazer a publicação na hora (versão
+  anterior da function, migração de reversão ou revert em main) e avisar o Lucas.
+- No fim de cada dia (19h SP), resumo no chat de tudo o que foi publicado no dia.
 
 ## Quem decide o quê (Lucas, 6/10)
 
