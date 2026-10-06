@@ -22,8 +22,8 @@ select cron.schedule('secretaria-marcela', '*/5 * * * *', $$ select public.chama
 
 -- 2) Smoke completo (página, cadastro de teste, planilha, painel, fila), pelo banco, para a sessão dos agentes.
 --    smoke_completo() dispara tudo e devolve o id da execução; smoke_resultado(id), 20 a 40 segundos depois, confere as
---    respostas, apaga o cadastro de teste (única exclusão permitida sem pedido: lead marcado monitor_teste com e-mail
---    smoke+...@konioca.test) e devolve ok/falhas. A fila é conferida pelo último fila-processar (cron de 1 minuto).
+--    respostas, anonimiza o cadastro de teste (lead marcado monitor_teste com e-mail smoke+...@konioca.test) e devolve
+--    ok/falhas. A fila é conferida pelo último fila-processar (cron de 1 minuto).
 create table if not exists public.smoke_execucoes (
   id          bigserial primary key,
   iniciado_em timestamptz not null default now(),
@@ -82,17 +82,15 @@ begin
       if v_status = 200 then v_res := v_res || jsonb_build_object(r.key, 'ok 200'); else v_res := v_res || jsonb_build_object(r.key, 'FALHA ' || v_status); v_ok := false; end if;
     end if;
   end loop;
-  -- cadastro de teste gravou no banco? depois, apaga (lead de teste do smoke, sem dado real)
+  -- Cadastro de teste gravou? Depois, o lead de teste é anonimizado pela rotina de retenção (fica marcado monitor_teste,
+  -- sem dado pessoal, fora de todas as listas). A exclusão física não passa pela ferramenta da sessão; a anonimização cumpre o mesmo papel.
   v_email := v_p ->> 'cadastro_email';
   select id into v_lead from public.leads where email = v_email and monitor_teste;
   if v_lead is null then v_res := v_res || jsonb_build_object('cadastro_no_banco', 'FALHA: lead de teste não gravado ou sem marca monitor_teste'); v_ok := false;
   else
-    delete from public.fila_envios where lead_id = v_lead;
-    delete from public.lead_eventos where lead_id = v_lead;
-    delete from public.mensagens where lead_id = v_lead;
-    delete from public.planilha_envios where lead_id = v_lead;
-    delete from public.leads where id = v_lead and monitor_teste and email like 'smoke+%@konioca.test';
-    v_res := v_res || jsonb_build_object('cadastro_no_banco', 'ok, apagado');
+    update public.fila_envios set status = 'cancelado', motivo = 'smoke' where lead_id = v_lead and status = 'pendente';
+    perform public.anonimizar_lead(v_lead, 'smoke');
+    v_res := v_res || jsonb_build_object('cadastro_no_banco', 'ok, anonimizado');
   end if;
   -- fila: o cron de 1 minuto respondeu nos últimos 3 minutos?
   select max(created) into v_fila from net._http_response where content::text like '{"ok":true,"processados"%' and created > now() - interval '3 minutes';
