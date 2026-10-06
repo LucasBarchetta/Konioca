@@ -4,7 +4,7 @@
 # Sem a chave de serviço no ambiente (sessão dos agentes), rodar o equivalente pelo banco:
 #   select public.smoke_completo();            -- dispara página, painel, config pública, CSV e cadastro de teste (monitor)
 #   -- 20 a 40 segundos depois, com o id devolvido:
-#   select public.smoke_resultado(<id>);       -- esperado: {"ok": true, ...}; apaga o cadastro de teste e confere a fila
+#   select public.smoke_resultado(<id>);       -- esperado: {"ok": true, ...}; anonimiza o cadastro de teste e confere a fila
 set -euo pipefail
 URL="${SUPABASE_URL:?defina SUPABASE_URL}"; URL="${URL%/}/functions/v1"
 falhas=0

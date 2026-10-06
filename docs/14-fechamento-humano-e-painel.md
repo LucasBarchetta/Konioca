@@ -101,7 +101,7 @@ Marcela e para o Lucas. Inscrições e cancelamentos entram na contagem do envio
 
 Depois de toda publicação: `select public.smoke_completo()` dispara página, painel, config pública, CSV da planilha e um
 cadastro de teste pela lead-intake (modo monitor: sem Circular, planilha nem pixels); `select public.smoke_resultado(id)`
-20 a 40 segundos depois confere as respostas, apaga o cadastro de teste e confere se a fila respondeu nos últimos 3
+20 a 40 segundos depois confere as respostas, anonimiza o cadastro de teste e confere se a fila respondeu nos últimos 3
 minutos. Falhou: desfazer a publicação na hora e avisar o Lucas.
 
 ## O que sai da fila (etapa 3)
