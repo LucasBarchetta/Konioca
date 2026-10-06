@@ -239,3 +239,22 @@ test("Sem encontros_ativos (antes da migração 800), o convite é o legado da l
   assert.match(b.texto, /encontros fechados pelo Google Meet/);
   assert.doesNotMatch(b.texto, /Instagram/);
 });
+
+test("Segundo e-mail da base antiga (5/10): turmas abertas, datas e imagem da config, preços da página, link b2, sem de/por nem promessa", () => {
+  const cfg = { ...CFG, preco_atual: 25900, preco_prevenda: 9900, financiamento_parceiro: "Bradesco", base_antiga_email2_datas: "15, 16, 20 e 21 de outubro, às 18h30", base_antiga_email2_arte: "cones" };
+  const base = { ...LEAD, base_antiga_gancho: "fev/26", base_antiga_prioridade: "P2", base_antiga_variante: "a" };
+  const e = montarEnvio("base_antiga_email2", "email", base, cfg, API);
+  assert.equal(e.canal, "email");
+  assert.equal(e.assunto, "Ana, as turmas com a Marcela estão abertas");
+  assert.match(e.texto, /^Ana, a gente te escreveu sobre a nova geração da Konioca\. Agora as turmas estão abertas\./);
+  assert.match(e.texto, /30 minutos, no máximo 35 pessoas por turma\. As primeiras datas são 15, 16, 20 e 21 de outubro, às 18h30\./);
+  assert.match(e.texto, /250 máquinas por R\$ 9\.900\. A atual custa R\$ 25\.900\./);
+  assert.ok(!/\bde R\$ [\d.]+ por R\$|de\/por|fatur|lucro|renda/i.test(e.texto), "sem de/por e sem promessa");
+  assert.match(e.texto, /utm_campaign=base_antiga&utm_content=b2/);
+  assert.ok(e.html.includes("cones-600x240.jpg") && !e.html.includes("arte6-600.jpg"), "cones por padrão");
+  const e2 = montarEnvio("base_antiga_email2", "email", base, { ...cfg, base_antiga_email2_arte: "arte6" }, API);
+  assert.ok(e2.html.includes("arte6-600.jpg") && !e2.html.includes("cones-600x240.jpg"), "arte 6 quando a config manda");
+  assert.ok(e2.html.indexOf("Agora as turmas estão abertas") < e2.html.indexOf("arte6-600.jpg"), "arte depois do primeiro parágrafo");
+  const sem = montarEnvio("base_antiga_email2", "email", base, { ...cfg, base_antiga_email2_datas: "[datas]" }, API);
+  assert.equal(sem.canal, "nenhum");
+});

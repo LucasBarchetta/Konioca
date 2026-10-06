@@ -62,6 +62,29 @@ ou produto feito por IA (declarado no conteúdo, `maquina_ia`; ilustração de p
 Ajustes do Lucas de 3/10: o principal aprova qualquer tipo de item; trava de IA só para produto e máquina; R$ 1.000
 entre os valores permitidos. O item barrado fica pendente com o motivo na tela até alguém corrigir o conteúdo.
 
+## Divisão de responsabilidades (6/10, pedido do Lucas)
+
+O LG é o responsável por growth e performance da pré-venda. Decide sozinho, sem passar pelo Lucas: textos, assuntos,
+imagens e artes de e-mail; testes A/B (o que testar, quando encerrar e qual versão vence); segmentação, exclusões,
+horários e ritmo dos disparos; roteiros de vídeo e prioridade entre canais. Na prática: o relatório de desempenho de
+cada disparo e os testes de e-mail vão ao LG pelo painel (item na aba Aprovações ou comentário), com cópia resumida ao
+Lucas. Quando uma decisão de performance estiver pendente, a pergunta vai ao LG pelo painel; sem resposta depois do
+segundo lembrete (regra abaixo), vale a regra padrão (vence quem tiver mais cadastros; em empate, mais cliques),
+registrada no item e avisada a ele e ao Lucas. Continuam com o Lucas: preço e condições comerciais, Circular e jurídico,
+contratações e gastos, mudança de formato da pré-venda e o SIM técnico para publicar no sistema. O revisor automático
+continua valendo para todos. Nada que use voz ou imagem da Marcela sai pela regra padrão: espera a aprovação dela.
+
+## Cobrança de aprovações (6/10, pedido do Lucas)
+
+Vale para todos os aprovadores (LG, Marcela, Matheus e Lucas). Todo e-mail que pede aprovação ou decisão leva o link
+pessoal do painel da pessoa, apontando para o item. Sem resposta em 4 horas úteis (9h às 19h, São Paulo), sai um
+lembrete por e-mail ao responsável, também com o link e o item, dizendo o que está esperando e o que trava se não for
+decidido; repete a cada 4 horas úteis até a decisão, com cópia ao Lucas a partir do segundo lembrete. Mesma lógica da
+cobrança dos links do Meet (tarefa humana que trava uma etapa: lembrete ao responsável a cada 4 horas úteis, com o que
+falta, por que importa e o passo a passo, cópia ao Lucas, até resolver). Em 6/10 a cobrança roda pela agenda da sessão
+(check-ins às 9h, 13h e 17h); a versão durável (tabela `pendencias` + function com cron, `pendencias-cobrar`) entra no
+branch e só publica com o SIM do Lucas.
+
 ## O que sai da fila (etapa 3)
 
 Meio de pagamento, PIX, contrato na D4Sign, aceite dos termos e pedido pelo sistema saem do escopo do time de agentes.
