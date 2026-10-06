@@ -41,3 +41,21 @@ test("Devolução temporária repetida vira bloqueio no máximo configurado", ()
   assert.equal(temporariaViraBloqueio(2, 2), true);
   assert.equal(temporariaViraBloqueio(5, 0), false, "máximo 0 desliga a regra");
 });
+
+test("Time (6/10): aprovadores e domínio da empresa são 'do time'; o resto não", async () => {
+  const { enderecoDoTime, decisaoDevolucaoTime } = await import("../supabase/functions/_shared/email_eventos.ts");
+  const internos = ["chefe@exemplo.com.br", "marketing.exemplo@gmail.com"];
+  assert.equal(enderecoDoTime("Chefe@Exemplo.com.br", internos, ["konioca.com"]), true, "aprovador, qualquer caixa");
+  assert.equal(enderecoDoTime("qualquer.um@konioca.com", internos, ["konioca.com"]), true, "domínio da empresa");
+  assert.equal(enderecoDoTime("qualquer.um@konioca.com", internos, ["@Konioca.com "]), true, "domínio com arroba e espaço na config");
+  assert.equal(enderecoDoTime("lead@gmail.com", internos, ["konioca.com"]), false);
+  assert.equal(enderecoDoTime("", internos, ["konioca.com"]), false);
+  assert.equal(enderecoDoTime("x@konioca.com.br", internos, ["konioca.com"]), false, "domínio parecido não conta");
+
+  const agora = new Date("2026-10-06T21:30:00Z"); // 18h30 SP
+  assert.equal(decisaoDevolucaoTime(null, agora, 6), "primeira", "sem devolução aberta: registra e avisa, não bloqueia");
+  assert.equal(decisaoDevolucaoTime("2026-10-06T16:18:00Z", agora, 6), "mesma_queda", "13h18 → 18h30: 5h12, mesma queda");
+  assert.equal(decisaoDevolucaoTime("2026-10-06T12:20:00Z", agora, 6), "bloquear", "9h20 → 18h30: 9h10, voltou outra vez");
+  assert.equal(decisaoDevolucaoTime("2026-10-06T15:30:00Z", agora, 6), "bloquear", "exatamente 6h conta como de novo");
+  assert.equal(decisaoDevolucaoTime("lixo", agora, 6), "primeira", "data inválida não bloqueia à toa");
+});

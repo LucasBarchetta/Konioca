@@ -5,15 +5,18 @@
 //   devolução temporária: só registra; na repetição (config.email_devolucao_temporaria_max em 7 dias) bloqueia;
 //   spam: encerra tudo, igual ao opt-out (e-mail e WhatsApp), endereço bloqueado, evento no lead; se o e-mail era da base
 //   antiga, a trilha pausa na hora (tolerância zero, Lucas 2/10);
-//   base antiga: devoluções do dia acima do teto pausam a trilha e avisam os aprovadores.
+//   base antiga: devoluções do dia acima do teto pausam a trilha e avisam os aprovadores;
+//   endereço do próprio time (aprovadores e config.email_time_dominios; Lucas, 6/10): devolução definitiva não bloqueia
+//   de imediato: registra em email_devolucoes_time e avisa; o cron email-time-retentar testa de novo depois de
+//   config.email_devolucao_time_horas; só bloqueia se voltar outra vez (avisando). Entrega no endereço encerra a queda.
 import { json } from "../_shared/http.ts";
 import { db } from "../_shared/db.ts";
 import { verificarSvix } from "../_shared/svix.ts";
 import { aplicarEventoCircular } from "../_shared/circular.ts";
 import { carregarConfig, cfgBool, cfgNum, cfgText } from "../_shared/config.ts";
-import { aprovadores } from "../_shared/aprovadores.ts";
+import { aprovadores, emailsInternos } from "../_shared/aprovadores.ts";
 import { enviarEmail } from "../_shared/email.ts";
-import { classificarEvento, destinatarioDe, temporariaViraBloqueio, type DadosResend } from "../_shared/email_eventos.ts";
+import { classificarEvento, decisaoDevolucaoTime, destinatarioDe, enderecoDoTime, temporariaViraBloqueio, type DadosResend } from "../_shared/email_eventos.ts";
 
 Deno.serve(async (req) => {
   if (req.method !== "POST") return json({ erro: "método" }, 405);
@@ -48,7 +51,17 @@ Deno.serve(async (req) => {
   }
   const modelo = m?.modelo ?? (circular ? "circular" : null);
   const resultado: Record<string, unknown> = { ok: true, tipo, acao: decisao.acao, mensagem: m?.id ?? null, circular, lead: leadId };
-  if (decisao.acao === "nenhuma") return json(resultado);
+  if (decisao.acao === "nenhuma") {
+    // Entrega em endereço do time com queda aberta: a caixa voltou, encerra a queda (nada a bloquear).
+    if (tipo === "email.delivered" && email) {
+      const { todos: cfg0 } = await carregarConfig();
+      if (enderecoDoTime(email, emailsInternos(cfg0), dominiosTime(cfg0))) {
+        const { data: fechadas } = await sb.from("email_devolucoes_time").update({ resolvido_em: quando }).eq("email", email).is("resolvido_em", null).select("id");
+        if (fechadas?.length) resultado.time = { queda_encerrada: fechadas.length };
+      }
+    }
+    return json(resultado);
+  }
 
   const { todos: cfg } = await carregarConfig();
   const dadosEvento = { provedor_id: id, modelo, motivo: decisao.motivo, em: quando, email };
@@ -69,8 +82,13 @@ Deno.serve(async (req) => {
   }
 
   if (decisao.acao === "bloquear_email") {
-    if (email) await sb.rpc("email_bloquear", { p_email: email, p_motivo: "devolvido", p_mensagem_id: m?.id ?? null, p_dados: dadosEvento });
     if (leadId) await sb.from("lead_eventos").insert({ lead_id: leadId, tipo: decisao.evento, origem: "sistema", dados: dadosEvento });
+    if (email && enderecoDoTime(email, emailsInternos(cfg), dominiosTime(cfg))) {
+      resultado.time = await devolucaoDoTime(cfg, email, decisao.motivo, id, m?.id ?? null, quando, dadosEvento);
+      resultado.bloqueado = (resultado.time as { decisao: string }).decisao === "bloqueou";
+      return json(resultado);
+    }
+    if (email) await sb.rpc("email_bloquear", { p_email: email, p_motivo: "devolvido", p_mensagem_id: m?.id ?? null, p_dados: dadosEvento });
     resultado.bloqueado = !!email;
     if (modelo === "base_antiga_email") resultado.base_antiga = await verificarBaseAntiga(cfg, email);
     return json(resultado);
@@ -91,6 +109,52 @@ Deno.serve(async (req) => {
   }
   return json(resultado);
 });
+
+/** Domínios do time na config (lista JSON), sem arroba. */
+function dominiosTime(cfg: Record<string, unknown>): string[] {
+  const v = cfg["email_time_dominios"];
+  return Array.isArray(v) ? v.map(String) : [];
+}
+
+/** Devolução definitiva de endereço do time (Lucas, 6/10): primeira só registra e avisa; dentro da janela só registra;
+ *  depois da janela (o teste de entrega ou qualquer outro e-mail voltou de novo) bloqueia e avisa. */
+async function devolucaoDoTime(cfg: Record<string, unknown>, email: string, motivo: string, provedorId: string, mensagemId: number | null, quando: string, dados: Record<string, unknown>): Promise<Record<string, unknown>> {
+  const sb = db();
+  const horas = cfgNum(cfg, "email_devolucao_time_horas", 6);
+  const { data: aberta } = await sb.from("email_devolucoes_time").select("em").eq("email", email).is("resolvido_em", null).order("em", { ascending: true }).limit(1).maybeSingle();
+  const d = decisaoDevolucaoTime(aberta?.em ?? null, new Date(quando), horas);
+  const decisao = d === "bloquear" ? "bloqueou" : d;
+  await sb.from("email_devolucoes_time").insert({ email, em: quando, motivo, provedor_id: provedorId, mensagem_id: mensagemId, decisao });
+  const quandoSP = new Date(quando).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+  let assunto = ""; let texto: string[] = [];
+  if (d === "bloquear") {
+    await sb.rpc("email_bloquear", { p_email: email, p_motivo: "devolvido", p_mensagem_id: mensagemId, p_dados: { ...dados, time: true, primeira_em: aberta?.em ?? null } });
+    await sb.from("email_devolucoes_time").update({ resolvido_em: quando }).eq("email", email).is("resolvido_em", null);
+    await sb.from("alertas").insert({ tipo: "email_time_bloqueado", resumo: `Endereço do time bloqueado por devolução repetida: ${email}` });
+    assunto = `[Konioca] Endereço do time bloqueado: ${email}`;
+    texto = [
+      `O endereço ${email} devolveu outra vez em ${quandoSP} (${motivo}), depois da janela de ${horas} horas da primeira devolução. Agora está bloqueado: nenhum e-mail sai para ele.`, ``,
+      `Para liberar: corrigir o endereço nos aprovadores ou pedir aqui o desbloqueio, com o endereço certo.`,
+    ];
+  } else if (d === "primeira") {
+    assunto = `[Konioca] Devolução em endereço do time (sem bloqueio): ${email}`;
+    texto = [
+      `O endereço ${email} devolveu um e-mail em ${quandoSP} (${motivo}). Por ser endereço do time, não foi bloqueado.`, ``,
+      `Daqui a ${horas} horas o sistema manda um teste de entrega. Se voltar outra vez, aí bloqueia e avisa. Se qualquer e-mail for entregue antes, a queda é encerrada sozinha.`, ``,
+      `Enquanto isso, o que devolveu não chegou: vale conferir a caixa.`,
+    ];
+  }
+  const avisados: string[] = [];
+  if (assunto) {
+    const corpo = texto.join("\n");
+    const html = `<pre style="font-family:Carlito,Calibri,sans-serif;font-size:15px;white-space:pre-wrap">${corpo.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c] as string))}</pre>`;
+    for (const a of aprovadores(cfg).filter((x) => x.papel === "principal")) {
+      const r = await enviarEmail(a.email, assunto, corpo, html, "monitor");
+      if (r.ok) avisados.push(a.email);
+    }
+  }
+  return { decisao, primeira_em: aberta?.em ?? null, avisados };
+}
 
 /** Pausa a trilha da base antiga (config), registra o alerta e avisa o aprovador principal por e-mail. */
 async function pausarBaseAntiga(cfg: Record<string, unknown>, motivo: string, enderecos: string[], assunto: string): Promise<Record<string, unknown>> {

@@ -51,3 +51,28 @@ export function taxaDevolucaoExcedida(enviados: number, devolvidos: number, mini
   if (enviados < minimo || enviados <= 0) return false;
   return (devolvidos * 100) / enviados > maxPct;
 }
+
+// Endereços do próprio time (Lucas, 6/10): devolução definitiva não bloqueia de imediato. A primeira só registra e avisa;
+// o sistema tenta de novo depois de N horas (cron email-time-retentar) e só bloqueia se voltar outra vez, avisando o Lucas.
+// Quem é "do time": qualquer endereço de config.painel_aprovadores (principal e cópias) ou de um domínio em config.email_time_dominios.
+export type DecisaoTime = "primeira" | "mesma_queda" | "bloquear";
+
+/** É endereço do time? `internos` = emailsInternos(cfg); `dominios` = ["konioca.com", ...], sem arroba, qualquer caixa. */
+export function enderecoDoTime(email: string, internos: string[], dominios: string[]): boolean {
+  const e = String(email ?? "").trim().toLowerCase();
+  if (!e.includes("@")) return false;
+  if (internos.map((i) => i.toLowerCase()).includes(e)) return true;
+  const dom = e.slice(e.lastIndexOf("@") + 1);
+  return dominios.map((d) => String(d).trim().toLowerCase().replace(/^@/, "")).filter(Boolean).includes(dom);
+}
+
+/** `primeiraEm` = primeira devolução ainda em aberto (sem entrega depois) desse endereço, ou null.
+ *  Sem devolução aberta: "primeira" (registra, avisa, não bloqueia). Dentro da janela: "mesma_queda" (só registra).
+ *  Depois da janela: "bloquear" (voltou outra vez). */
+export function decisaoDevolucaoTime(primeiraEm: string | Date | null | undefined, agora: Date, horas: number): DecisaoTime {
+  if (!primeiraEm) return "primeira";
+  const t0 = new Date(primeiraEm).getTime();
+  if (Number.isNaN(t0)) return "primeira";
+  const janela = Math.max(0, horas) * 3600_000;
+  return agora.getTime() - t0 >= janela ? "bloquear" : "mesma_queda";
+}
