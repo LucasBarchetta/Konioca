@@ -85,6 +85,25 @@ falta, por que importa e o passo a passo, cópia ao Lucas, até resolver). Em 6/
 (check-ins às 9h, 13h e 17h); a versão durável (tabela `pendencias` + function com cron, `pendencias-cobrar`) entra no
 branch e só publica com o SIM do Lucas.
 
+## Secretária automática da Marcela (6/10, pedido do Lucas)
+
+Function `secretaria-marcela` (cron a cada 5 minutos), regras puras em `_shared/secretaria.ts`, um registro por envio em
+`secretaria_envios`. Por e-mail à Marcela (papel conteudo em `painel_aprovadores`): agenda da semana toda segunda às 9h
+(turmas, horários, inscritos; a primeira sai assim que todas as turmas abertas dos próximos 21 dias tiverem link do Meet);
+convite de calendário (.ics) quando o link do Meet de uma turma é preenchido; lembrete da véspera às 10h com a lista de
+inscritos (nome, cidade, se já tem negócio); 2 horas antes com o link e o roteiro de 30 minutos (config
+`secretaria_roteiro`, padrão = resumo de docs/19 com a fala da Circular); 15 minutos antes com o link; depois do
+encontro, pedido de presença e reservas com o link pessoal do painel. Turma com zero inscritos na véspera: alerta para a
+Marcela e para o Lucas. Inscrições e cancelamentos entram na contagem do envio seguinte (a lista é lida na hora do envio).
+`config.secretaria_ativa = false` pausa tudo. `{"simular":true}` no corpo lista o que sairia sem mandar.
+
+## Smoke completo (6/10)
+
+Depois de toda publicação: `select public.smoke_completo()` dispara página, painel, config pública, CSV da planilha e um
+cadastro de teste pela lead-intake (modo monitor: sem Circular, planilha nem pixels); `select public.smoke_resultado(id)`
+20 a 40 segundos depois confere as respostas, apaga o cadastro de teste e confere se a fila respondeu nos últimos 3
+minutos. Falhou: desfazer a publicação na hora e avisar o Lucas.
+
 ## O que sai da fila (etapa 3)
 
 Meio de pagamento, PIX, contrato na D4Sign, aceite dos termos e pedido pelo sistema saem do escopo do time de agentes.
