@@ -48,6 +48,26 @@ Resultado prático de hoje: o convite para hotmail.co saiu e, se voltar, ningué
 6. Teste de ponta a ponta antes de ligar: envio para um endereço inexistente em domínio real (ex.: `nao-existe-xyz@gmail.com`)
    a partir da `email-teste`, para ver a devolução chegar, bloquear e aparecer no lead. Sem lead real envolvido.
 
+## Endereços do próprio time (Lucas, 6/10, publicado)
+
+Caso de 6/10: a caixa `controladoria@konioca.com` ficou fora do ar na noite de 5/10, devolveu o lembrete das 9h20 e
+foi bloqueada na hora pela regra de 1/10; o endereço existe. Regra nova para endereços do time (qualquer endereço de
+`painel_aprovadores`, principal e cópias, e os domínios em `config.email_time_dominios`, hoje só `konioca.com`):
+
+- Devolução definitiva não bloqueia de imediato. Fica registrada em `email_devolucoes_time` (decisão `primeira`) e o
+  Lucas recebe um aviso (tag `monitor`) dizendo que não houve bloqueio.
+- Dentro de `config.email_devolucao_time_horas` (6) depois da primeira devolução em aberto, novas devoluções só registram
+  (`mesma_queda`).
+- 6 horas depois da primeira devolução, o cron `email-time-retentar` (a cada 30 min) manda um teste de entrega curto para
+  o endereço (via `email-teste`, tipo texto; só funciona para endereço de `painel_aprovadores`).
+- Qualquer devolução definitiva depois da janela (o teste ou outro e-mail) bloqueia (`email_bloquear`, decisão `bloqueou`),
+  registra o alerta `email_time_bloqueado` e avisa o Lucas.
+- Qualquer entrega no endereço encerra a queda (`resolvido_em`): a próxima devolução começa do zero.
+- Regra pura em `_shared/email_eventos.ts` (`enderecoDoTime`, `decisaoDevolucaoTime`), com testes. Migração 880.
+
+Desbloqueio de 6/10 (19h): a linha de `controladoria@konioca.com` em `emails_bloqueados` foi renomeada (`removido:...`)
+e uma cópia ficou como histórico (`historico:...`, com quem liberou e por quê). Nenhum outro endereço do time devolveu.
+
 ## Resend
 
 Até 1/10 não havia webhook cadastrado no Resend: nenhuma devolução chegava, nem da Circular. Em 1/10 o Lucas
