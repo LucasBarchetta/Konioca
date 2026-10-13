@@ -37,7 +37,7 @@ Quem é quem está só em `config.painel_aprovadores` (nome, e-mail, papel, esco
 | principal (Lucas) | tudo | tudo | aprova mensagens para leads ou base, peças, propostas e config; comenta; propõe A/B |
 | conteudo (Marcela) | tudo | tudo, menos gerar link | aprova o que usa voz ou imagem dela (mensagens, roteiros, peças); comenta; propõe A/B |
 | operacional (Matheus, cópia marketing) | tudo | tudo, menos gerar link (turmas e links do Meet) | comenta e propõe A/B; não aprova conteúdo |
-| growth (LG) | tudo: leads, turmas, Desempenho, aprovações | "Contatado à mão" e "Respondeu"; sem reserva, correção de e-mail, turmas e presença | aprova mensagens para leads ou base, roteiros de vídeo, peças e propostas; comenta; propõe A/B |
+| growth (vago desde 12/10; o LG saiu do time e perdeu o acesso) | tudo: leads, turmas, Desempenho, aprovações | "Contatado à mão" e "Respondeu"; sem reserva, correção de e-mail, turmas e presença | aprova mensagens para leads ou base, roteiros de vídeo, peças e propostas; comenta; propõe A/B |
 
 Quem decide cada item (`regraAprovacao(tipo, usa_marcela)`): basta um de `qualquer_um_de` e, além disso, cada um de `tambem`.
 
@@ -62,9 +62,14 @@ ou produto feito por IA (declarado no conteúdo, `maquina_ia`; ilustração de p
 Ajustes do Lucas de 3/10: o principal aprova qualquer tipo de item; trava de IA só para produto e máquina; R$ 1.000
 entre os valores permitidos. O item barrado fica pendente com o motivo na tela até alguém corrigir o conteúdo.
 
-## Divisão de responsabilidades (6/10, pedido do Lucas)
+## Divisão de responsabilidades (6/10, pedido do Lucas; o LG saiu do time em 12/10)
 
-O LG é o responsável por growth e performance da pré-venda. Decide sozinho, sem passar pelo Lucas: textos, assuntos,
+Atualização de 13/10: o LG saiu do time em 12/10; o acesso dele ao painel foi removido (`painel_aprovadores`, com
+histórico em `painel_aprovadores_removidos`) e as decisões de growth voltam ao Lucas até ele nomear outro responsável.
+A regra padrão de performance fica suspensa enquanto o aprovador for o Lucas. O texto abaixo fica como registro da
+regra de 6/10.
+
+O LG era o responsável por growth e performance da pré-venda. Decide sozinho, sem passar pelo Lucas: textos, assuntos,
 imagens e artes de e-mail; testes A/B (o que testar, quando encerrar e qual versão vence); segmentação, exclusões,
 horários e ritmo dos disparos; roteiros de vídeo e prioridade entre canais. Na prática: o relatório de desempenho de
 cada disparo e os testes de e-mail vão ao LG pelo painel (item na aba Aprovações ou comentário), com cópia resumida ao
@@ -76,7 +81,7 @@ continua valendo para todos. Nada que use voz ou imagem da Marcela sai pela regr
 
 ## Cobrança de aprovações (6/10, pedido do Lucas)
 
-Vale para todos os aprovadores (LG, Marcela, Matheus e Lucas). Todo e-mail que pede aprovação ou decisão leva o link
+Vale para todos os aprovadores (Marcela, Matheus e Lucas; o LG saiu em 12/10). Todo e-mail que pede aprovação ou decisão leva o link
 pessoal do painel da pessoa, apontando para o item. Sem resposta em 4 horas úteis (9h às 19h, São Paulo), sai um
 lembrete por e-mail ao responsável, também com o link e o item, dizendo o que está esperando e o que trava se não for
 decidido; repete a cada 4 horas úteis até a decisão, com cópia ao Lucas a partir do segundo lembrete. Mesma lógica da
