@@ -8,6 +8,8 @@ import { conviteWhatsappVencido, montarEnvio, type LeadFila } from "../_shared/f
 import { enviarTemplate, whatsappConfigurado } from "../_shared/whatsapp.ts";
 import { enviarEmail } from "../_shared/email.ts";
 
+const pausa = (ms: number) => new Promise((ok) => setTimeout(ok, Math.max(0, ms)));
+
 async function fechar(id: number, status: string, motivo?: string) {
   await db().from("fila_envios").update({ status, motivo: motivo ?? null, processado_em: new Date().toISOString() }).eq("id", id);
 }
@@ -98,6 +100,13 @@ Deno.serve(async (req) => {
 
     if (envio.canal === "email") {
       const r = await enviarEmail(lead.email, envio.assunto, envio.texto, envio.html, item.tipo, envio.anexos);
+      // Resend limita a 2 pedidos por segundo: cada e-mail espera um intervalo (config.email_intervalo_ms, 600 ms) e, se mesmo
+      // assim voltar 429, o item volta à fila em 2 minutos sem gastar tentativa (13/10: 903 itens marcados "falhou" por isso).
+      await pausa(cfgNum(cfg, "email_intervalo_ms", 600));
+      if (!r.ok && /^resend 429/.test(r.motivo ?? "")) {
+        await sb.from("fila_envios").update({ status: "pendente", tentativas: Math.max(0, item.tentativas - 1), agendado_para: new Date(Date.now() + 120_000).toISOString(), motivo: "resend 429: volta em 2 min" }).eq("id", item.id);
+        resultados[item.id] = "resend 429 (volta em 2 min)"; await pausa(2000); continue;
+      }
       if (!r.ok && /^email_bloqueado/.test(r.motivo ?? "")) { await fechar(item.id, "pulado", r.motivo); resultados[item.id] = r.motivo ?? "pulado"; continue; }
       await sb.from("mensagens").insert({ lead_id: lead.id, canal: "email", direcao: "out", tipo: "template", modelo: item.tipo, corpo: envio.texto, provedor_id: r.id ?? null, status: r.ok ? "enviado" : "falhou", erro: r.motivo ?? null, iniciada_pela_empresa: true, fila_id: item.id });
       await fechar(item.id, r.ok ? "enviado" : "falhou", r.motivo);
