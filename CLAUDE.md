@@ -20,6 +20,11 @@ por conduta:
   pelo banco: página, cadastro de teste, planilha, painel, fila). Se falhar, desfazer a publicação na hora (versão
   anterior da function, migração de reversão ou revert em main) e avisar o Lucas.
 - No fim de cada dia (19h SP), resumo no chat de tudo o que foi publicado no dia.
+- Segurança do banco (Lucas, 13/10): toda tabela nova nasce com RLS ativo e sem policy (só service_role); view nova nasce
+  com `security_invoker = true` e sem grant para anon/authenticated; toda função nova tem `search_path` fixo, e toda
+  função `security definer` passa por revisão (o que ela lê e grava, quem pode chamar) antes do merge. A chave pública
+  não lê tabela, view nem função: a LP e o painel só falam com as Edge Functions. Qualquer GRANT a anon/authenticated
+  entra na migração com o motivo escrito. Depois de migração, rodar o Advisor de segurança: zero alerta ERROR.
 
 ## Quem decide o quê (Lucas, 6/10; atualizado 13/10)
 
