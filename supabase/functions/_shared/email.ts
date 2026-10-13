@@ -26,7 +26,8 @@ export async function enviarEmail(para: string, assunto: string, texto: string, 
     method: "POST", headers: { "authorization": `Bearer ${apiKey}`, "content-type": "application/json" },
     body: JSON.stringify({ from, to: [para], reply_to: replyTo && !pendente(replyTo) ? replyTo : undefined, subject: assunto, text: texto, html, attachments: anexos?.length ? anexos : undefined, tags: [{ name: "tipo", value: tag }] }),
   });
-  const j = await r.json().catch(() => ({})) as { id?: string };
-  if (!r.ok) return { ok: false, motivo: "resend " + r.status };
+  const j = await r.json().catch(() => ({})) as { id?: string; name?: string; message?: string };
+  // Erro do Resend com o nome e a mensagem dele (ex.: "resend 429 daily_quota_exceeded: ..."), para o diagnóstico sair da fila.
+  if (!r.ok) return { ok: false, motivo: ("resend " + r.status + " " + [j.name, j.message].filter(Boolean).join(": ")).trim().slice(0, 200) };
   return { ok: true, id: j.id };
 }
