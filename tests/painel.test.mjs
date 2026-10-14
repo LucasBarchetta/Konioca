@@ -72,7 +72,7 @@ test("Papel growth: vê tudo, marca contato e resposta, decide, comenta e propõ
   const g = permissoesDe("growth");
   assert.equal(g.ver, true); assert.equal(g.contato, true); assert.equal(g.respondeu, true); assert.equal(g.decidir, true); assert.equal(g.comentar, true); assert.equal(g.propor_ab, true);
   assert.equal(g.reservar, false); assert.equal(g.corrigir_email, false); assert.equal(g.turmas_editar, false); assert.equal(g.presenca, false);
-  for (const a of ["quem", "leads", "eventos", "aprovacoes", "encontros", "encontro_leads", "contato_manual", "respondeu", "comentar", "propor_ab", "decidir"]) assert.equal(podeAcao("growth", a), true, a);
+  for (const a of ["quem", "leads", "eventos", "aprovacoes", "encontros", "encontro_leads", "encontro_avisos", "contato_manual", "encontro_avisado", "respondeu", "comentar", "propor_ab", "decidir"]) assert.equal(podeAcao("growth", a), true, a);
   for (const a of ["reservar", "reserva_cancelar", "corrigir_email", "encontro_salvar", "presenca", "link", "inventada"]) assert.equal(podeAcao("growth", a), false, a);
 });
 
@@ -83,6 +83,7 @@ test("Operacional comenta e propõe, não aprova conteúdo; papel desconhecido s
   const x = permissoesDe("estagiario");
   assert.equal(x.ver, true); assert.equal(x.contato, false); assert.equal(x.comentar, false); assert.equal(x.decidir, false);
   assert.equal(podeAcao("estagiario", "leads"), true); assert.equal(podeAcao("estagiario", "respondeu"), false);
+  assert.equal(podeAcao("estagiario", "encontro_avisos"), true); assert.equal(podeAcao("estagiario", "encontro_avisado"), false);
 });
 
 test("Regra de aprovação por tipo e uso da Marcela (ordem do Lucas, 2/10 à noite)", () => {

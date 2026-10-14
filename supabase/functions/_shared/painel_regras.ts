@@ -237,10 +237,11 @@ export function revisarConteudo(c: ConteudoRevisao, precos: ConfigPrecos): { ok:
   return { ok: problemas.length === 0, problemas: [...new Set(problemas)] };
 }
 
-const ACOES_LEITURA = new Set(["quem", "leads", "eventos", "aprovacoes", "encontros", "encontro_leads", "desempenho"]);
+const ACOES_LEITURA = new Set(["quem", "leads", "eventos", "aprovacoes", "encontros", "encontro_leads", "encontro_avisos", "desempenho"]);
 const ACOES_ESCRITA: Record<string, keyof Permissoes> = {
   contato_manual: "contato", respondeu: "respondeu", reservar: "reservar", reserva_cancelar: "reservar", corrigir_email: "corrigir_email",
   encontro_salvar: "turmas_editar", presenca: "presenca", comentar: "comentar", propor_ab: "propor_ab", decidir: "decidir",
+  encontro_avisado: "contato", // pausa de 14/10: marcar quem já recebeu o aviso de adiamento pelo WhatsApp (mesma permissão do contato manual)
 };
 
 /** Ação da painel-api permitida para o papel? Para "decidir", a regra do item é conferida depois (podeDecidirItem). */

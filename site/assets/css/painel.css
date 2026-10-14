@@ -77,3 +77,9 @@ body.painel{display:block;margin:0;background:#19422d;font-family:Carlito,Calibr
 .p-tabela th{background:#f4ebdb;color:#5a6b3a;font-weight:700;border-top:0}
 .p-tabela th:first-child,.p-tabela td:first-child{text-align:left}
 .p-tabela.p-disparos th:nth-child(2),.p-tabela.p-disparos td:nth-child(2){text-align:left}
+
+/* Pausa de 14/10: lista de quem escolheu horário, com o botão "Avisado" (aba Turmas) */
+.p-aviso-turma{margin-top:12px;padding-top:10px;border-top:1px solid #e3d9c3}
+.p-aviso-linha{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:8px 0;border-bottom:1px dashed #e3d9c3;font-size:15px}
+.p-aviso-linha:last-child{border-bottom:0}
+.p-aviso-linha a{color:#1f4a36}

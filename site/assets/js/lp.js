@@ -172,7 +172,7 @@
   K.visita("lp");
   K.config().then(function (cfg) {
     if (!cfg) { K.pronto(); erroGeral("A página está sem os dados da pré-venda agora. Recarregue em instantes."); return; }
-    K.preencher(K.tokens(cfg)); K.preencherLinks(cfg); K.pronto();
+    K.preencher(K.tokens(cfg)); K.preencherLinks(cfg); K.modoAgenda(cfg); K.pronto();
     K.iniciarContagem(cfg); K.mostrarContador(cfg);
     window.KPixels.init(cfg);
     cfgAtual = cfg;

@@ -78,8 +78,10 @@ input::placeholder{color:#7a7f66}
 <!-- FORM -->
 <form id="cadastro" novalidate style="display: flex; flex-direction: column; gap: 16px; padding: 24px 20px; background: #fdfdfd; border: 1px solid #c9a227; border-radius: 7px">
 <div style="display: flex; flex-direction: column; gap: 6px">
-<div style="font-family: Caladea, Cambria, Georgia, serif; font-size: 26px; line-height: 1.15; color: #1f4a36">Garanta sua vaga nos encontros</div>
-<div style="font-size: 15px; line-height: 1.45; color: #5a6b3a" data-tpl="Encontros fechados pelo Google Meet: {encontro_duracao} minutos, no máximo {encontro_capacidade} pessoas por grupo. Você escolhe o horário depois do cadastro."></div>
+<div style="font-family: Caladea, Cambria, Georgia, serif; font-size: 26px; line-height: 1.15; color: #1f4a36" data-agenda="pausada">Entre na lista</div>
+<div style="font-size: 15px; line-height: 1.45; color: #5a6b3a" data-agenda="pausada">Entre na lista e seja avisado quando a nova agenda de encontros com a Marcela abrir.</div>
+<div class="oculto" style="font-family: Caladea, Cambria, Georgia, serif; font-size: 26px; line-height: 1.15; color: #1f4a36" data-agenda="aberta">Garanta sua vaga nos encontros</div>
+<div class="oculto" style="font-size: 15px; line-height: 1.45; color: #5a6b3a" data-agenda="aberta" data-tpl="Encontros fechados pelo Google Meet: {encontro_duracao} minutos, no máximo {encontro_capacidade} pessoas por grupo. Você escolhe o horário depois do cadastro."></div>
 </div>
 <div style="display: flex; flex-direction: column; gap: 6px">
 <label for="f-nome" style="font-size: 14px; font-weight: 700; color: #1f4a36">Seu nome</label>
@@ -114,8 +116,9 @@ input::placeholder{color:#7a7f66}
 <div id="f-turnstile" class="oculto" style="min-height: 65px"></div>
 <div id="f-erro" class="form-erro oculto" role="alert"></div>
 <div id="f-planob" class="oculto"><a id="f-planob-link" href="#" rel="noopener" target="_blank" style="display: flex; align-items: center; justify-content: center; height: 52px; background: #1f4a36; color: #f7f0e2; font-size: 17px; font-weight: 700; text-decoration: none; border-radius: 7px">Garantir minha vaga pelo WhatsApp</a></div>
-<button type="submit" id="f-enviar" class="cta" style="display: flex; align-items: center; justify-content: center; height: 56px; background: #b04d0c; color: #f7f0e2; font-size: 19px; font-weight: 700; text-decoration: none; border-radius: 7px">Quero minha vaga no encontro</button>
-<div style="font-size: 13px; line-height: 1.45; color: #5a6b3a; text-align: center">Depois do cadastro, você escolhe o horário e recebe o link do Meet por e-mail. Sem spam.</div>
+<button type="submit" id="f-enviar" class="cta" style="display: flex; align-items: center; justify-content: center; height: 56px; background: #b04d0c; color: #f7f0e2; font-size: 19px; font-weight: 700; text-decoration: none; border-radius: 7px" data-texto-aberta="Quero minha vaga no encontro">Quero entrar na lista</button>
+<div style="font-size: 13px; line-height: 1.45; color: #5a6b3a; text-align: center" data-agenda="pausada">Você recebe a nova agenda por e-mail antes de todo mundo. Sem spam.</div>
+<div class="oculto" style="font-size: 13px; line-height: 1.45; color: #5a6b3a; text-align: center" data-agenda="aberta">Depois do cadastro, você escolhe o horário e recebe o link do Meet por e-mail. Sem spam.</div>
 </form>
 </section>
 
@@ -205,7 +208,7 @@ input::placeholder{color:#7a7f66}
 <rect x="222" y="84" width="74" height="22" rx="8" fill="#dce4d6" stroke="#1f4a36" stroke-width="1.5"></rect>
 <rect x="204" y="116" width="58" height="22" rx="8" stroke="#1f4a36" stroke-width="1.5"></rect>
 </svg>
-<figcaption style="padding: 12px 14px; border-top: 2px solid #1f4a36; background: #f4ebdb; font-size: 16px; line-height: 1.4; color: #1f4a36"><strong>Você deixa seu nome na lista.</strong> Escolhe o horário e recebe o link do Meet por e-mail, com lembrete na véspera e uma hora antes.</figcaption>
+<figcaption style="padding: 12px 14px; border-top: 2px solid #1f4a36; background: #f4ebdb; font-size: 16px; line-height: 1.4; color: #1f4a36"><strong>Você deixa seu nome na lista.</strong> <span data-agenda="pausada">Quando a nova agenda de encontros abrir, você é avisado por e-mail antes de todo mundo.</span><span class="oculto" data-agenda="aberta">Escolhe o horário e recebe o link do Meet por e-mail, com lembrete na véspera e uma hora antes.</span></figcaption>
 </figure>
 
 <!-- Q3 -->
@@ -350,7 +353,8 @@ input::placeholder{color:#7a7f66}
 <div style="height: 1px; background: #2f5a44; margin-top: 20px"></div>
 <h2 style="margin: 0; font-family: Caladea, Cambria, Georgia, serif; font-weight: 400; font-size: 34px; line-height: 1.1; color: #f7f0e2" data-tpl="A pré-venda tem {lote1} máquinas."></h2>
 <div style="width: 120px; height: 1px; background: #c9a227; margin-left: 6px"></div>
-<p style="margin: 0; font-family: Caladea, Cambria, Georgia, serif; font-style: italic; font-size: 20px; line-height: 1.4; color: #c4a77d" data-tpl="Encontros fechados com a Marcela, pelo Google Meet, em horários que você escolhe. A pré-venda fecha em {fim_ddmm}."></p>
+<p style="margin: 0; font-family: Caladea, Cambria, Georgia, serif; font-style: italic; font-size: 20px; line-height: 1.4; color: #c4a77d" data-agenda="pausada">Entre na lista e seja avisado quando a nova agenda de encontros com a Marcela abrir.</p>
+<p class="oculto" style="margin: 0; font-family: Caladea, Cambria, Georgia, serif; font-style: italic; font-size: 20px; line-height: 1.4; color: #c4a77d" data-agenda="aberta" data-tpl="Encontros fechados com a Marcela, pelo Google Meet, em horários que você escolhe. A pré-venda fecha em {fim_ddmm}."></p>
 <a href="#cadastro" style="display: flex; align-items: center; justify-content: center; height: 56px; background: #b04d0c; color: #f7f0e2; font-size: 19px; font-weight: 700; text-decoration: none; border-radius: 7px">Quero ver a nova Konioca no encontro</a>
 <div style="display: flex; flex-direction: column; gap: 6px; padding: 16px; border: 1px solid #c9a227; border-radius: 7px">
 <div style="font-size: 12px; font-weight: 700; letter-spacing: 0.2em; color: #c9a227" data-tpl="FINANCIAMENTO EM PARCERIA COM O {parceiro_maiusc}"></div>

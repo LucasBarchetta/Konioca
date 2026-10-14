@@ -9,6 +9,7 @@
 
   K.config().then(function (cfg) {
     if (cfg) { K.preencher(K.tokens(cfg)); K.preencherLinks(cfg); }
+    K.modoAgenda(cfg);
     K.pronto();
     window.KPixels.init(cfg);
 
