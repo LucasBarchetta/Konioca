@@ -166,6 +166,28 @@ Deno.serve(async (req) => {
     if (error) return json({ erro: error.message }, 500, cors);
     return json({ ok: true, leads: data ?? [] }, 200, cors);
   }
+  // Pausa da campanha (Lucas, 14/10): quem escolheu horário recebe o aviso de adiamento à mão, pelo WhatsApp. A aba Turmas
+  // mostra a lista (nome, WhatsApp, turma), turma mais próxima primeiro, e o botão "Avisado" registra quem já recebeu a mensagem.
+  if (acao === "encontro_avisos") {
+    const { data, error } = await sb.from("leads").select("id, nome, whatsapp, encontro_id, encontro_escolhido_em, adiamento_avisado_em, adiamento_avisado_por, encontro:encontros(id, inicio, duracao_min)")
+      .not("encontro_id", "is", null).is("optout_em", null).is("anonimizado_em", null).or("monitor_teste.is.null,monitor_teste.eq.false");
+    if (error) return json({ erro: error.message }, 500, cors);
+    type Linha = { id: string; nome: string | null; whatsapp: string | null; encontro_id: number; encontro_escolhido_em: string | null; adiamento_avisado_em: string | null; adiamento_avisado_por: string | null; encontro: unknown };
+    const pessoas = ((data ?? []) as unknown as Linha[]).map((l) => {
+      const e = (Array.isArray(l.encontro) ? l.encontro[0] : l.encontro) as { id: number; inicio: string; duracao_min: number } | null;
+      return { id: l.id, nome: l.nome, whatsapp: l.whatsapp, encontro_id: l.encontro_id, inicio: e?.inicio ?? null, duracao_min: e?.duracao_min ?? null, escolhido_em: l.encontro_escolhido_em, avisado_em: l.adiamento_avisado_em, avisado_por: l.adiamento_avisado_por };
+    }).sort((a, b) => String(a.inicio ?? "9").localeCompare(String(b.inicio ?? "9")) || String(a.nome ?? "").localeCompare(String(b.nome ?? ""), "pt-BR"));
+    return json({ ok: true, pessoas }, 200, cors);
+  }
+  if (acao === "encontro_avisado") {
+    const leadId = String(b.lead_id ?? ""), avisado = b.avisado !== false;
+    if (!leadId) return json({ erro: "lead_id" }, 400, cors);
+    const { data, error } = await sb.from("leads").update({ adiamento_avisado_em: avisado ? new Date().toISOString() : null, adiamento_avisado_por: avisado ? por : null }).eq("id", leadId).not("encontro_id", "is", null).select("id");
+    if (error) return json({ erro: error.message }, 400, cors);
+    if (!data?.length) return json({ erro: "esta pessoa não escolheu horário" }, 404, cors);
+    await registrar(leadId, avisado ? "adiamento_avisado" : "adiamento_avisado_desfeito", {});
+    return json({ ok: true }, 200, cors);
+  }
   if (acao === "presenca") {
     const presente = b.presente === true ? true : b.presente === false ? false : null;
     if (presente === null) return json({ erro: "presente: true ou false" }, 400, cors);

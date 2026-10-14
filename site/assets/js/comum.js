@@ -65,6 +65,14 @@
       el.textContent = el.getAttribute("data-tpl").replace(/\{(\w+)\}/g, function (_, k) { return T[k] != null ? T[k] : ""; });
     });
   }
+  // Pausa da campanha (config.campanha_pausada, Lucas 14/10). O HTML nasce no modo "pausada" (sem datas de encontro nem
+  // "Escolher meu horário"); só com a chave em false os blocos data-agenda="aberta" aparecem e os "pausada" somem.
+  // Sem configuração (falha de rede), fica no modo pausada. Textos alternativos de botão: data-texto-aberta.
+  function modoAgenda(cfg) {
+    var pausada = !cfg || !(cfg.campanha_pausada === false || cfg.campanha_pausada === "false");
+    document.querySelectorAll("[data-agenda]").forEach(function (e) { e.classList.toggle("oculto", (e.getAttribute("data-agenda") === "aberta") === pausada); });
+    if (!pausada) document.querySelectorAll("[data-texto-aberta]").forEach(function (e) { e.textContent = e.getAttribute("data-texto-aberta"); });
+  }
   function preencherLinks(cfg) {
     document.querySelectorAll("[data-href]").forEach(function (a) {
       var v = cfg[a.getAttribute("data-href")];
@@ -142,7 +150,7 @@
   }
 
   window.K = {
-    API: API, config: config, post: post, tokens: tokens, preencher: preencher, preencherLinks: preencherLinks,
+    API: API, config: config, post: post, tokens: tokens, preencher: preencher, preencherLinks: preencherLinks, modoAgenda: modoAgenda,
     rastreio: rastreio, visita: visita, iniciarContagem: iniciarContagem, mostrarContador: mostrarContador, fmtReais: fmtReais, partes: partes,
     pronto: function () { document.documentElement.classList.add("pronto"); }
   };

@@ -7,7 +7,7 @@
   try { if (token) sessionStorage.setItem("k_painel_t", token); else token = sessionStorage.getItem("k_painel_t") || ""; } catch (e) { /* sem storage */ }
   if (q.get("t")) { try { history.replaceState(null, "", location.pathname); } catch (e) { /* ok */ } }
 
-  var estado = { quem: null, leads: [], filtro: "todos", canal: "todos", temp: "todas", busca: "", aba: "leads", aberto: {}, canalAberto: {}, aprovacoes: [], proporAberto: false, turmas: [], turmasFiltro: "futuras", turmaAberta: {}, turmaPessoas: {}, desempenho: null, periodo: "7d", novos: {}, atualizadoEm: 0, digitando: false, carregando: false, adiada: false };
+  var estado = { quem: null, leads: [], filtro: "todos", canal: "todos", temp: "todas", busca: "", aba: "leads", aberto: {}, canalAberto: {}, aprovacoes: [], proporAberto: false, turmas: [], turmasFiltro: "futuras", turmaAberta: {}, turmaPessoas: {}, avisos: [], desempenho: null, periodo: "7d", novos: {}, atualizadoEm: 0, digitando: false, carregando: false, adiada: false };
   // Etiqueta de canal (primeiro toque, mesma gaveta da aba Desempenho: v_painel_leads.canal). Espelho de painel_regras.ts.
   var CANAIS = [["stories", "Stories"], ["bio_instagram", "Bio do Instagram"], ["bio_tiktok", "Bio do TikTok"], ["whatsapp", "WhatsApp"], ["base_p1", "E-mail base antiga P1"], ["base_p2", "E-mail base antiga P2"], ["base_p2_a", "E-mail base antiga P2 (A)"], ["base_p2_b", "E-mail base antiga P2 (B)"], ["base_p34", "E-mail base antiga P3-P4"], ["base_p34_cones", "E-mail base antiga P3-P4 (cones)"], ["base_p34_arte6", "E-mail base antiga P3-P4 (arte 6)"], ["base_b2", "E-mail base antiga 2º envio"], ["base_email", "E-mail base antiga"], ["convite", "Convite"], ["direto", "Direto"], ["outros", "Outros"]];
   function rotuloCanal(c) { for (var i = 0; i < CANAIS.length; i++) if (CANAIS[i][0] === (c || "outros")) return CANAIS[i][1]; return "Outros"; }
@@ -165,6 +165,29 @@
     var extra = aberta === "editar" ? formTurma(t) : aberta === "pessoas" ? '<div class="p-hist" id="turma-pessoas-' + t.id + '">carregando…</div>' : "";
     return '<article class="p-card p-turma' + (cheia ? " cheia" : "") + (!t.ativo ? " inativa" : "") + '" data-turma="' + t.id + '"><h3>' + esc(quandoTurma(t.inicio)) + ' <span class="p-canal" style="cursor:default">' + t.duracao_min + " min</span></h3><div class=\"p-meta\">" + esc(dataHora(t.inicio)) + ' · capacidade ' + t.capacidade + '</div><div class="p-tags">' + tags.join("") + '</div><div class="p-acoes">' + acoes + "</div>" + extra + "</article>";
   }
+  // Pausa da campanha (Lucas, 14/10): quem escolheu horário recebe o aviso de adiamento à mão, pelo WhatsApp. A lista vem da
+  // painel-api (encontro_avisos), turma mais próxima primeiro; "Avisado" marca quem já recebeu a mensagem (permissão "contato").
+  function renderAvisos() {
+    var caixa = el("p-avisos"); if (!caixa) return;
+    var lista = estado.avisos || [];
+    if (!lista.length) { caixa.innerHTML = ""; caixa.classList.add("oculto"); return; }
+    caixa.classList.remove("oculto");
+    var grupos = [], porId = {};
+    lista.forEach(function (p) { var k = String(p.encontro_id); if (!porId[k]) { porId[k] = { id: k, inicio: p.inicio, pessoas: [] }; grupos.push(porId[k]); } porId[k].pessoas.push(p); });
+    var feitos = lista.filter(function (p) { return !!p.avisado_em; }).length;
+    var html = '<article class="p-card"><h3>Aviso de adiamento pelo WhatsApp</h3><div class="p-meta">Quem escolheu horário precisa saber que o encontro mudou de data. Mande a mensagem à mão e marque "Avisado". ' + feitos + " de " + lista.length + (lista.length === 1 ? " pessoa avisada" : " pessoas avisadas") + ".</div>";
+    html += grupos.map(function (g) {
+      var linhas = g.pessoas.map(function (p) {
+        var dig = String(p.whatsapp || "").replace(/\D/g, "");
+        var zap = dig ? '<a href="https://wa.me/' + dig + '" target="_blank" rel="noopener">' + esc(fmtWhats(p.whatsapp)) + "</a>" : '<span class="p-tag cinza">sem WhatsApp</span>';
+        var estadoTxt = p.avisado_em ? tag("Avisado por " + String(p.avisado_por || "").split(" (")[0] + " em " + dataHora(p.avisado_em), "verde") : tag("Ainda não avisado", "vermelho");
+        var botao = pode("contato") ? (p.avisado_em ? '<button type="button" class="discreto" data-acao="avisado" data-id="' + p.id + '" data-avisado="false">Desfazer</button>' : '<button type="button" class="primario" data-acao="avisado" data-id="' + p.id + '" data-avisado="true">Avisado</button>') : "";
+        return '<div class="p-aviso-linha"><strong>' + esc(p.nome || "(sem nome)") + "</strong> · " + zap + " " + estadoTxt + " " + botao + "</div>";
+      }).join("");
+      return '<div class="p-aviso-turma"><div class="p-sub">Turma de ' + esc(quandoTurma(g.inicio)) + " · " + g.pessoas.length + (g.pessoas.length === 1 ? " pessoa" : " pessoas") + "</div>" + linhas + "</div>";
+    }).join("");
+    caixa.innerHTML = html + "</article>";
+  }
   function renderTurmas() {
     var agora = Date.now(), lista = estado.turmas.filter(function (t) {
       var fim = new Date(t.inicio).getTime() + (t.duracao_min || 30) * 60000;
@@ -283,9 +306,10 @@
     if (estado.carregando) { if (!auto) estado.pendente = true; return Promise.resolve(); }
     if (auto && ocupado()) { estado.adiada = true; mostrarAtualizado(); return Promise.resolve(); }
     estado.carregando = true; estado.adiada = false;
-    return Promise.all([api("quem"), api("leads"), api("aprovacoes"), api("encontros"), api("desempenho", { periodo: estado.periodo })]).then(function (r) {
-      var quem = r[0], leads = r[1], ap = r[2], enc = r[3], des = r[4];
+    return Promise.all([api("quem"), api("leads"), api("aprovacoes"), api("encontros"), api("desempenho", { periodo: estado.periodo }), api("encontro_avisos")]).then(function (r) {
+      var quem = r[0], leads = r[1], ap = r[2], enc = r[3], des = r[4], av = r[5];
       estado.turmas = (enc && enc.encontros) || [];
+      estado.avisos = (av && av.ok && av.pessoas) || [];
       if (des && des.ok) estado.desempenho = des;
       if (!quem.ok) { if (quem._status === 401) restrito(); else if (!auto) erro(quem.erro || "Não foi possível abrir o painel."); return; }
       var antes = {}; estado.leads.forEach(function (l) { antes[l.id] = true; });
@@ -295,7 +319,7 @@
       el("p-nome").textContent = quem.nome; el("p-papel").textContent = quem.papel + " · " + (quem.escopo || "");
       el("p-placar-num").textContent = String(quem.placar.reservas_lote1 || 0); el("p-placar-lote").textContent = String(quem.placar.lote1_tamanho || 250);
       estado.atualizadoEm = Date.now(); estado.digitando = false;
-      liberar(); erro(""); render(); renderAprovacoes(); renderTurmas(); renderDesempenho(); mostrarAtualizado();
+      liberar(); erro(""); render(); renderAprovacoes(); renderAvisos(); renderTurmas(); renderDesempenho(); mostrarAtualizado();
       if (Object.keys(estado.novos).length) setTimeout(function () { estado.novos = {}; document.querySelectorAll(".p-card.p-novo").forEach(function (c) { c.classList.remove("p-novo"); }); }, 6500);
     }).catch(function () { if (!auto) erro("Sem conexão com o painel. Tente de novo."); else { estado.atualizadoEm = Date.now(); mostrarAtualizado("sem conexão, tentando de novo em " + Math.round(INTERVALO / 1000) + " s"); } })
       .then(function () { estado.carregando = false; if (estado.pendente) { estado.pendente = false; return recarregar(); } });
@@ -335,6 +359,12 @@
     else if (acao === "turma-editar") { estado.turmaAberta[id] = "editar"; renderTurmas(); }
     else if (acao === "turma-pessoas") { if (estado.turmaAberta[id] === "pessoas") delete estado.turmaAberta[id]; else estado.turmaAberta[id] = "pessoas"; renderTurmas(); }
     else if (acao === "turma-fechar") { delete estado.turmaAberta[id]; estado.digitando = false; renderTurmas(); }
+    else if (acao === "avisado") {
+      var marcar = b.getAttribute("data-avisado") === "true";
+      if (!marcar && !confirm("Desfazer a marcação de avisado desta pessoa?")) return;
+      b.disabled = true;
+      api("encontro_avisado", { lead_id: id, avisado: marcar }).then(function (j) { if (!j.ok) erro(j.erro || "erro"); return recarregar(); });
+    }
     else if (acao === "presenca") {
       b.disabled = true;
       api("presenca", { lead_id: id, presente: b.getAttribute("data-presente") === "true" }).then(function (j) { if (!j.ok) erro(j.erro || "erro"); return recarregar(); });

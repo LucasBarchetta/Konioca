@@ -26,6 +26,14 @@ por conduta:
   não lê tabela, view nem função: a LP e o painel só falam com as Edge Functions. Qualquer GRANT a anon/authenticated
   entra na migração com o motivo escrito. Depois de migração, rodar o Advisor de segurança: zero alerta ERROR.
 
+## Campanha pausada (Lucas, 14/10)
+
+A pré-venda está interrompida por um período: `envios_ativos = false`, secretária e crons de envio desligados, turmas
+fechadas, LP sem datas (`campanha_pausada = true`). Nada religa sem o SIM do Lucas. O aviso de adiamento a quem escolheu
+horário é à mão, pelo WhatsApp, marcado no painel (aba Turmas, botão "Avisado"); nenhuma lista de pessoas vai pelo chat.
+Nada se apaga: leads, base antiga, fila, turmas e histórico ficam guardados. O que ficou desligado e a ordem de retomada
+estão em `docs/20-pausa-da-campanha.md`.
+
 ## Quem decide o quê (Lucas, 6/10; atualizado 13/10)
 
 - O LG saiu do time em 12/10 (Lucas). O acesso dele ao painel foi removido (fora de `painel_aprovadores`; o link pessoal deixou de valer na hora) e nenhum aviso ou relatório vai mais para ele.
