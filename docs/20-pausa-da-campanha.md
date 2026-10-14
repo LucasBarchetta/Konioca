@@ -16,7 +16,7 @@ desligado, onde cada coisa está registrada e o que precisa ser religado na reto
 | Ritmo de e-mail | `config.email_por_minuto = 0` (já estava, pelo 429 do Resend) | `public.config` |
 | Resumo diário das 18h50 e check-ins de cobrança | rotina do resumo desativada; check-in de 17h30 de 14/10 apagado; nenhuma cobrança automática ao time | rotinas da sessão dos agentes |
 | Turmas | as 4 abertas (ids 1, 3, 7 e 9) passaram a `ativo = false`, com observação "fechada em 14/10: pausa da campanha"; `encontro_escolher` recusa turma inativa, então ninguém escolhe horário mesmo com link antigo | `public.encontros`, `config.encontros_fechados_pausa` |
-| Página de cadastro e de obrigado | continuam no ar e recebendo cadastros; `config.campanha_pausada = true` (pública) esconde datas e "Escolher meu horário" e mostra "Entre na lista e seja avisado quando a nova agenda de encontros com a Marcela abrir." | `site/index.html`, `site/obrigado.html`, `comum.js` (`modoAgenda`) |
+| Página de cadastro e de obrigado | continuam no ar e recebendo cadastros; `config.campanha_pausada = true` (pública) esconde datas, "Escolher meu horário", a contagem regressiva e toda menção ao prazo da pré-venda (`prevenda_fim`: linhas ENCERRA e FALTAM, "Pré-venda até", "Depois de {fim_ddmm}", FAQ "Até quando"). Preço e {lote1} máquinas continuam. Mostra "Entre na lista e seja avisado quando a nova agenda de encontros com a Marcela abrir." | `site/index.html`, `site/obrigado.html`, `comum.js` (`modoAgenda`) |
 
 O que continua rodando de propósito: `planilha-processar` (fila da planilha), `circular-reconciliar` (lê eventos do
 Resend, não envia), `sults-export-diario` (exportação de dados, não envia) e `retencao-diaria` (LGPD: anonimiza quem
@@ -36,7 +36,7 @@ tem a permissão "contato" (principal, conteúdo, operacional, growth) marca; os
 ## Retomada: o que religar, nesta ordem
 
 1. Decidir a agenda nova: criar turmas pelo painel (ou reabrir as de `config.encontros_fechados_pausa`) com link do Meet.
-2. `config.campanha_pausada = false`: a LP e a página de obrigado voltam a mostrar datas e "Escolher meu horário" em até 20 s (cache da `public-config`).
+2. Conferir `config.prevenda_fim` (a nova data volta junto com a agenda) e então `config.campanha_pausada = false`: a LP e a página de obrigado voltam a mostrar datas, contagem regressiva, prazo e "Escolher meu horário" em até 20 s (cache da `public-config`).
 3. Quem já tinha horário (6 pessoas em 14/10) precisa escolher de novo: o `encontro_id` antigo aponta para turma fechada. Decidir se recebem convite novo (`convite_enfileirar`) ou contato à mão.
 4. Resolver a conta do Resend (429 desde 13/10) e publicar `fila-processar`, `email-teste` e `painel-avisar` com o código de main (ritmo e diagnóstico do 429). `config.email_por_minuto` volta a 2 ou 3.
 5. Crons: `select cron.alter_job(jobid, active := true) from cron.job where jobname = any (array[...])` com a lista de `config.crons_pausados_campanha`, começando por `fila-429-devolver`, `email-time-retentar`, `fila-processar`; depois `circular-lembrete`, `secretaria-marcela`, `perguntas-selecionar`.
